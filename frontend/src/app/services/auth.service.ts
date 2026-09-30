@@ -37,6 +37,12 @@ export interface LoginResponse {
   role: string;
 }
 
+export interface CsrfResponse {
+  token: string;
+  parameterName: string;
+  headerName: string;
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -79,6 +85,15 @@ export class AuthService {
     return this.http.post<void>(
       `${this.apiUrl}/logout`,
       {},
+      {
+        withCredentials: true
+      }
+    );
+  }
+
+  csrf(): Observable<CsrfResponse> {
+    return this.http.get<CsrfResponse>(
+      'http://localhost:8081/api/csrf',
       {
         withCredentials: true
       }

@@ -1,0 +1,483 @@
+:host {
+  display: block;
+}
+
+.profile-page {
+  max-width: 1250px;
+  margin: 0 auto;
+}
+
+
+/* HEADER */
+
+.page-header {
+  margin-bottom: 24px;
+}
+
+.eyebrow,
+.section-label {
+  color: var(--primary);
+
+  font-size: 10px;
+  font-weight: 700;
+
+  letter-spacing: .12em;
+}
+
+.page-header h1 {
+  margin: 7px 0 7px;
+
+  color: var(--text-primary);
+
+  font-size: 28px;
+}
+
+.page-header p {
+  margin: 0;
+
+  color: var(--text-secondary);
+
+  font-size: 13px;
+}
+
+
+/* ALERTS */
+
+.alert {
+  margin-bottom: 18px;
+
+  padding: 12px 15px;
+
+  border-radius: var(--radius-md);
+
+  font-size: 12px;
+}
+
+.success-alert {
+  color: var(--success);
+
+  border:
+    1px solid rgba(22, 163, 74, .18);
+
+  background: var(--success-soft);
+}
+
+.error-alert {
+  color: var(--danger);
+
+  border:
+    1px solid rgba(220, 38, 38, .18);
+
+  background: var(--danger-soft);
+}
+
+.loading-card {
+  padding: 30px;
+
+  border:
+    1px solid var(--border-color);
+
+  border-radius: var(--radius-lg);
+
+  background: var(--bg-card);
+
+  color: var(--text-secondary);
+}
+
+
+/* LAYOUT */
+
+.profile-layout {
+  display: grid;
+
+  grid-template-columns:
+    minmax(0, 1fr)
+    310px;
+
+  gap: 20px;
+
+  align-items: start;
+}
+
+.main-column,
+.side-column {
+  display: flex;
+  flex-direction: column;
+
+  gap: 20px;
+}
+
+
+/* CARD */
+
+.card,
+.account-card,
+.save-card {
+  border:
+    1px solid var(--border-color);
+
+  border-radius: var(--radius-lg);
+
+  background: var(--bg-card);
+
+  box-shadow: var(--shadow-sm);
+}
+
+.card-header {
+  padding: 21px 24px;
+
+  border-bottom:
+    1px solid var(--border-color);
+}
+
+.card-header h2 {
+  margin: 6px 0 5px;
+
+  color: var(--text-primary);
+
+  font-size: 16px;
+}
+
+.card-header p {
+  margin: 0;
+
+  color: var(--text-secondary);
+
+  font-size: 11px;
+}
+
+.card-content {
+  padding: 24px;
+}
+
+
+/* FORM */
+
+.form-grid {
+  display: grid;
+
+  grid-template-columns:
+    repeat(2, minmax(0, 1fr));
+
+  gap: 18px;
+}
+
+.form-field {
+  margin-bottom: 20px;
+
+  display: flex;
+  flex-direction: column;
+
+  gap: 7px;
+}
+
+.form-field label {
+  color: var(--text-primary);
+
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.form-field input,
+.form-field select {
+  width: 100%;
+  min-height: 43px;
+
+  padding: 0 12px;
+
+  outline: none;
+
+  border:
+    1px solid var(--border-color);
+
+  border-radius: 8px;
+
+  color: var(--text-primary);
+
+  background: var(--bg-card);
+
+  font-size: 12px;
+
+  transition:
+    border-color .15s ease,
+    box-shadow .15s ease;
+}
+
+.form-field input:focus,
+.form-field select:focus {
+  border-color:
+    rgba(29, 78, 216, .55);
+
+  box-shadow:
+    0 0 0 3px
+    rgba(29, 78, 216, .08);
+}
+
+.form-field input:disabled {
+  cursor: not-allowed;
+
+  color: var(--text-secondary);
+
+  background: var(--bg-muted);
+}
+
+.field-help {
+  color: var(--text-muted);
+
+  font-size: 9px;
+}
+
+.field-error {
+  color: var(--danger);
+
+  font-size: 9px;
+}
+
+
+/* SECURITY */
+
+.security-item {
+  min-height: 82px;
+
+  padding: 18px 24px;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  gap: 20px;
+
+  border-bottom:
+    1px solid var(--border-color);
+}
+
+.security-item:last-child {
+  border-bottom: 0;
+}
+
+.security-item > div {
+  display: flex;
+  flex-direction: column;
+
+  gap: 5px;
+}
+
+.security-item strong {
+  color: var(--text-primary);
+
+  font-size: 12px;
+}
+
+.security-item span {
+  color: var(--text-secondary);
+
+  font-size: 10px;
+}
+
+.secondary-button {
+  min-height: 36px;
+
+  padding: 0 12px;
+
+  border:
+    1px solid var(--border-color);
+
+  border-radius: 7px;
+
+  color: var(--text-secondary);
+
+  background: var(--bg-card);
+
+  font-size: 10px;
+}
+
+.coming-soon {
+  padding: 6px 9px;
+
+  border-radius: 20px;
+
+  color: var(--warning) !important;
+
+  background: var(--warning-soft);
+
+  font-size: 9px !important;
+  font-weight: 700;
+}
+
+
+/* ACCOUNT CARD */
+
+.account-card {
+  padding: 28px 20px;
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+
+  text-align: center;
+}
+
+.avatar-large {
+  width: 72px;
+  height: 72px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 50%;
+
+  color: var(--primary);
+
+  background: var(--primary-soft);
+
+  font-size: 21px;
+  font-weight: 700;
+}
+
+.account-card h3 {
+  margin: 15px 0 4px;
+
+  color: var(--text-primary);
+
+  font-size: 15px;
+}
+
+.account-card .email {
+  color: var(--text-secondary);
+
+  font-size: 10px;
+}
+
+.role-badge {
+  margin-top: 14px;
+
+  padding: 6px 10px;
+
+  border-radius: 20px;
+
+  color: var(--primary);
+
+  background: var(--primary-soft);
+
+  font-size: 9px;
+  font-weight: 700;
+}
+
+.account-status {
+  margin-top: 17px;
+
+  display: flex;
+  align-items: center;
+
+  gap: 7px;
+
+  color: var(--success);
+
+  font-size: 10px;
+}
+
+.status-dot {
+  width: 7px;
+  height: 7px;
+
+  border-radius: 50%;
+
+  background: var(--success);
+}
+
+
+/* SAVE */
+
+.save-card {
+  padding: 20px;
+}
+
+.save-card h3 {
+  margin: 0 0 7px;
+
+  color: var(--text-primary);
+
+  font-size: 13px;
+}
+
+.save-card p {
+  margin: 0 0 17px;
+
+  color: var(--text-secondary);
+
+  line-height: 1.6;
+
+  font-size: 10px;
+}
+
+.primary-button {
+  width: 100%;
+  min-height: 42px;
+
+  border: 0;
+
+  border-radius: 8px;
+
+  cursor: pointer;
+
+  color: white;
+
+  background: var(--primary);
+
+  font-size: 11px;
+  font-weight: 700;
+
+  transition:
+    background .15s ease,
+    opacity .15s ease;
+}
+
+.primary-button:hover:not(:disabled) {
+  background: var(--primary-hover);
+}
+
+.primary-button:disabled {
+  cursor: not-allowed;
+
+  opacity: .55;
+}
+
+
+/* RESPONSIVE */
+
+@media (max-width: 950px) {
+
+  .profile-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .side-column {
+    display: grid;
+
+    grid-template-columns:
+      repeat(2, 1fr);
+  }
+
+}
+
+@media (max-width: 650px) {
+
+  .form-grid,
+  .side-column {
+    grid-template-columns: 1fr;
+  }
+
+  .card-header,
+  .card-content,
+  .security-item {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+
+  .security-item {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+}

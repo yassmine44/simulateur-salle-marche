@@ -102,26 +102,30 @@
           ☀
         </button>
 
-        <div class="user-profile">
+       <a
+  routerLink="/app/profile"
+  class="user-profile"
+>
 
-          <div class="avatar">
-            {{ user.firstName.charAt(0) }}
-            {{ user.lastName.charAt(0) }}
-          </div>
+  <div class="avatar">
+    {{ user.firstName.charAt(0) }}
+    {{ user.lastName.charAt(0) }}
+  </div>
 
-          <div class="user-details">
-            <strong>
-              {{ user.firstName }}
-              {{ user.lastName }}
-            </strong>
+  <div class="user-details">
 
-            <span>
-              {{ user.role }}
-            </span>
-          </div>
+    <strong>
+      {{ user.firstName }}
+      {{ user.lastName }}
+    </strong>
 
-        </div>
+    <span>
+      {{ user.role }}
+    </span>
 
+  </div>
+
+</a>
         <button
           type="button"
           class="logout-button"
