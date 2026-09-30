@@ -12,7 +12,11 @@ export interface UserProfile {
   role: string;
   enabled: boolean;
 }
-
+export interface ChangePasswordRequest {
+  currentPassword: string;
+  newPassword: string;
+  confirmPassword: string;
+}
 export interface UpdateProfileRequest {
   firstName: string;
   lastName: string;
@@ -53,4 +57,17 @@ export class UserProfileService {
       }
     );
   }
+
+  changePassword(
+  request: ChangePasswordRequest
+): Observable<void> {
+
+  return this.http.put<void>(
+    `${this.apiUrl}/me/password`,
+    request,
+    {
+      withCredentials: true
+    }
+  );
+}
 }

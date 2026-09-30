@@ -1,14 +1,25 @@
 <section class="profile-page">
 
+  <!-- PAGE HEADER -->
+
   <div class="page-header">
     <div>
-      <span class="eyebrow">MON COMPTE</span>
-      <h1>Mon profil</h1>
+      <span class="eyebrow">
+        MON COMPTE
+      </span>
+
+      <h1>
+        Mon profil
+      </h1>
+
       <p>
         Gérez vos informations personnelles et les paramètres associés à votre compte.
       </p>
     </div>
   </div>
+
+
+  <!-- LOADING -->
 
   @if (loading) {
 
@@ -17,6 +28,8 @@
     </div>
 
   } @else {
+
+    <!-- PROFILE MESSAGES -->
 
     @if (successMessage) {
       <div class="alert success-alert">
@@ -30,215 +43,476 @@
       </div>
     }
 
-    <form
-      [formGroup]="form"
-      (ngSubmit)="onSubmit()"
-      class="profile-layout"
-    >
+
+    <div class="profile-layout">
+
+
+      <!-- ========================================= -->
+      <!-- LEFT COLUMN                               -->
+      <!-- ========================================= -->
 
       <div class="main-column">
 
-        <!-- INFORMATIONS PERSONNELLES -->
 
-        <section class="card">
+        <!-- ========================================= -->
+        <!-- PROFILE FORM                              -->
+        <!-- ========================================= -->
 
-          <div class="card-header">
-            <div>
-              <span class="section-label">
-                INFORMATIONS PERSONNELLES
-              </span>
+        <form
+          id="profileForm"
+          [formGroup]="form"
+          (ngSubmit)="onSubmit()"
+        >
 
-              <h2>Profil utilisateur</h2>
+          <section class="card">
 
-              <p>
-                Ces informations sont utilisées pour identifier votre compte
-                dans le simulateur.
-              </p>
-            </div>
-          </div>
+            <div class="card-header">
 
-          <div class="card-content">
+              <div>
 
-            <div class="form-grid">
+                <span class="section-label">
+                  INFORMATIONS PERSONNELLES
+                </span>
 
-              <div class="form-field">
+                <h2>
+                  Profil utilisateur
+                </h2>
 
-                <label for="firstName">
-                  Prénom
-                </label>
-
-                <input
-                  id="firstName"
-                  type="text"
-                  formControlName="firstName"
-                  placeholder="Votre prénom"
-                />
-
-                @if (
-                  form.controls.firstName.touched &&
-                  form.controls.firstName.invalid
-                ) {
-                  <small class="field-error">
-                    Le prénom est obligatoire.
-                  </small>
-                }
-
-              </div>
-
-
-              <div class="form-field">
-
-                <label for="lastName">
-                  Nom
-                </label>
-
-                <input
-                  id="lastName"
-                  type="text"
-                  formControlName="lastName"
-                  placeholder="Votre nom"
-                />
-
-                @if (
-                  form.controls.lastName.touched &&
-                  form.controls.lastName.invalid
-                ) {
-                  <small class="field-error">
-                    Le nom est obligatoire.
-                  </small>
-                }
+                <p>
+                  Ces informations sont utilisées pour identifier votre compte
+                  dans le simulateur.
+                </p>
 
               </div>
 
             </div>
 
 
-            <div class="form-field">
-
-              <label for="email">
-                Adresse e-mail
-              </label>
-
-              <input
-                id="email"
-                type="email"
-                formControlName="email"
-              />
-
-              <small class="field-help">
-                L'adresse e-mail ne peut pas être modifiée depuis cette page.
-              </small>
-
-            </div>
+            <div class="card-content">
 
 
-            <div class="form-grid">
+              <!-- FIRST NAME / LAST NAME -->
 
-              <div class="form-field">
+              <div class="form-grid">
 
-                <label for="countryCode">
-                  Pays
-                </label>
+                <div class="form-field">
 
-                <select
-                  id="countryCode"
-                  formControlName="countryCode"
-                >
+                  <label for="firstName">
+                    Prénom
+                  </label>
 
-                  @for (
-                    country of countries;
-                    track country.code
+                  <input
+                    id="firstName"
+                    type="text"
+                    formControlName="firstName"
+                    placeholder="Votre prénom"
+                    autocomplete="given-name"
+                  />
+
+                  @if (
+                    form.controls.firstName.touched &&
+                    form.controls.firstName.hasError('required')
                   ) {
 
-                    <option
-                      [value]="country.code"
-                    >
-                      {{ country.name }}
-                      ({{ country.dialCode }})
-                    </option>
+                    <small class="field-error">
+                      Le prénom est obligatoire.
+                    </small>
 
                   }
 
-                </select>
+                  @if (
+                    form.controls.firstName.touched &&
+                    form.controls.firstName.hasError('maxlength')
+                  ) {
+
+                    <small class="field-error">
+                      Le prénom ne doit pas dépasser 100 caractères.
+                    </small>
+
+                  }
+
+                </div>
+
+
+                <div class="form-field">
+
+                  <label for="lastName">
+                    Nom
+                  </label>
+
+                  <input
+                    id="lastName"
+                    type="text"
+                    formControlName="lastName"
+                    placeholder="Votre nom"
+                    autocomplete="family-name"
+                  />
+
+                  @if (
+                    form.controls.lastName.touched &&
+                    form.controls.lastName.hasError('required')
+                  ) {
+
+                    <small class="field-error">
+                      Le nom est obligatoire.
+                    </small>
+
+                  }
+
+                  @if (
+                    form.controls.lastName.touched &&
+                    form.controls.lastName.hasError('maxlength')
+                  ) {
+
+                    <small class="field-error">
+                      Le nom ne doit pas dépasser 100 caractères.
+                    </small>
+
+                  }
+
+                </div>
 
               </div>
 
 
+              <!-- EMAIL -->
+
               <div class="form-field">
 
-                <label for="phoneNumber">
-                  Téléphone
+                <label for="email">
+                  Adresse e-mail
                 </label>
 
                 <input
-                  id="phoneNumber"
-                  type="tel"
-                  formControlName="phoneNumber"
-                  placeholder="22 123 456"
+                  id="email"
+                  type="email"
+                  formControlName="email"
+                  autocomplete="email"
                 />
 
-                @if (
-                  form.controls.phoneNumber.touched &&
-                  form.controls.phoneNumber.invalid
-                ) {
-                  <small class="field-error">
-                    Le numéro de téléphone est obligatoire.
-                  </small>
-                }
+                <small class="field-help">
+                  L'adresse e-mail ne peut pas être modifiée depuis cette page.
+                </small>
+
+              </div>
+
+
+              <!-- COUNTRY / PHONE -->
+
+              <div class="form-grid">
+
+                <div class="form-field">
+
+                  <label for="countryCode">
+                    Pays
+                  </label>
+
+                  <select
+                    id="countryCode"
+                    formControlName="countryCode"
+                  >
+
+                    @for (
+                      country of countries;
+                      track country.code
+                    ) {
+
+                      <option
+                        [value]="country.code"
+                      >
+                        {{ country.name }}
+                        ({{ country.dialCode }})
+                      </option>
+
+                    }
+
+                  </select>
+
+                </div>
+
+
+                <div class="form-field">
+
+                  <label for="phoneNumber">
+                    Téléphone
+                  </label>
+
+                  <input
+                    id="phoneNumber"
+                    type="tel"
+                    formControlName="phoneNumber"
+                    placeholder="22 123 456"
+                    autocomplete="tel"
+                  />
+
+                  @if (
+                    form.controls.phoneNumber.touched &&
+                    form.controls.phoneNumber.hasError('required')
+                  ) {
+
+                    <small class="field-error">
+                      Le numéro de téléphone est obligatoire.
+                    </small>
+
+                  }
+
+                  @if (
+                    form.controls.phoneNumber.touched &&
+                    form.controls.phoneNumber.hasError('maxlength')
+                  ) {
+
+                    <small class="field-error">
+                      Le numéro de téléphone est trop long.
+                    </small>
+
+                  }
+
+                </div>
 
               </div>
 
             </div>
 
-          </div>
+          </section>
 
-        </section>
+        </form>
 
 
-        <!-- SECURITE -->
+        <!-- ========================================= -->
+        <!-- SECURITY                                  -->
+        <!-- ========================================= -->
 
         <section class="card">
 
           <div class="card-header security-header">
 
             <div>
+
               <span class="section-label">
                 SÉCURITÉ
               </span>
 
-              <h2>Sécurité du compte</h2>
+              <h2>
+                Sécurité du compte
+              </h2>
 
               <p>
                 Gérez les paramètres liés à l'accès à votre compte.
               </p>
+
             </div>
 
           </div>
 
-          <div class="security-item">
 
-            <div>
+          <!-- CHANGE PASSWORD -->
 
-              <strong>
-                Mot de passe
-              </strong>
+          <div class="password-section">
 
-              <span>
-                Modifiez régulièrement votre mot de passe pour protéger votre compte.
-              </span>
+            <div class="password-section-header">
+
+              <div>
+
+                <strong>
+                  Modifier le mot de passe
+                </strong>
+
+                <span>
+                  Utilisez un mot de passe différent de votre mot de passe actuel.
+                </span>
+
+              </div>
 
             </div>
 
-            <button
-              type="button"
-              class="secondary-button"
-              disabled
+
+            <!-- PASSWORD SUCCESS -->
+
+            @if (passwordSuccessMessage) {
+
+              <div class="password-message success-alert">
+                {{ passwordSuccessMessage }}
+              </div>
+
+            }
+
+
+            <!-- PASSWORD ERROR -->
+
+            @if (passwordErrorMessage) {
+
+              <div class="password-message error-alert">
+                {{ passwordErrorMessage }}
+              </div>
+
+            }
+
+
+            <form
+              [formGroup]="passwordForm"
+              (ngSubmit)="changePassword()"
+              class="password-form"
             >
-              Modifier le mot de passe
-            </button>
+
+
+              <!-- CURRENT PASSWORD -->
+
+              <div class="form-field">
+
+                <label for="currentPassword">
+                  Mot de passe actuel
+                </label>
+
+                <input
+                  id="currentPassword"
+                  type="password"
+                  formControlName="currentPassword"
+                  placeholder="Votre mot de passe actuel"
+                  autocomplete="current-password"
+                />
+
+                @if (
+                  passwordForm.controls.currentPassword.touched &&
+                  passwordForm.controls.currentPassword.hasError('required')
+                ) {
+
+                  <small class="field-error">
+                    Le mot de passe actuel est obligatoire.
+                  </small>
+
+                }
+
+              </div>
+
+
+              <!-- NEW + CONFIRM -->
+
+              <div class="form-grid">
+
+                <div class="form-field">
+
+                  <label for="newPassword">
+                    Nouveau mot de passe
+                  </label>
+
+                  <input
+                    id="newPassword"
+                    type="password"
+                    formControlName="newPassword"
+                    placeholder="Nouveau mot de passe"
+                    autocomplete="new-password"
+                  />
+
+                  @if (
+                    passwordForm.controls.newPassword.touched &&
+                    passwordForm.controls.newPassword.hasError('required')
+                  ) {
+
+                    <small class="field-error">
+                      Le nouveau mot de passe est obligatoire.
+                    </small>
+
+                  }
+
+                  @if (
+                    passwordForm.controls.newPassword.touched &&
+                    passwordForm.controls.newPassword.hasError('minlength')
+                  ) {
+
+                    <small class="field-error">
+                      Le mot de passe doit contenir au moins 8 caractères.
+                    </small>
+
+                  }
+
+                  @if (
+                    passwordForm.controls.newPassword.touched &&
+                    passwordForm.controls.newPassword.hasError('maxlength')
+                  ) {
+
+                    <small class="field-error">
+                      Le mot de passe ne doit pas dépasser 72 caractères.
+                    </small>
+
+                  }
+
+                </div>
+
+
+                <div class="form-field">
+
+                  <label for="confirmPassword">
+                    Confirmation
+                  </label>
+
+                  <input
+                    id="confirmPassword"
+                    type="password"
+                    formControlName="confirmPassword"
+                    placeholder="Confirmez le mot de passe"
+                    autocomplete="new-password"
+                  />
+
+                  @if (
+                    passwordForm.controls.confirmPassword.touched &&
+                    passwordForm.controls.confirmPassword.hasError('required')
+                  ) {
+
+                    <small class="field-error">
+                      La confirmation est obligatoire.
+                    </small>
+
+                  }
+
+                </div>
+
+              </div>
+
+
+              <div class="password-help">
+
+                <span>
+                  Minimum 8 caractères.
+                </span>
+
+                <span>
+                  Le nouveau mot de passe doit être différent de l'ancien.
+                </span>
+
+              </div>
+
+
+              <div class="password-actions">
+
+                <button
+                  type="submit"
+                  class="primary-button password-button"
+                  [disabled]="
+                    changingPassword ||
+                    passwordForm.invalid
+                  "
+                >
+
+                  @if (changingPassword) {
+
+                    Modification...
+
+                  } @else {
+
+                    Modifier le mot de passe
+
+                  }
+
+                </button>
+
+              </div>
+
+            </form>
 
           </div>
 
+
+          <!-- SOCIAL LOGIN -->
 
           <div class="security-item">
 
@@ -265,9 +539,14 @@
       </div>
 
 
-      <!-- COLONNE DROITE -->
+      <!-- ========================================= -->
+      <!-- RIGHT COLUMN                              -->
+      <!-- ========================================= -->
 
       <aside class="side-column">
+
+
+        <!-- ACCOUNT SUMMARY -->
 
         <section class="account-card">
 
@@ -287,26 +566,38 @@
 
           </div>
 
+
           <h3>
+
             {{ form.controls.firstName.value }}
+
             {{ form.controls.lastName.value }}
+
           </h3>
+
 
           <span class="email">
             {{ form.controls.email.value }}
           </span>
 
+
           <div class="role-badge">
             {{ form.controls.role.value }}
           </div>
 
+
           <div class="account-status">
+
             <span class="status-dot"></span>
+
             Compte actif
+
           </div>
 
         </section>
 
+
+        <!-- SAVE PROFILE -->
 
         <section class="save-card">
 
@@ -320,23 +611,54 @@
 
           <button
             type="submit"
+            form="profileForm"
             class="primary-button"
-            [disabled]="saving || form.invalid"
+            [disabled]="
+              saving ||
+              form.invalid
+            "
           >
 
             @if (saving) {
+
               Enregistrement...
+
             } @else {
+
               Enregistrer
+
             }
 
           </button>
 
         </section>
 
+
+        <!-- SECURITY INFO -->
+
+        <section class="security-summary-card">
+
+          <span class="security-icon">
+            ✓
+          </span>
+
+          <div>
+
+            <strong>
+              Compte protégé
+            </strong>
+
+            <p>
+              Votre mot de passe est stocké de manière sécurisée.
+            </p>
+
+          </div>
+
+        </section>
+
       </aside>
 
-    </form>
+    </div>
 
   }
 
