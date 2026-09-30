@@ -1,0 +1,426 @@
+<div class="home-page">
+
+  <nav class="navbar">
+
+    <a routerLink="/" class="brand">
+      <span class="brand-icon">↗</span>
+
+      <span class="brand-text">
+        <strong>Trading Room</strong>
+        <small>Intelligent Market Simulator</small>
+      </span>
+    </a>
+
+    <div class="nav-links">
+      <a href="#features">Fonctionnalités</a>
+      <a href="#platform">Plateforme</a>
+      <a href="#about">À propos</a>
+    </div>
+
+    <div class="nav-actions">
+      <a routerLink="/login" class="login-button">
+        Se connecter
+      </a>
+
+      <a routerLink="/register" class="register-button">
+        Créer un compte
+      </a>
+    </div>
+
+  </nav>
+
+
+  <main>
+
+    <!-- HERO -->
+
+    <section class="hero">
+
+      <div class="hero-content">
+
+        <div class="badge">
+          <span class="status-dot"></span>
+          SIMULATEUR INTELLIGENT DE MARCHÉS FINANCIERS
+        </div>
+
+        <h1>
+          Explorez les marchés.
+          <span>Maîtrisez le risque.</span>
+          Simulez vos stratégies.
+        </h1>
+
+        <p class="hero-description">
+          Un environnement immersif de salle de marché conçu pour
+          analyser les marchés financiers, exécuter des transactions
+          simulées, gérer des portefeuilles et mesurer le risque.
+        </p>
+
+        <div class="hero-actions">
+
+          <a routerLink="/register" class="primary-action">
+            Commencer la simulation
+            <span>→</span>
+          </a>
+
+          <a routerLink="/login" class="secondary-action">
+            Accéder à mon espace
+          </a>
+
+        </div>
+
+        <div class="hero-metrics">
+
+          <div>
+            <strong>Temps réel</strong>
+            <span>Données de marché</span>
+          </div>
+
+          <div>
+            <strong>Multi-actifs</strong>
+            <span>Simulation financière</span>
+          </div>
+
+          <div>
+            <strong>IA & Risk</strong>
+            <span>Analyse avancée</span>
+          </div>
+
+        </div>
+
+      </div>
+
+
+      <!-- FAUX DASHBOARD VISUEL -->
+
+      <div class="terminal-preview">
+
+        <div class="terminal-top">
+
+          <div>
+            <span class="terminal-title">
+              MARKET OVERVIEW
+            </span>
+
+            <span class="live">
+              <span></span>
+              LIVE
+            </span>
+          </div>
+
+          <div class="terminal-user">
+            TRADING DESK
+          </div>
+
+        </div>
+
+
+        <div class="market-cards">
+
+          <div class="market-card">
+            <span>S&P 500</span>
+            <strong>5,487.03</strong>
+            <small class="positive">+0.62%</small>
+          </div>
+
+          <div class="market-card">
+            <span>NASDAQ</span>
+            <strong>17,862.23</strong>
+            <small class="positive">+0.94%</small>
+          </div>
+
+          <div class="market-card">
+            <span>EUR / USD</span>
+            <strong>1.0842</strong>
+            <small class="negative">-0.13%</small>
+          </div>
+
+        </div>
+
+
+        <div class="chart">
+
+          <div class="chart-header">
+            <div>
+              <span>PORTFOLIO VALUE</span>
+              <strong>124,850.24 DT</strong>
+            </div>
+
+            <small class="positive">
+              +8.24%
+            </small>
+          </div>
+
+          <svg
+            viewBox="0 0 600 180"
+            preserveAspectRatio="none"
+            aria-hidden="true"
+          >
+
+            <defs>
+              <linearGradient
+                id="chartGradient"
+                x1="0"
+                y1="0"
+                x2="0"
+                y2="1"
+              >
+                <stop
+                  offset="0%"
+                  stop-color="#38bdf8"
+                  stop-opacity=".35"
+                />
+
+                <stop
+                  offset="100%"
+                  stop-color="#38bdf8"
+                  stop-opacity="0"
+                />
+              </linearGradient>
+            </defs>
+
+            <path
+              class="chart-area"
+              d="M0 150
+                 L45 142
+                 L90 130
+                 L135 138
+                 L180 105
+                 L225 114
+                 L270 82
+                 L315 94
+                 L360 61
+                 L405 73
+                 L450 39
+                 L495 48
+                 L540 25
+                 L600 34
+                 L600 180
+                 L0 180 Z"
+            />
+
+            <path
+              class="chart-line"
+              d="M0 150
+                 L45 142
+                 L90 130
+                 L135 138
+                 L180 105
+                 L225 114
+                 L270 82
+                 L315 94
+                 L360 61
+                 L405 73
+                 L450 39
+                 L495 48
+                 L540 25
+                 L600 34"
+            />
+
+          </svg>
+
+        </div>
+
+      </div>
+
+    </section>
+
+
+    <!-- FEATURES -->
+
+    <section
+      class="features"
+      id="features"
+    >
+
+      <div class="section-heading">
+
+        <span>PLATEFORME MULTI-MODULES</span>
+
+        <h2>
+          Une salle de marché complète,
+          dans un seul environnement.
+        </h2>
+
+        <p>
+          De l'exécution des ordres à l'intelligence artificielle,
+          chaque module reproduit une fonction essentielle du monde
+          financier.
+        </p>
+
+      </div>
+
+
+      <div class="features-grid">
+
+        <article class="feature-card">
+          <span class="feature-number">01</span>
+          <div class="feature-icon">↗</div>
+          <h3>Trading & Ordres</h3>
+          <p>
+            Simulez l'achat, la vente et le suivi des ordres
+            dans un environnement de marché réaliste.
+          </p>
+        </article>
+
+
+        <article class="feature-card">
+          <span class="feature-number">02</span>
+          <div class="feature-icon">◫</div>
+          <h3>Portefeuille</h3>
+          <p>
+            Suivez vos positions, performances, allocations
+            et indicateurs financiers.
+          </p>
+        </article>
+
+
+        <article class="feature-card">
+          <span class="feature-number">03</span>
+          <div class="feature-icon">△</div>
+          <h3>Gestion des risques</h3>
+          <p>
+            Analysez l'exposition, les pertes potentielles,
+            la volatilité et les scénarios de stress.
+          </p>
+        </article>
+
+
+        <article class="feature-card">
+          <span class="feature-number">04</span>
+          <div class="feature-icon">◎</div>
+          <h3>Données de marché</h3>
+          <p>
+            Consultez cours, tendances, historiques et
+            indicateurs nécessaires à la prise de décision.
+          </p>
+        </article>
+
+
+        <article class="feature-card">
+          <span class="feature-number">05</span>
+          <div class="feature-icon">AI</div>
+          <h3>Intelligence artificielle</h3>
+          <p>
+            Exploitez des modèles intelligents pour enrichir
+            l'analyse et l'interprétation des marchés.
+          </p>
+        </article>
+
+
+        <article class="feature-card">
+          <span class="feature-number">06</span>
+          <div class="feature-icon">∑</div>
+          <h3>Stratégies & Backtesting</h3>
+          <p>
+            Concevez et évaluez des stratégies sur des données
+            historiques avant leur simulation.
+          </p>
+        </article>
+
+      </div>
+
+    </section>
+
+
+    <!-- PLATFORM -->
+
+    <section
+      class="platform-section"
+      id="platform"
+    >
+
+      <div class="platform-copy">
+
+        <span class="section-label">
+          EXPÉRIENCE IMMERSIVE
+        </span>
+
+        <h2>
+          Pensé comme une véritable
+          salle de marché.
+        </h2>
+
+        <p>
+          Une interface conçue pour centraliser les données,
+          les décisions, l'exécution et le suivi du risque
+          au sein d'un espace de travail financier cohérent.
+        </p>
+
+        <a
+          routerLink="/register"
+          class="text-link"
+        >
+          Découvrir la plateforme →
+        </a>
+
+      </div>
+
+
+      <div class="workflow">
+
+        <div class="workflow-item">
+          <span>01</span>
+
+          <div>
+            <strong>Observer</strong>
+            <p>Analyser les marchés et leurs mouvements.</p>
+          </div>
+        </div>
+
+        <div class="workflow-line"></div>
+
+        <div class="workflow-item">
+          <span>02</span>
+
+          <div>
+            <strong>Décider</strong>
+            <p>Évaluer opportunités et risques.</p>
+          </div>
+        </div>
+
+        <div class="workflow-line"></div>
+
+        <div class="workflow-item">
+          <span>03</span>
+
+          <div>
+            <strong>Exécuter</strong>
+            <p>Simuler les opérations de trading.</p>
+          </div>
+        </div>
+
+        <div class="workflow-line"></div>
+
+        <div class="workflow-item">
+          <span>04</span>
+
+          <div>
+            <strong>Mesurer</strong>
+            <p>Suivre performance et exposition.</p>
+          </div>
+        </div>
+
+      </div>
+
+    </section>
+
+  </main>
+
+
+  <footer id="about">
+
+    <a routerLink="/" class="footer-brand">
+      ↗ Trading Room
+    </a>
+
+    <p>
+      Simulateur intelligent de salle de marché.
+    </p>
+
+    <span>
+      Projet académique — ESPRIT
+    </span>
+
+  </footer>
+
+</div>

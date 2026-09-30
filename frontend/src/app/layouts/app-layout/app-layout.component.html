@@ -1,0 +1,146 @@
+<div class="app-shell">
+
+  <header class="topbar">
+
+    <!-- BRAND -->
+
+    <a
+      routerLink="/app/dashboard"
+      class="brand"
+    >
+      <span class="brand-icon">
+        ↗
+      </span>
+
+      <div class="brand-copy">
+        <strong>Trading Room</strong>
+        <small>Market Simulator</small>
+      </div>
+    </a>
+
+
+    <!-- MAIN NAVIGATION -->
+
+    <nav class="main-navigation">
+
+      <a
+        routerLink="/app/dashboard"
+        routerLinkActive="active"
+      >
+        Dashboard
+      </a>
+
+      <a
+        routerLink="/app/markets"
+        routerLinkActive="active"
+      >
+        Marchés
+      </a>
+
+      <a
+        routerLink="/app/trading"
+        routerLinkActive="active"
+      >
+        Trading
+      </a>
+
+      <a
+        routerLink="/app/portfolio"
+        routerLinkActive="active"
+      >
+        Portefeuille
+      </a>
+
+      <a
+        routerLink="/app/risk"
+        routerLinkActive="active"
+      >
+        Risque
+      </a>
+
+      <a
+        routerLink="/app/analytics"
+        routerLinkActive="active"
+      >
+        Analyse
+      </a>
+
+      <a
+        routerLink="/app/ai"
+        routerLinkActive="active"
+      >
+        IA
+      </a>
+
+    </nav>
+
+
+    <!-- USER AREA -->
+
+    @if (user$ | async; as user) {
+
+      <div class="user-area">
+
+        <div class="market-indicator">
+          <span class="market-dot"></span>
+          Live
+        </div>
+
+        <button
+          type="button"
+          class="notification-button"
+          aria-label="Notifications"
+        >
+          ♢
+        </button>
+
+        <button
+          type="button"
+          class="theme-button"
+          aria-label="Changer le thème"
+        >
+          ☀
+        </button>
+
+        <div class="user-profile">
+
+          <div class="avatar">
+            {{ user.firstName.charAt(0) }}
+            {{ user.lastName.charAt(0) }}
+          </div>
+
+          <div class="user-details">
+            <strong>
+              {{ user.firstName }}
+              {{ user.lastName }}
+            </strong>
+
+            <span>
+              {{ user.role }}
+            </span>
+          </div>
+
+        </div>
+
+        <button
+          type="button"
+          class="logout-button"
+          (click)="logout()"
+        >
+          Déconnexion
+        </button>
+
+      </div>
+
+    }
+
+  </header>
+
+
+  <main class="app-content">
+
+    <router-outlet></router-outlet>
+
+  </main>
+
+</div>

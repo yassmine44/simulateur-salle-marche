@@ -1,0 +1,429 @@
+<section class="dashboard-page">
+
+  @if (user$ | async; as user) {
+
+    <div class="dashboard-header">
+
+      <div>
+        <span class="eyebrow">
+          VUE GÉNÉRALE
+        </span>
+
+        <h1>
+          Bonjour {{ user.firstName }}
+        </h1>
+
+        <p>
+          Voici un aperçu de votre activité et des marchés.
+        </p>
+      </div>
+
+      <div class="market-session">
+        <span class="market-dot"></span>
+
+        <div>
+          <strong>Marchés ouverts</strong>
+          <small>Session active</small>
+        </div>
+      </div>
+
+    </div>
+
+
+    <!-- KPI -->
+
+    <div class="kpi-grid">
+
+      <article class="kpi-card">
+
+        <span class="kpi-label">
+          Valeur du portefeuille
+        </span>
+
+        <strong class="kpi-value">
+          124 850,24 DT
+        </strong>
+
+        <span class="kpi-change positive">
+          +8,24 %
+        </span>
+
+      </article>
+
+
+      <article class="kpi-card">
+
+        <span class="kpi-label">
+          P&amp;L journalier
+        </span>
+
+        <strong class="kpi-value">
+          +3 420,18 DT
+        </strong>
+
+        <span class="kpi-change positive">
+          +2,81 %
+        </span>
+
+      </article>
+
+
+      <article class="kpi-card">
+
+        <span class="kpi-label">
+          Exposition
+        </span>
+
+        <strong class="kpi-value">
+          82 400 DT
+        </strong>
+
+        <span class="kpi-meta">
+          66 % du portefeuille
+        </span>
+
+      </article>
+
+
+      <article class="kpi-card">
+
+        <span class="kpi-label">
+          Niveau de risque
+        </span>
+
+        <strong class="kpi-value">
+          Modéré
+        </strong>
+
+        <span class="risk-badge">
+          12,4 %
+        </span>
+
+      </article>
+
+    </div>
+
+
+    <!-- MAIN GRID -->
+
+    <div class="dashboard-grid">
+
+      <!-- PERFORMANCE -->
+
+      <article class="panel performance-panel">
+
+        <div class="panel-header">
+
+          <div>
+            <span class="panel-label">
+              PERFORMANCE
+            </span>
+
+            <h2>
+              Évolution du portefeuille
+            </h2>
+          </div>
+
+          <select>
+            <option>1 jour</option>
+            <option>1 semaine</option>
+            <option>1 mois</option>
+            <option>1 an</option>
+          </select>
+
+        </div>
+
+        <div class="chart-container">
+
+          <svg
+            viewBox="0 0 900 260"
+            preserveAspectRatio="none"
+            aria-hidden="true"
+          >
+
+            <defs>
+              <linearGradient
+                id="portfolioGradient"
+                x1="0"
+                y1="0"
+                x2="0"
+                y2="1"
+              >
+                <stop
+                  offset="0%"
+                  stop-color="#2563eb"
+                  stop-opacity=".18"
+                />
+
+                <stop
+                  offset="100%"
+                  stop-color="#2563eb"
+                  stop-opacity="0"
+                />
+              </linearGradient>
+            </defs>
+
+            <path
+              class="chart-area"
+              d="
+                M0 210
+                L70 195
+                L140 202
+                L210 165
+                L280 178
+                L350 145
+                L420 152
+                L490 110
+                L560 125
+                L630 85
+                L700 92
+                L770 60
+                L840 70
+                L900 38
+                L900 260
+                L0 260 Z
+              "
+            />
+
+            <path
+              class="chart-line"
+              d="
+                M0 210
+                L70 195
+                L140 202
+                L210 165
+                L280 178
+                L350 145
+                L420 152
+                L490 110
+                L560 125
+                L630 85
+                L700 92
+                L770 60
+                L840 70
+                L900 38
+              "
+            />
+
+          </svg>
+
+        </div>
+
+      </article>
+
+
+      <!-- MARKET INDICES -->
+
+      <article class="panel market-panel">
+
+        <div class="panel-header">
+
+          <div>
+            <span class="panel-label">
+              MARCHÉS
+            </span>
+
+            <h2>
+              Indices suivis
+            </h2>
+          </div>
+
+        </div>
+
+        <div class="market-list">
+
+          @for (market of marketIndices; track market.name) {
+
+            <div class="market-row">
+
+              <div>
+                <strong>
+                  {{ market.name }}
+                </strong>
+
+                <span>
+                  Marché
+                </span>
+              </div>
+
+              <div class="market-value">
+
+                <strong>
+                  {{ market.value }}
+                </strong>
+
+                <span
+                  [class.positive]="market.variation >= 0"
+                  [class.negative]="market.variation < 0"
+                >
+                  {{ market.variation >= 0 ? '+' : '' }}
+                  {{ market.variation }} %
+                </span>
+
+              </div>
+
+            </div>
+
+          }
+
+        </div>
+
+      </article>
+
+    </div>
+
+
+    <!-- LOWER GRID -->
+
+    <div class="lower-grid">
+
+      <!-- POSITIONS -->
+
+      <article class="panel positions-panel">
+
+        <div class="panel-header">
+
+          <div>
+            <span class="panel-label">
+              PORTEFEUILLE
+            </span>
+
+            <h2>
+              Positions ouvertes
+            </h2>
+          </div>
+
+          <button type="button">
+            Voir tout
+          </button>
+
+        </div>
+
+        <div class="table-wrapper">
+
+          <table>
+
+            <thead>
+              <tr>
+                <th>Actif</th>
+                <th>Type</th>
+                <th>Quantité</th>
+                <th>Prix</th>
+                <th>P&amp;L</th>
+              </tr>
+            </thead>
+
+            <tbody>
+
+              @for (position of positions; track position.asset) {
+
+                <tr>
+
+                  <td>
+                    <strong>
+                      {{ position.asset }}
+                    </strong>
+                  </td>
+
+                  <td>
+                    {{ position.type }}
+                  </td>
+
+                  <td>
+                    {{ position.quantity }}
+                  </td>
+
+                  <td>
+                    {{ position.price }}
+                  </td>
+
+                  <td
+                    [class.positive]="position.pnl >= 0"
+                    [class.negative]="position.pnl < 0"
+                  >
+                    {{ position.pnl >= 0 ? '+' : '' }}
+                    {{ position.pnl }} DT
+                  </td>
+
+                </tr>
+
+              }
+
+            </tbody>
+
+          </table>
+
+        </div>
+
+      </article>
+
+
+      <!-- WATCHLIST -->
+
+      <article class="panel watchlist-panel">
+
+        <div class="panel-header">
+
+          <div>
+            <span class="panel-label">
+              WATCHLIST
+            </span>
+
+            <h2>
+              Actifs surveillés
+            </h2>
+          </div>
+
+        </div>
+
+        <div class="watchlist">
+
+          @for (asset of watchlist; track asset.symbol) {
+
+            <div class="watchlist-row">
+
+              <div class="asset-main">
+                <div class="asset-icon">
+                  {{ asset.symbol.charAt(0) }}
+                </div>
+
+                <div>
+                  <strong>
+                    {{ asset.symbol }}
+                  </strong>
+
+                  <span>
+                    {{ asset.name }}
+                  </span>
+                </div>
+              </div>
+
+              <div class="asset-price">
+
+                <strong>
+                  {{ asset.price }}
+                </strong>
+
+                <span
+                  [class.positive]="asset.change >= 0"
+                  [class.negative]="asset.change < 0"
+                >
+                  {{ asset.change >= 0 ? '+' : '' }}
+                  {{ asset.change }} %
+                </span>
+
+              </div>
+
+            </div>
+
+          }
+
+        </div>
+
+      </article>
+
+    </div>
+
+  }
+
+</section>
