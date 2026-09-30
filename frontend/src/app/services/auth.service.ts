@@ -1,5 +1,5 @@
-import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 
 export interface RegisterRequest {
@@ -22,6 +22,21 @@ export interface UserResponse {
   enabled: boolean;
 }
 
+export interface LoginRequest {
+  email: string;
+  password: string;
+}
+
+export interface LoginResponse {
+  id: number;
+  firstName: string;
+  lastName: string;
+  email: string;
+  countryCode: string;
+  phoneNumber: string;
+  role: string;
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -34,8 +49,39 @@ export class AuthService {
   register(request: RegisterRequest): Observable<UserResponse> {
     return this.http.post<UserResponse>(
       `${this.apiUrl}/register`,
-      request
+      request,
+      {
+        withCredentials: true
+      }
+    );
+  }
+
+  login(request: LoginRequest): Observable<LoginResponse> {
+    return this.http.post<LoginResponse>(
+      `${this.apiUrl}/login`,
+      request,
+      {
+        withCredentials: true
+      }
+    );
+  }
+
+  me(): Observable<LoginResponse> {
+    return this.http.get<LoginResponse>(
+      `${this.apiUrl}/me`,
+      {
+        withCredentials: true
+      }
+    );
+  }
+
+  logout(): Observable<void> {
+    return this.http.post<void>(
+      `${this.apiUrl}/logout`,
+      {},
+      {
+        withCredentials: true
+      }
     );
   }
 }
-

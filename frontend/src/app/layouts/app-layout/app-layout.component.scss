@@ -1,0 +1,450 @@
+:host {
+  display: block;
+}
+
+.app-shell {
+  min-height: 100vh;
+
+  background: var(--bg-page);
+
+  color: var(--text-primary);
+}
+
+
+/* =========================
+   TOP BAR
+   ========================= */
+
+.topbar {
+  height: 72px;
+
+  position: sticky;
+  top: 0;
+  z-index: 100;
+
+  display: flex;
+  align-items: center;
+
+  padding: 0 24px;
+
+  border-bottom:
+    1px solid var(--border-color);
+
+  background:
+    rgba(255, 255, 255, 0.96);
+
+  backdrop-filter: blur(14px);
+
+  box-shadow:
+    0 1px 4px rgba(15, 23, 42, 0.04);
+}
+
+
+/* =========================
+   BRAND
+   ========================= */
+
+.brand {
+  min-width: 205px;
+
+  display: flex;
+  align-items: center;
+
+  gap: 10px;
+
+  text-decoration: none;
+}
+
+.brand-icon {
+  width: 39px;
+  height: 39px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 9px;
+
+  color: white;
+
+  background:
+    linear-gradient(
+      135deg,
+      var(--primary),
+      var(--accent)
+    );
+
+  font-size: 21px;
+  font-weight: 700;
+
+  box-shadow:
+    0 6px 16px rgba(29, 78, 216, 0.18);
+}
+
+.brand-copy {
+  display: flex;
+  flex-direction: column;
+}
+
+.brand-copy strong {
+  color: var(--text-primary);
+
+  font-size: 13px;
+}
+
+.brand-copy small {
+  margin-top: 2px;
+
+  color: var(--text-muted);
+
+  font-size: 9px;
+}
+
+
+/* =========================
+   NAVIGATION
+   ========================= */
+
+.main-navigation {
+  height: 100%;
+
+  flex: 1;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  gap: 3px;
+}
+
+.main-navigation a {
+  height: 100%;
+
+  position: relative;
+
+  display: flex;
+  align-items: center;
+
+  padding: 0 13px;
+
+  color: var(--text-secondary);
+
+  text-decoration: none;
+
+  font-size: 12px;
+  font-weight: 500;
+
+  transition:
+    color 0.15s ease,
+    background 0.15s ease;
+}
+
+.main-navigation a:hover {
+  color: var(--text-primary);
+
+  background: var(--bg-muted);
+}
+
+.main-navigation a.active {
+  color: var(--primary);
+
+  font-weight: 600;
+}
+
+.main-navigation a.active::after {
+  content: '';
+
+  position: absolute;
+
+  left: 13px;
+  right: 13px;
+  bottom: 0;
+
+  height: 2px;
+
+  border-radius: 2px 2px 0 0;
+
+  background: var(--primary);
+}
+
+
+/* =========================
+   USER AREA
+   ========================= */
+
+.user-area {
+  min-width: 310px;
+
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+
+  gap: 9px;
+}
+
+.market-indicator {
+  display: flex;
+  align-items: center;
+
+  gap: 6px;
+
+  padding: 6px 9px;
+
+  border-radius: 20px;
+
+  color: var(--success);
+
+  background: var(--success-soft);
+
+  font-size: 9px;
+  font-weight: 700;
+
+  text-transform: uppercase;
+}
+
+.market-dot {
+  width: 6px;
+  height: 6px;
+
+  border-radius: 50%;
+
+  background: var(--success);
+
+  box-shadow:
+    0 0 8px rgba(22, 163, 74, 0.45);
+}
+
+.notification-button,
+.theme-button {
+  width: 34px;
+  height: 34px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border:
+    1px solid var(--border-color);
+
+  border-radius: 8px;
+
+  cursor: pointer;
+
+  color: var(--text-secondary);
+
+  background: var(--bg-card);
+
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease;
+}
+
+.notification-button:hover,
+.theme-button:hover {
+  border-color: var(--border-strong);
+
+  background: var(--bg-muted);
+}
+
+
+/* =========================
+   PROFILE
+   ========================= */
+
+.user-profile {
+  display: flex;
+  align-items: center;
+
+  gap: 8px;
+
+  margin-left: 4px;
+}
+
+.avatar {
+  width: 35px;
+  height: 35px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 50%;
+
+  color: var(--primary);
+
+  background: var(--primary-soft);
+
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.user-details {
+  display: flex;
+  flex-direction: column;
+}
+
+.user-details strong {
+  max-width: 120px;
+
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+
+  color: var(--text-primary);
+
+  font-size: 11px;
+}
+
+.user-details span {
+  margin-top: 2px;
+
+  color: var(--text-muted);
+
+  font-size: 8px;
+}
+
+
+/* =========================
+   LOGOUT
+   ========================= */
+
+.logout-button {
+  padding: 8px 10px;
+
+  border:
+    1px solid var(--border-color);
+
+  border-radius: 7px;
+
+  cursor: pointer;
+
+  color: var(--text-secondary);
+
+  background: var(--bg-card);
+
+  font-size: 9px;
+
+  transition:
+    color 0.15s ease,
+    border-color 0.15s ease,
+    background 0.15s ease;
+}
+
+.logout-button:hover {
+  color: var(--danger);
+
+  border-color:
+    rgba(220, 38, 38, 0.25);
+
+  background: var(--danger-soft);
+}
+
+
+/* =========================
+   CONTENT
+   ========================= */
+
+.app-content {
+  width: 100%;
+
+  min-height:
+    calc(100vh - 72px);
+
+  padding: 28px 32px 45px;
+
+  background:
+    radial-gradient(
+      circle at 100% 0%,
+      rgba(29, 78, 216, 0.035),
+      transparent 24%
+    ),
+    var(--bg-page);
+}
+
+
+/* =========================
+   RESPONSIVE
+   ========================= */
+
+@media (max-width: 1200px) {
+
+  .main-navigation a {
+    padding:
+      0 9px;
+
+    font-size: 11px;
+  }
+
+  .brand {
+    min-width: 175px;
+  }
+
+  .user-area {
+    min-width: 250px;
+  }
+
+  .market-indicator {
+    display: none;
+  }
+
+}
+
+
+@media (max-width: 950px) {
+
+  .main-navigation {
+    overflow-x: auto;
+
+    justify-content: flex-start;
+
+    scrollbar-width: none;
+  }
+
+  .main-navigation::-webkit-scrollbar {
+    display: none;
+  }
+
+  .user-details {
+    display: none;
+  }
+
+  .logout-button {
+    display: none;
+  }
+
+  .brand-copy {
+    display: none;
+  }
+
+  .brand {
+    min-width: 55px;
+  }
+
+  .user-area {
+    min-width: auto;
+  }
+
+}
+
+
+@media (max-width: 650px) {
+
+  .topbar {
+    padding:
+      0 12px;
+  }
+
+  .main-navigation {
+    display: none;
+  }
+
+  .user-area {
+    margin-left: auto;
+  }
+
+  .app-content {
+    padding:
+      20px 14px 35px;
+  }
+
+}
