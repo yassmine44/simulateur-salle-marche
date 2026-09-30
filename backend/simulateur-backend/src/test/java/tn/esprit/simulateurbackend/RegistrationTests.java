@@ -25,9 +25,15 @@ class RegistrationTests {
     MockMvc mvc;
 
     private static final String VALID = """
-        {"firstName":"  Test  ","lastName":" User ","email":" TEST@example.com ","password":"StrongPassword123!"}
-        """;
-
+    {
+      "firstName":"  Test  ",
+      "lastName":" User ",
+      "countryCode":"TN",
+      "phoneNumber":"22 123 456",
+      "email":" TEST@example.com ",
+      "password":"StrongPassword123!"
+    }
+    """;
     @BeforeEach
     void setup() {
         users.deleteAll();
@@ -35,27 +41,38 @@ class RegistrationTests {
     }
 
     @Test
+
     void registrationPersistsNormalizedUserAndHash() throws Exception {
-        mvc.perform(post("/api/auth/register").contentType("application/json").content(VALID))
-            .andExpect(status().isCreated())
-            .andExpect(jsonPath("$.id").isNumber())
-            .andExpect(jsonPath("$.firstName").value("Test"))
-            .andExpect(jsonPath("$.lastName").value("User"))
-            .andExpect(jsonPath("$.email").value("test@example.com"))
-            .andExpect(jsonPath("$.role").value("USER"))
-            .andExpect(jsonPath("$.enabled").value(true))
-            .andExpect(jsonPath("$.password").doesNotExist())
-            .andExpect(jsonPath("$.passwordHash").doesNotExist());
+        mvc.perform(post("/api/auth/register")
+                        .contentType("application/json")
+                        .content(VALID))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.id").isNumber())
+                .andExpect(jsonPath("$.firstName").value("Test"))
+                .andExpect(jsonPath("$.lastName").value("User"))
+                .andExpect(jsonPath("$.countryCode").value("TN"))
+                .andExpect(jsonPath("$.phoneNumber").value("+21622123456"))
+                .andExpect(jsonPath("$.email").value("test@example.com"))
+                .andExpect(jsonPath("$.role").value("USER"))
+                .andExpect(jsonPath("$.enabled").value(true))
+                .andExpect(jsonPath("$.password").doesNotExist())
+                .andExpect(jsonPath("$.passwordHash").doesNotExist());
+
         var user = users.findByEmail("test@example.com").orElseThrow();
+
         assertThat(user.getFirstName()).isEqualTo("Test");
         assertThat(user.getLastName()).isEqualTo("User");
+        assertThat(user.getCountryCode()).isEqualTo("TN");
+        assertThat(user.getPhoneNumber()).isEqualTo("+21622123456");
         assertThat(user.getRole()).isEqualTo(Role.USER);
         assertThat(user.isEnabled()).isTrue();
         assertThat(user.getCreatedAt()).isNotNull();
         assertThat(user.getPassword()).isNotEqualTo("StrongPassword123!");
-        assertThat(passwords.matches("StrongPassword123!", user.getPassword())).isTrue();
+        assertThat(passwords.matches(
+                "StrongPassword123!",
+                user.getPassword()
+        )).isTrue();
     }
-
     @Test
     void rejectsDuplicateRegardlessOfEmailCase() throws Exception {
         mvc.perform(post("/api/auth/register").contentType("application/json").content(VALID))
@@ -66,19 +83,7 @@ class RegistrationTests {
         assertThat(users.count()).isEqualTo(1);
     }
 
-    @Test
-    void invalidFieldsDoNotCreateUserOrEchoPassword() throws Exception {
-        var result = mvc.perform(post("/api/auth/register").contentType("application/json")
-                .content("{\"firstName\":\" \",\"lastName\":\" \",\"email\":\"invalid\",\"password\":\"short\"}"))
-            .andExpect(status().isBadRequest())
-            .andExpect(jsonPath("$.errors.firstName").exists())
-            .andExpect(jsonPath("$.errors.lastName").exists())
-            .andExpect(jsonPath("$.errors.email").exists())
-            .andExpect(jsonPath("$.errors.password").exists()).andReturn();
-        assertThat(result.getResponse().getContentAsString()).doesNotContain("short");
-        assertThat(users.count()).isZero();
-    }
-
+ 
     @Test
     void missingFieldsAndMalformedJsonAreRejected() throws Exception {
         mvc.perform(post("/api/auth/register").contentType("application/json").content("{}"))
@@ -117,6 +122,81 @@ class RegistrationTests {
         mvc.perform(post("/api/auth/register").contentType("application/json")
                 .content(VALID.replace("StrongPassword123!", "é".repeat(40))))
             .andExpect(status().isBadRequest());
+        assertThat(users.count()).isZero();
+    }
+    @Test
+    void normalizesLowercaseCountryCode() throws Exception {
+        String request = VALID.replace(
+                "\"countryCode\":\"TN\"",
+                "\"countryCode\":\"tn\""
+        );
+
+        mvc.perform(post("/api/auth/register")
+                        .contentType("application/json")
+                        .content(request))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.countryCode").value("TN"))
+                .andExpect(jsonPath("$.phoneNumber").value("+21622123456"));
+
+        var user = users.findByEmail("test@example.com").orElseThrow();
+
+        assertThat(user.getCountryCode()).isEqualTo("TN");
+        assertThat(user.getPhoneNumber()).isEqualTo("+21622123456");
+    }
+    @Test
+    void invalidFieldsDoNotCreateUserOrEchoPassword() throws Exception {
+        var result = mvc.perform(post("/api/auth/register")
+                        .contentType("application/json")
+                        .content("""
+                {
+                  "firstName":" ",
+                  "lastName":" ",
+                  "countryCode":"",
+                  "phoneNumber":"",
+                  "email":"invalid",
+                  "password":"short"
+                }
+                """))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.errors.firstName").exists())
+                .andExpect(jsonPath("$.errors.lastName").exists())
+                .andExpect(jsonPath("$.errors.countryCode").exists())
+                .andExpect(jsonPath("$.errors.phoneNumber").exists())
+                .andExpect(jsonPath("$.errors.email").exists())
+                .andExpect(jsonPath("$.errors.password").exists())
+                .andReturn();
+
+        assertThat(result.getResponse().getContentAsString())
+                .doesNotContain("short");
+
+        assertThat(users.count()).isZero();
+    }
+    @Test
+    void rejectsUnsupportedCountryCode() throws Exception {
+        String request = VALID.replace(
+                "\"countryCode\":\"TN\"",
+                "\"countryCode\":\"XX\""
+        );
+
+        mvc.perform(post("/api/auth/register")
+                        .contentType("application/json")
+                        .content(request))
+                .andExpect(status().isBadRequest());
+
+        assertThat(users.count()).isZero();
+    }
+    @Test
+    void rejectsPhoneNumberInvalidForSelectedCountry() throws Exception {
+        String request = VALID.replace(
+                "\"phoneNumber\":\"22 123 456\"",
+                "\"phoneNumber\":\"123\""
+        );
+
+        mvc.perform(post("/api/auth/register")
+                        .contentType("application/json")
+                        .content(request))
+                .andExpect(status().isBadRequest());
+
         assertThat(users.count()).isZero();
     }
 

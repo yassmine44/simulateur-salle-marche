@@ -1,170 +1,401 @@
-<section class="register-container">
+<div class="register-page">
 
-  <h2>Créer un compte</h2>
+  <div class="market-decoration market-decoration-left"></div>
+  <div class="market-decoration market-decoration-right"></div>
 
-  <p>
-    Inscription au simulateur intelligent de salle de marché.
-  </p>
+  <section class="register-card">
 
-  @if (successMessage) {
-    <p class="message success" role="status">
-      {{ successMessage }}
-    </p>
-  }
+    <div class="brand-section">
 
-  @if (errorMessage) {
-    <p class="message error" role="alert">
-      {{ errorMessage }}
-    </p>
-  }
+      <div class="brand-icon">
+        <span>↗</span>
+      </div>
 
-  <form
-    [formGroup]="registerForm"
-    (ngSubmit)="onSubmit()"
-  >
+      <div>
+        <p class="brand-name">
+          Trading Room
+        </p>
 
-    <!-- Prénom -->
-    <div>
-      <label for="firstName">Prénom</label>
+        <p class="brand-subtitle">
+          Intelligent Market Simulator
+        </p>
+      </div>
 
-      <input
-        id="firstName"
-        type="text"
-        formControlName="firstName"
-      >
-
-      @if (
-        registerForm.controls.firstName.touched &&
-        registerForm.controls.firstName.hasError('required')
-      ) {
-        <small>
-          Le prénom est obligatoire.
-        </small>
-      }
     </div>
 
 
-    <!-- Nom -->
-    <div>
-      <label for="lastName">Nom</label>
+    <div class="register-header">
 
-      <input
-        id="lastName"
-        type="text"
-        formControlName="lastName"
-      >
+      <span class="eyebrow">
+        ACCÈS PLATEFORME
+      </span>
 
-      @if (
-        registerForm.controls.lastName.touched &&
-        registerForm.controls.lastName.hasError('required')
-      ) {
-        <small>
-          Le nom est obligatoire.
-        </small>
-      }
+      <h1>
+        Créer votre compte
+      </h1>
+
+      <p>
+        Accédez à votre environnement de simulation,
+        d'analyse et de gestion des marchés financiers.
+      </p>
+
     </div>
 
 
-    <!-- Email -->
-    <div>
-      <label for="email">Adresse e-mail</label>
+    @if (successMessage) {
 
-      <input
-        id="email"
-        type="email"
-        formControlName="email"
+      <div
+        class="message success"
+        role="status"
+      >
+        <span class="message-icon">✓</span>
+
+        <span>
+          {{ successMessage }}
+        </span>
+      </div>
+
+    }
+
+
+    @if (errorMessage) {
+
+      <div
+        class="message error"
+        role="alert"
+      >
+        <span class="message-icon">!</span>
+
+        <span>
+          {{ errorMessage }}
+        </span>
+      </div>
+
+    }
+
+
+    <form
+      [formGroup]="registerForm"
+      (ngSubmit)="onSubmit()"
+      class="register-form"
+    >
+
+      <div class="form-grid">
+
+
+        <!-- Prénom -->
+
+        <div class="form-group">
+
+          <label for="firstName">
+            Prénom
+          </label>
+
+          <input
+            id="firstName"
+            type="text"
+            formControlName="firstName"
+            placeholder="Votre prénom"
+            autocomplete="given-name"
+          >
+
+          @if (
+            registerForm.controls.firstName.touched &&
+            registerForm.controls.firstName.hasError('required')
+          ) {
+            <small>
+              Le prénom est obligatoire.
+            </small>
+          }
+
+        </div>
+
+
+        <!-- Nom -->
+
+        <div class="form-group">
+
+          <label for="lastName">
+            Nom
+          </label>
+
+          <input
+            id="lastName"
+            type="text"
+            formControlName="lastName"
+            placeholder="Votre nom"
+            autocomplete="family-name"
+          >
+
+          @if (
+            registerForm.controls.lastName.touched &&
+            registerForm.controls.lastName.hasError('required')
+          ) {
+            <small>
+              Le nom est obligatoire.
+            </small>
+          }
+
+        </div>
+
+      </div>
+
+
+      <!-- Pays -->
+
+      <div class="form-group">
+
+        <label for="countryCode">
+          Pays
+        </label>
+
+        <div class="country-select-wrapper">
+
+          <span class="selected-flag">
+            {{ selectedCountry.flag }}
+          </span>
+
+          <select
+            id="countryCode"
+            formControlName="countryCode"
+            autocomplete="country"
+          >
+
+            @for (country of countries; track country.code) {
+
+              <option [value]="country.code">
+
+                {{ country.flag }}
+                {{ country.name }}
+                ({{ country.dialCode }})
+
+              </option>
+
+            }
+
+          </select>
+
+        </div>
+
+      </div>
+
+
+      <!-- Téléphone -->
+
+      <div class="form-group">
+
+        <label for="phoneNumber">
+          Numéro de téléphone
+        </label>
+
+        <div class="phone-input">
+
+          <div class="dial-code">
+
+            <span>
+              {{ selectedCountry.flag }}
+            </span>
+
+            <strong>
+              {{ selectedCountry.dialCode }}
+            </strong>
+
+          </div>
+
+          <input
+            id="phoneNumber"
+            type="tel"
+            formControlName="phoneNumber"
+            placeholder="22 123 456"
+            autocomplete="tel"
+          >
+
+        </div>
+
+        <span class="field-hint">
+          Le numéro sera automatiquement validé selon le pays sélectionné.
+        </span>
+
+        @if (
+          registerForm.controls.phoneNumber.touched &&
+          registerForm.controls.phoneNumber.hasError('required')
+        ) {
+          <small>
+            Le numéro de téléphone est obligatoire.
+          </small>
+        }
+
+      </div>
+
+
+      <!-- Email -->
+
+      <div class="form-group">
+
+        <label for="email">
+          Adresse e-mail
+        </label>
+
+        <input
+          id="email"
+          type="email"
+          formControlName="email"
+          placeholder="nom@exemple.com"
+          autocomplete="email"
+        >
+
+        @if (
+          registerForm.controls.email.touched &&
+          registerForm.controls.email.hasError('required')
+        ) {
+          <small>
+            L'adresse e-mail est obligatoire.
+          </small>
+        }
+
+        @if (
+          registerForm.controls.email.touched &&
+          registerForm.controls.email.hasError('email')
+        ) {
+          <small>
+            L'adresse e-mail n'est pas valide.
+          </small>
+        }
+
+      </div>
+
+
+      <div class="form-grid">
+
+        <!-- Mot de passe -->
+
+        <div class="form-group">
+
+          <label for="password">
+            Mot de passe
+          </label>
+
+          <input
+            id="password"
+            type="password"
+            formControlName="password"
+            placeholder="Minimum 8 caractères"
+            autocomplete="new-password"
+          >
+
+          @if (
+            registerForm.controls.password.touched &&
+            registerForm.controls.password.hasError('required')
+          ) {
+            <small>
+              Le mot de passe est obligatoire.
+            </small>
+          }
+
+          @if (
+            registerForm.controls.password.touched &&
+            registerForm.controls.password.hasError('minlength')
+          ) {
+            <small>
+              Minimum 8 caractères.
+            </small>
+          }
+
+        </div>
+
+
+        <!-- Confirmation -->
+
+        <div class="form-group">
+
+          <label for="confirmPassword">
+            Confirmation
+          </label>
+
+          <input
+            id="confirmPassword"
+            type="password"
+            formControlName="confirmPassword"
+            placeholder="Confirmez le mot de passe"
+            autocomplete="new-password"
+          >
+
+          @if (
+            registerForm.controls.confirmPassword.touched &&
+            registerForm.controls.confirmPassword.hasError('required')
+          ) {
+            <small>
+              La confirmation est obligatoire.
+            </small>
+          }
+
+          @if (
+            registerForm.controls.confirmPassword.touched &&
+            registerForm.hasError('passwordsMismatch')
+          ) {
+            <small>
+              Les mots de passe ne correspondent pas.
+            </small>
+          }
+
+        </div>
+
+      </div>
+
+
+      <button
+        class="submit-button"
+        type="submit"
+        [disabled]="isSubmitting"
       >
 
-      @if (
-        registerForm.controls.email.touched &&
-        registerForm.controls.email.hasError('required')
-      ) {
-        <small>
-          L'adresse e-mail est obligatoire.
-        </small>
-      }
+        @if (isSubmitting) {
 
-      @if (
-        registerForm.controls.email.touched &&
-        registerForm.controls.email.hasError('email')
-      ) {
-        <small>
-          L'adresse e-mail n'est pas valide.
-        </small>
-      }
-    </div>
+          <span class="loader"></span>
 
+          <span>
+            Création du compte...
+          </span>
 
-    <!-- Mot de passe -->
-    <div>
-      <label for="password">Mot de passe</label>
+        } @else {
 
-      <input
-        id="password"
-        type="password"
-        formControlName="password"
-      >
+          <span>
+            Créer mon compte
+          </span>
 
-      @if (
-        registerForm.controls.password.touched &&
-        registerForm.controls.password.hasError('required')
-      ) {
-        <small>
-          Le mot de passe est obligatoire.
-        </small>
-      }
+          <span class="button-arrow">
+            →
+          </span>
 
-      @if (
-        registerForm.controls.password.touched &&
-        registerForm.controls.password.hasError('minlength')
-      ) {
-        <small>
-          Le mot de passe doit contenir au moins 8 caractères.
-        </small>
-      }
-    </div>
+        }
+
+      </button>
 
 
-    <!-- Confirmation -->
-    <div>
-      <label for="confirmPassword">
-        Confirmer le mot de passe
-      </label>
+      <div class="security-note">
 
-      <input
-        id="confirmPassword"
-        type="password"
-        formControlName="confirmPassword"
-      >
+        <span>🔒</span>
 
-      @if (
-        registerForm.controls.confirmPassword.touched &&
-        registerForm.controls.confirmPassword.hasError('required')
-      ) {
-        <small>
-          La confirmation du mot de passe est obligatoire.
-        </small>
-      }
+        <span>
+          Vos informations sont sécurisées et vos mots de passe
+          sont protégés par chiffrement BCrypt.
+        </span>
 
-      @if (
-        registerForm.controls.confirmPassword.touched &&
-        registerForm.hasError('passwordsMismatch')
-      ) {
-        <small>
-          Les mots de passe ne correspondent pas.
-        </small>
-      }
-    </div>
+      </div>
 
 
-    <button type="submit" [disabled]="isSubmitting">
-      @if (isSubmitting) {
-        Création du compte...
-      } @else {
-        Créer mon compte
-      }
-    </button>
+      <p class="login-link">
 
-  </form>
+        Vous avez déjà un compte ?
 
-</section>
+        <a href="#">
+          Se connecter
+        </a>
+
+      </p>
+
+    </form>
+
+  </section>
+
+</div>
