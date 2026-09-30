@@ -1,14 +1,16 @@
 import { Component, OnInit } from '@angular/core';
+import { RouterOutlet } from '@angular/router';
 import { HealthService } from './services/health.service';
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [],
+  imports: [RouterOutlet],
   templateUrl: './app.component.html',
   styleUrl: './app.component.scss'
 })
 export class AppComponent implements OnInit {
+
   healthStatus = 'Vérification du backend...';
 
   constructor(private readonly healthService: HealthService) {}

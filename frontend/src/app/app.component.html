@@ -1,2 +1,12 @@
-<h1>Simulateur intelligent de salle de marché</h1>
-<p>Statut du backend : {{ healthStatus }}</p>
+<header>
+  <h1>Simulateur intelligent de salle de marché</h1>
+
+  <p>
+    Statut du backend :
+    <strong>{{ healthStatus }}</strong>
+  </p>
+</header>
+
+<main>
+  <router-outlet></router-outlet>
+</main>
