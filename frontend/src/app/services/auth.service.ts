@@ -42,7 +42,19 @@ export interface CsrfResponse {
   parameterName: string;
   headerName: string;
 }
+export interface MessageResponse {
+  message: string;
+}
 
+export interface ForgotPasswordRequest {
+  email: string;
+}
+
+export interface ResetPasswordRequest {
+  token: string;
+  newPassword: string;
+  confirmPassword: string;
+}
 @Injectable({
   providedIn: 'root'
 })
@@ -99,4 +111,21 @@ export class AuthService {
       }
     );
   }
+  forgotPassword(
+  request: ForgotPasswordRequest
+): Observable<MessageResponse> {
+  return this.http.post<MessageResponse>(
+    `${this.apiUrl}/forgot-password`,
+    request
+  );
+}
+
+resetPassword(
+  request: ResetPasswordRequest
+): Observable<MessageResponse> {
+  return this.http.post<MessageResponse>(
+    `${this.apiUrl}/reset-password`,
+    request
+  );
+}
 }
