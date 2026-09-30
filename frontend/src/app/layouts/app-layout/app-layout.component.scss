@@ -446,5 +446,16 @@
     padding:
       20px 14px 35px;
   }
+.user-profile {
+  display: flex;
+  align-items: center;
 
+  gap: 8px;
+
+  margin-left: 4px;
+
+  text-decoration: none;
+
+  cursor: pointer;
+}
 }

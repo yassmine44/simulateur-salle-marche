@@ -8,6 +8,7 @@ import { AppLayoutComponent } from './layouts/app-layout/app-layout.component';
 import { DashboardComponent } from './pages/dashboard/dashboard.component';
 
 import { authGuard } from './guards/auth.guard';
+import { ProfileComponent } from './pages/profile/profile.component';
 
 export const routes: Routes = [
 
@@ -49,7 +50,12 @@ export const routes: Routes = [
       {
         path: 'dashboard',
         component: DashboardComponent
-      }
+      },
+
+      {
+          path: 'profile',
+          component: ProfileComponent
+     }
 
     ]
   },

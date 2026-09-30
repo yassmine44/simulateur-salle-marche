@@ -84,17 +84,27 @@ export class LoginComponent {
       )
       .subscribe({
 
-        next: (user) => {
+next: (user) => {
 
-          this.authState.setUser(user);
+  this.authService.csrf().subscribe({
 
-          console.log(
-            'Utilisateur connecté :',
-            user.email
-          );
+    next: () => {
 
-          this.router.navigate(['/app/dashboard']);
-        },
+      this.authState.setUser(user);
+
+      this.router.navigate([
+        '/app/dashboard'
+      ]);
+    },
+
+    error: () => {
+
+      this.errorMessage =
+        'Impossible d’initialiser la session sécurisée.';
+    }
+
+  });
+},
 
         error: (error: HttpErrorResponse) => {
 

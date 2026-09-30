@@ -1,0 +1,343 @@
+<section class="profile-page">
+
+  <div class="page-header">
+    <div>
+      <span class="eyebrow">MON COMPTE</span>
+      <h1>Mon profil</h1>
+      <p>
+        Gérez vos informations personnelles et les paramètres associés à votre compte.
+      </p>
+    </div>
+  </div>
+
+  @if (loading) {
+
+    <div class="loading-card">
+      Chargement de votre profil...
+    </div>
+
+  } @else {
+
+    @if (successMessage) {
+      <div class="alert success-alert">
+        {{ successMessage }}
+      </div>
+    }
+
+    @if (errorMessage) {
+      <div class="alert error-alert">
+        {{ errorMessage }}
+      </div>
+    }
+
+    <form
+      [formGroup]="form"
+      (ngSubmit)="onSubmit()"
+      class="profile-layout"
+    >
+
+      <div class="main-column">
+
+        <!-- INFORMATIONS PERSONNELLES -->
+
+        <section class="card">
+
+          <div class="card-header">
+            <div>
+              <span class="section-label">
+                INFORMATIONS PERSONNELLES
+              </span>
+
+              <h2>Profil utilisateur</h2>
+
+              <p>
+                Ces informations sont utilisées pour identifier votre compte
+                dans le simulateur.
+              </p>
+            </div>
+          </div>
+
+          <div class="card-content">
+
+            <div class="form-grid">
+
+              <div class="form-field">
+
+                <label for="firstName">
+                  Prénom
+                </label>
+
+                <input
+                  id="firstName"
+                  type="text"
+                  formControlName="firstName"
+                  placeholder="Votre prénom"
+                />
+
+                @if (
+                  form.controls.firstName.touched &&
+                  form.controls.firstName.invalid
+                ) {
+                  <small class="field-error">
+                    Le prénom est obligatoire.
+                  </small>
+                }
+
+              </div>
+
+
+              <div class="form-field">
+
+                <label for="lastName">
+                  Nom
+                </label>
+
+                <input
+                  id="lastName"
+                  type="text"
+                  formControlName="lastName"
+                  placeholder="Votre nom"
+                />
+
+                @if (
+                  form.controls.lastName.touched &&
+                  form.controls.lastName.invalid
+                ) {
+                  <small class="field-error">
+                    Le nom est obligatoire.
+                  </small>
+                }
+
+              </div>
+
+            </div>
+
+
+            <div class="form-field">
+
+              <label for="email">
+                Adresse e-mail
+              </label>
+
+              <input
+                id="email"
+                type="email"
+                formControlName="email"
+              />
+
+              <small class="field-help">
+                L'adresse e-mail ne peut pas être modifiée depuis cette page.
+              </small>
+
+            </div>
+
+
+            <div class="form-grid">
+
+              <div class="form-field">
+
+                <label for="countryCode">
+                  Pays
+                </label>
+
+                <select
+                  id="countryCode"
+                  formControlName="countryCode"
+                >
+
+                  @for (
+                    country of countries;
+                    track country.code
+                  ) {
+
+                    <option
+                      [value]="country.code"
+                    >
+                      {{ country.name }}
+                      ({{ country.dialCode }})
+                    </option>
+
+                  }
+
+                </select>
+
+              </div>
+
+
+              <div class="form-field">
+
+                <label for="phoneNumber">
+                  Téléphone
+                </label>
+
+                <input
+                  id="phoneNumber"
+                  type="tel"
+                  formControlName="phoneNumber"
+                  placeholder="22 123 456"
+                />
+
+                @if (
+                  form.controls.phoneNumber.touched &&
+                  form.controls.phoneNumber.invalid
+                ) {
+                  <small class="field-error">
+                    Le numéro de téléphone est obligatoire.
+                  </small>
+                }
+
+              </div>
+
+            </div>
+
+          </div>
+
+        </section>
+
+
+        <!-- SECURITE -->
+
+        <section class="card">
+
+          <div class="card-header security-header">
+
+            <div>
+              <span class="section-label">
+                SÉCURITÉ
+              </span>
+
+              <h2>Sécurité du compte</h2>
+
+              <p>
+                Gérez les paramètres liés à l'accès à votre compte.
+              </p>
+            </div>
+
+          </div>
+
+          <div class="security-item">
+
+            <div>
+
+              <strong>
+                Mot de passe
+              </strong>
+
+              <span>
+                Modifiez régulièrement votre mot de passe pour protéger votre compte.
+              </span>
+
+            </div>
+
+            <button
+              type="button"
+              class="secondary-button"
+              disabled
+            >
+              Modifier le mot de passe
+            </button>
+
+          </div>
+
+
+          <div class="security-item">
+
+            <div>
+
+              <strong>
+                Authentification sociale
+              </strong>
+
+              <span>
+                Google, Microsoft et Apple pourront être associés à votre compte.
+              </span>
+
+            </div>
+
+            <span class="coming-soon">
+              Bientôt disponible
+            </span>
+
+          </div>
+
+        </section>
+
+      </div>
+
+
+      <!-- COLONNE DROITE -->
+
+      <aside class="side-column">
+
+        <section class="account-card">
+
+          <div class="avatar-large">
+
+            {{
+              form.controls.firstName.value
+                ? form.controls.firstName.value.charAt(0)
+                : '?'
+            }}
+
+            {{
+              form.controls.lastName.value
+                ? form.controls.lastName.value.charAt(0)
+                : ''
+            }}
+
+          </div>
+
+          <h3>
+            {{ form.controls.firstName.value }}
+            {{ form.controls.lastName.value }}
+          </h3>
+
+          <span class="email">
+            {{ form.controls.email.value }}
+          </span>
+
+          <div class="role-badge">
+            {{ form.controls.role.value }}
+          </div>
+
+          <div class="account-status">
+            <span class="status-dot"></span>
+            Compte actif
+          </div>
+
+        </section>
+
+
+        <section class="save-card">
+
+          <h3>
+            Enregistrer les modifications
+          </h3>
+
+          <p>
+            Vérifiez vos informations avant de mettre à jour votre profil.
+          </p>
+
+          <button
+            type="submit"
+            class="primary-button"
+            [disabled]="saving || form.invalid"
+          >
+
+            @if (saving) {
+              Enregistrement...
+            } @else {
+              Enregistrer
+            }
+
+          </button>
+
+        </section>
+
+      </aside>
+
+    </form>
+
+  }
+
+</section>
