@@ -1,0 +1,52 @@
+.register-container {
+  max-width: 500px;
+  margin-top: 30px;
+}
+
+form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+form div {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+input {
+  padding: 10px;
+  font-size: 16px;
+  border: 1px solid #9ca3af;
+  border-radius: 4px;
+}
+
+button {
+  padding: 12px;
+  cursor: pointer;
+}
+
+button:disabled {
+  cursor: wait;
+  opacity: 0.65;
+}
+
+small {
+  color: #b00020;
+}
+
+.message {
+  padding: 10px 12px;
+  border-radius: 4px;
+}
+
+.success {
+  color: #166534;
+  background: #dcfce7;
+}
+
+.error {
+  color: #991b1b;
+  background: #fee2e2;
+}
