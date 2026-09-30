@@ -11,9 +11,13 @@ import tn.esprit.simulateurbackend.dto.LoginRequest;
 import tn.esprit.simulateurbackend.dto.LoginResponse;
 import tn.esprit.simulateurbackend.dto.RegisterRequest;
 import tn.esprit.simulateurbackend.dto.UserResponse;
-import tn.esprit.simulateurbackend.service.AuthenticationService;
-import tn.esprit.simulateurbackend.service.RegistrationService;
+import tn.esprit.simulateurbackend.service.*;
 import org.springframework.security.core.Authentication;
+
+import tn.esprit.simulateurbackend.dto.ForgotPasswordRequest;
+import tn.esprit.simulateurbackend.dto.ResetPasswordRequest;
+import tn.esprit.simulateurbackend.dto.MessageResponse;
+
 @RestController
 @RequestMapping("/api/auth")
 public class AuthController {
@@ -21,12 +25,18 @@ public class AuthController {
     private final RegistrationService registration;
     private final AuthenticationService authentication;
 
+    private final PasswordResetService passwordResetService;
+    private final EmailPasswordResetDeliveryService passwordResetDelivery;
     public AuthController(
             RegistrationService registration,
-            AuthenticationService authentication
+            AuthenticationService authentication,
+            PasswordResetService passwordResetService,
+            EmailPasswordResetDeliveryService passwordResetDelivery
     ) {
         this.registration = registration;
         this.authentication = authentication;
+        this.passwordResetService = passwordResetService;
+        this.passwordResetDelivery = passwordResetDelivery;
     }
 
     @PostMapping("/register")
@@ -64,5 +74,36 @@ public class AuthController {
         if (session != null) {
             session.invalidate();
         }
+    }
+    @PostMapping("/forgot-password")
+    public MessageResponse forgotPassword(
+            @Valid @RequestBody ForgotPasswordRequest request
+    ) {
+
+        passwordResetService
+                .createResetToken(request.email())
+                .ifPresent(token ->
+                        passwordResetDelivery.deliver(
+                                request.email(),
+                                token
+                        )
+                );
+
+        return new MessageResponse(
+                "Si un compte correspond à cette adresse, un lien de réinitialisation a été envoyé."
+        );
+    }
+    @PostMapping("/reset-password")
+    public MessageResponse resetPassword(
+            @Valid @RequestBody ResetPasswordRequest request
+    ) {
+
+        passwordResetService.resetPassword(
+                request
+        );
+
+        return new MessageResponse(
+                "Votre mot de passe a été réinitialisé avec succès."
+        );
     }
 }
