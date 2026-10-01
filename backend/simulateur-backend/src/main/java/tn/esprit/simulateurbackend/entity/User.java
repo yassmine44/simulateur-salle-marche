@@ -1,5 +1,11 @@
 package tn.esprit.simulateurbackend.entity;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
+import tn.esprit.simulateurbackend.entity.Role;
+import tn.esprit.simulateurbackend.entity.User;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
 

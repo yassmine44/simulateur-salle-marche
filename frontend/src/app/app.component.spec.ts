@@ -14,21 +14,21 @@ import { HealthResponse, HealthService } from './services/health.service';
     }).compileComponents();
   });
 
-  it('shows loading then the backend status', () => {
+  it('tracks loading then the backend status', () => {
     const fixture = TestBed.createComponent(AppComponent);
     fixture.detectChanges();
-    expect(fixture.nativeElement.querySelector('p').textContent).toContain('Vérification du backend...');
+    expect(fixture.componentInstance.healthStatus).toContain('Vérification du backend...');
     response.next({ status: 'UP' });
     fixture.detectChanges();
-    expect(fixture.nativeElement.querySelector('p').textContent).toContain('Connecté (UP)');
+    expect(fixture.componentInstance.healthStatus).toContain('Connecté (UP)');
     response.complete();
   });
 
-  it('shows a connection error when the request fails', () => {
+  it('tracks a connection error when the request fails', () => {
     const fixture = TestBed.createComponent(AppComponent);
     fixture.detectChanges();
     response.error(new Error('Backend unavailable'));
     fixture.detectChanges();
-    expect(fixture.nativeElement.querySelector('p').textContent).toContain('Erreur de connexion au backend');
+    expect(fixture.componentInstance.healthStatus).toContain('Erreur de connexion au backend');
   });
 });

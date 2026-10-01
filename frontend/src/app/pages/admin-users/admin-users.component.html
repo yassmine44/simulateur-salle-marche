@@ -1,0 +1,31 @@
+<section class="admin-page" aria-labelledby="admin-title">
+  <header><p class="eyebrow">ADMINISTRATION</p><h1 id="admin-title">Administration des utilisateurs</h1><p>Gérez les comptes, leurs rôles et leur accès à la plateforme.</p></header>
+  @if (error) { <div class="message error" role="alert">{{ error }} <button type="button" (click)="load()" [disabled]="loading || busy">Réessayer</button></div> }
+  @if (notice) { <p class="message success" role="status">{{ notice }}</p> }
+  <form class="filters card" (ngSubmit)="applyFilters()">
+    <label class="search">Rechercher<input name="search" [(ngModel)]="search" placeholder="Nom, prénom ou e-mail" type="search"></label>
+    <label>Rôle<select name="role" [(ngModel)]="role" (ngModelChange)="applyFilters()" [disabled]="busy"><option value="">Tous les rôles</option>@for (item of roles; track item) {<option [value]="item">{{ item }}</option>}</select></label>
+    <label>Statut<select name="enabled" [(ngModel)]="enabled" (ngModelChange)="applyFilters()" [disabled]="busy"><option [ngValue]="null">Tous les statuts</option><option [ngValue]="true">Actif</option><option [ngValue]="false">Désactivé</option></select></label>
+    <button class="primary" type="submit" [disabled]="loading || busy">Rechercher</button><button type="button" (click)="resetFilters()" [disabled]="loading || busy">Réinitialiser</button>
+  </form>
+  <div class="card" [attr.aria-busy]="loading">
+    @if (loading) { <p class="empty" role="status">Chargement des utilisateurs…</p> }
+    @if (result; as data) {
+      <div class="table-scroll"><table><caption>{{ data.totalElements }} utilisateur(s)</caption><thead><tr><th scope="col">Utilisateur</th><th scope="col">E-mail</th><th scope="col">Téléphone</th><th scope="col">Rôle</th><th scope="col">Statut</th><th scope="col">Inscription</th><th scope="col">Actions</th></tr></thead><tbody>
+      @for (user of data.content; track user.id) {
+        <tr><td><span class="initials" aria-hidden="true">{{ user.firstName.charAt(0) }}{{ user.lastName.charAt(0) }}</span><strong>{{ user.firstName }} {{ user.lastName }}</strong>@if (isSelf(user)) {<small>Votre compte</small>}</td><td>{{ user.email }}</td>
+        <td>{{ phone(user) }}</td><td><span class="badge role" [class.admin]="user.role === 'ADMIN'">{{ user.role }}</span><select #roleSelect [value]="user.role" [disabled]="busy || isSelf(user)" [attr.aria-label]="'Rôle de ' + user.firstName + ' ' + user.lastName" (change)="changeRole(user, roleSelect.value); roleSelect.value = user.role">@if (!roles.includes(user.role)) {<option [value]="user.role">{{ user.role }}</option>}@for (item of roles; track item) {<option [value]="item">{{ item }}</option>}</select></td>
+        <td><span class="badge" [class.active]="user.enabled">{{ user.enabled ? 'Actif' : 'Désactivé' }}</span></td>
+        <td>{{ user.createdAt | date:'dd/MM/yyyy' }}</td><td class="actions"><button type="button" (click)="details(user)" [disabled]="busy">Détails</button>@if (!isSelf(user)) {<button type="button" [class.danger]="user.enabled" (click)="toggleStatus(user)" [disabled]="busy || isSelf(user)" [title]="isSelf(user) ? 'Votre propre compte est protégé' : ''">{{ user.enabled ? 'Désactiver' : 'Réactiver' }}</button>}</td></tr>
+      } @empty { <tr><td colspan="7" class="empty">Aucun utilisateur ne correspond à ces critères.</td></tr> }
+      </tbody></table></div>
+      <footer><label>Par page <select name="size" [(ngModel)]="size" (ngModelChange)="applyFilters()" [disabled]="busy || loading"><option [ngValue]="10">10</option><option [ngValue]="25">25</option><option [ngValue]="50">50</option></select></label><nav aria-label="Pagination"><button type="button" (click)="movePage(-1)" [disabled]="data.first || busy || loading">Précédent</button><span>Page {{ data.totalPages ? data.number + 1 : 0 }} / {{ data.totalPages }}</span><button type="button" (click)="movePage(1)" [disabled]="data.last || busy || loading">Suivant</button></nav></footer>
+    }
+  </div>
+  @if (detailLoading) { <p role="status">Chargement du détail…</p> }
+  @if (selected; as user) {
+    <section class="card detail" aria-labelledby="detail-title" aria-live="polite"><header><h2 id="detail-title">{{ user.firstName }} {{ user.lastName }}</h2><button type="button" (click)="closeDetails()">Fermer le détail</button></header><dl><dt>E-mail</dt><dd>{{ user.email }}</dd><dt>Téléphone</dt><dd>{{ phone(user) }}</dd><dt>Pays</dt><dd>{{ user.countryCode || 'Non renseigné' }}</dd><dt>Rôle</dt><dd>{{ user.role }}</dd><dt>Statut</dt><dd>{{ user.enabled ? 'Actif' : 'Désactivé' }}</dd><dt>Créé le</dt><dd>{{ user.createdAt | date:'dd/MM/yyyy HH:mm' }}</dd></dl></section>
+  }
+</section>
+
+

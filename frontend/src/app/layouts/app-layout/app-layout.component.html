@@ -72,6 +72,9 @@
         IA
       </a>
 
+    @if ((user$ | async)?.role === 'ADMIN') {
+        <a routerLink="/app/admin/users" routerLinkActive="active">Administration</a>
+      }
     </nav>
 
 
