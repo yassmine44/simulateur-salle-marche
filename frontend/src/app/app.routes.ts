@@ -1,3 +1,5 @@
+import { AdminUsersComponent } from './pages/admin-users/admin-users.component';
+import { adminGuard } from './guards/admin.guard';
 import { Routes } from '@angular/router';
 
 import { HomeComponent } from './pages/home/home.component';
@@ -53,6 +55,7 @@ export const routes: Routes = [
     canActivate: [authGuard],
 
     children: [
+      { path: 'admin/users', component: AdminUsersComponent, canActivate: [adminGuard] },
 
       {
         path: '',

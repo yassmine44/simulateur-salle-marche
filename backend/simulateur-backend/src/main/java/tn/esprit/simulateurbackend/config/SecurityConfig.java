@@ -22,38 +22,63 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 public class SecurityConfig {
 
     @Bean
-    SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+    SecurityFilterChain securityFilterChain(
+            HttpSecurity http
+    ) throws Exception {
 
         http
-                .cors(cors -> {})
 
+                // =========================
+                // CORS
+                // =========================
+                .cors(cors -> {
+                })
+
+                // =========================
+                // CSRF
+                // =========================
                 .csrf(csrf -> csrf
+
+                        // Configuration SPA Angular
                         .spa()
+
+                        // Endpoints publics ne nécessitant pas de CSRF
                         .ignoringRequestMatchers(
                                 "/api/auth/register",
+                                "/api/auth/login",
                                 "/api/auth/forgot-password",
-                                "/api/auth/reset-password",
-                                "/api/auth/login"
+                                "/api/auth/reset-password"
                         )
                 )
 
+                // =========================
+                // AUTORISATIONS
+                // =========================
                 .authorizeHttpRequests(auth -> auth
 
-                        // Angular CORS preflight
+                        // -------------------------
+                        // CORS preflight Angular
+                        // -------------------------
                         .requestMatchers(
                                 HttpMethod.OPTIONS,
                                 "/**"
                         )
                         .permitAll()
 
-                        // Health check
+
+                        // -------------------------
+                        // Health check public
+                        // -------------------------
                         .requestMatchers(
                                 HttpMethod.GET,
                                 "/api/health"
                         )
                         .permitAll()
 
-                        // Authentication endpoints publics
+
+                        // -------------------------
+                        // Authentification publique
+                        // -------------------------
                         .requestMatchers(
                                 HttpMethod.POST,
                                 "/api/auth/register",
@@ -63,20 +88,46 @@ public class SecurityConfig {
                         )
                         .permitAll()
 
-                        // Toutes les autres routes nécessitent une session
+
+                        // -------------------------
+                        // Administration
+                        // ADMIN uniquement
+                        // -------------------------
+                        .requestMatchers(
+                                "/api/admin/**"
+                        )
+                        .hasRole("ADMIN")
+
+
+                        // -------------------------
+                        // Toutes les autres routes
+                        // nécessitent une session
+                        // -------------------------
                         .anyRequest()
                         .authenticated()
                 )
 
-                // API REST personnalisée
-                .formLogin(form -> form.disable())
+                // =========================
+                // Pas de formulaire Spring
+                // =========================
+                .formLogin(
+                        form -> form.disable()
+                )
 
-                // Pas d'authentification HTTP Basic
-                .httpBasic(basic -> basic.disable());
+                // =========================
+                // Pas de HTTP Basic
+                // =========================
+                .httpBasic(
+                        basic -> basic.disable()
+                );
 
         return http.build();
     }
 
+
+    // =========================
+    // AUTHENTICATION MANAGER
+    // =========================
 
     @Bean
     AuthenticationManager authenticationManager(
@@ -87,12 +138,20 @@ public class SecurityConfig {
     }
 
 
+    // =========================
+    // SESSION SECURITY CONTEXT
+    // =========================
+
     @Bean
     SecurityContextRepository securityContextRepository() {
 
         return new HttpSessionSecurityContextRepository();
     }
 
+
+    // =========================
+    // CORS CONFIGURATION
+    // =========================
 
     @Bean
     CorsConfigurationSource corsConfigurationSource() {
