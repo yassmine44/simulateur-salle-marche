@@ -32,9 +32,10 @@ export interface LoginResponse {
   firstName: string;
   lastName: string;
   email: string;
-  countryCode: string;
-  phoneNumber: string;
-  role: string;
+  countryCode: string | null;
+  phoneNumber: string | null;
+  role: 'USER' | 'ADMIN';
+  hasLocalPassword: boolean;
 }
 
 export interface CsrfResponse {

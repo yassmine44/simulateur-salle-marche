@@ -18,8 +18,20 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
+import tn.esprit.simulateurbackend.security.CustomOidcUserService;
+
 @Configuration
 public class SecurityConfig {
+
+    private final CustomOidcUserService customOidcUserService;
+
+    public SecurityConfig(
+            CustomOidcUserService customOidcUserService
+    ) {
+        this.customOidcUserService =
+                customOidcUserService;
+    }
+
 
     @Bean
     SecurityFilterChain securityFilterChain(
@@ -34,15 +46,14 @@ public class SecurityConfig {
                 .cors(cors -> {
                 })
 
+
                 // =========================
                 // CSRF
                 // =========================
                 .csrf(csrf -> csrf
 
-                        // Configuration SPA Angular
                         .spa()
 
-                        // Endpoints publics ne nécessitant pas de CSRF
                         .ignoringRequestMatchers(
                                 "/api/auth/register",
                                 "/api/auth/login",
@@ -51,14 +62,13 @@ public class SecurityConfig {
                         )
                 )
 
+
                 // =========================
-                // AUTORISATIONS
+                // AUTHORIZATIONS
                 // =========================
                 .authorizeHttpRequests(auth -> auth
 
-                        // -------------------------
-                        // CORS preflight Angular
-                        // -------------------------
+                        // Angular CORS preflight
                         .requestMatchers(
                                 HttpMethod.OPTIONS,
                                 "/**"
@@ -66,9 +76,7 @@ public class SecurityConfig {
                         .permitAll()
 
 
-                        // -------------------------
-                        // Health check public
-                        // -------------------------
+                        // Health check
                         .requestMatchers(
                                 HttpMethod.GET,
                                 "/api/health"
@@ -76,9 +84,7 @@ public class SecurityConfig {
                         .permitAll()
 
 
-                        // -------------------------
-                        // Authentification publique
-                        // -------------------------
+                        // Public authentication endpoints
                         .requestMatchers(
                                 HttpMethod.POST,
                                 "/api/auth/register",
@@ -89,37 +95,74 @@ public class SecurityConfig {
                         .permitAll()
 
 
-                        // -------------------------
-                        // Administration
-                        // ADMIN uniquement
-                        // -------------------------
+                        // OAuth2 / OIDC endpoints
+                        .requestMatchers(
+                                "/oauth2/**",
+                                "/login/oauth2/**"
+                        )
+                        .permitAll()
+
+
+                        // ADMIN only
                         .requestMatchers(
                                 "/api/admin/**"
                         )
                         .hasRole("ADMIN")
 
 
-                        // -------------------------
-                        // Toutes les autres routes
-                        // nécessitent une session
-                        // -------------------------
+                        // Everything else requires authentication
                         .anyRequest()
                         .authenticated()
                 )
 
+
                 // =========================
-                // Pas de formulaire Spring
+                // GOOGLE OAUTH2 / OIDC
+                // =========================
+                .oauth2Login(oauth -> oauth
+
+                        .userInfoEndpoint(userInfo ->
+                                userInfo
+                                        .oidcUserService(
+                                                customOidcUserService
+                                        )
+                        )
+
+                        .successHandler(
+                                (request, response, authentication) -> {
+
+                                    response.sendRedirect(
+                                            "http://localhost:4200/auth/oauth2/callback"
+                                    );
+                                }
+                        )
+
+                        .failureHandler(
+                                (request, response, exception) -> {
+
+                                    response.sendRedirect(
+                                            "http://localhost:4200/login?oauthError=google"
+                                    );
+                                }
+                        )
+                )
+
+
+                // =========================
+                // No Spring form login
                 // =========================
                 .formLogin(
                         form -> form.disable()
                 )
 
+
                 // =========================
-                // Pas de HTTP Basic
+                // No HTTP Basic
                 // =========================
                 .httpBasic(
                         basic -> basic.disable()
                 );
+
 
         return http.build();
     }
@@ -134,12 +177,13 @@ public class SecurityConfig {
             AuthenticationConfiguration configuration
     ) throws Exception {
 
-        return configuration.getAuthenticationManager();
+        return configuration
+                .getAuthenticationManager();
     }
 
 
     // =========================
-    // SESSION SECURITY CONTEXT
+    // SECURITY CONTEXT SESSION
     // =========================
 
     @Bean
@@ -150,7 +194,7 @@ public class SecurityConfig {
 
 
     // =========================
-    // CORS CONFIGURATION
+    // CORS
     // =========================
 
     @Bean
@@ -180,7 +224,10 @@ public class SecurityConfig {
                 List.of("*")
         );
 
-        configuration.setAllowCredentials(true);
+        configuration.setAllowCredentials(
+                true
+        );
+
 
         UrlBasedCorsConfigurationSource source =
                 new UrlBasedCorsConfigurationSource();

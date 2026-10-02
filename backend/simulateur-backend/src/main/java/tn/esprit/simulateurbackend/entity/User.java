@@ -26,7 +26,7 @@ public class User {
     private String email;
 
     // Contains only a BCrypt hash, never the raw password.
-    @Column(nullable = false)
+    @Column(name = "password")
     private String password;
 
     @Enumerated(EnumType.STRING)

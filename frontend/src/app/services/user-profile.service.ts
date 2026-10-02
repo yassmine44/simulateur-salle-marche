@@ -7,16 +7,24 @@ export interface UserProfile {
   firstName: string;
   lastName: string;
   email: string;
-  countryCode: string;
-  phoneNumber: string;
-  role: string;
+  countryCode: string | null;
+  phoneNumber: string | null;
+  role: 'USER' | 'ADMIN';
   enabled: boolean;
+  hasLocalPassword: boolean;
 }
+
 export interface ChangePasswordRequest {
   currentPassword: string;
   newPassword: string;
   confirmPassword: string;
 }
+
+export interface SetPasswordRequest {
+  newPassword: string;
+  confirmPassword: string;
+}
+
 export interface UpdateProfileRequest {
   firstName: string;
   lastName: string;
@@ -59,15 +67,28 @@ export class UserProfileService {
   }
 
   changePassword(
-  request: ChangePasswordRequest
-): Observable<void> {
+    request: ChangePasswordRequest
+  ): Observable<void> {
 
-  return this.http.put<void>(
-    `${this.apiUrl}/me/password`,
-    request,
-    {
-      withCredentials: true
-    }
-  );
-}
+    return this.http.put<void>(
+      `${this.apiUrl}/me/password`,
+      request,
+      {
+        withCredentials: true
+      }
+    );
+  }
+
+  setPassword(
+    request: SetPasswordRequest
+  ): Observable<void> {
+
+    return this.http.post<void>(
+      `${this.apiUrl}/me/password`,
+      request,
+      {
+        withCredentials: true
+      }
+    );
+  }
 }

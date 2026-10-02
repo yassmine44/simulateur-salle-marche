@@ -1,7 +1,8 @@
 import { AdminUsersComponent } from './pages/admin-users/admin-users.component';
 import { adminGuard } from './guards/admin.guard';
 import { Routes } from '@angular/router';
-
+import { Oauth2CallbackComponent }
+  from './pages/oauth2-callback/oauth2-callback.component';
 import { HomeComponent } from './pages/home/home.component';
 import { LoginComponent } from './pages/login/login.component';
 import { RegisterComponent } from './pages/register/register.component';
@@ -42,6 +43,10 @@ export const routes: Routes = [
   },{
   path: 'reset-password',
   component: ResetPasswordComponent
+},
+{
+  path: 'auth/oauth2/callback',
+  component: Oauth2CallbackComponent
 },
 
 

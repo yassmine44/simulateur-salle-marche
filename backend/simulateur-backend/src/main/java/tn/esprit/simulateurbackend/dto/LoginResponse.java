@@ -10,10 +10,16 @@ public record LoginResponse(
         String email,
         String countryCode,
         String phoneNumber,
-        Role role
+        Role role,
+        boolean hasLocalPassword
 ) {
 
     public static LoginResponse from(User user) {
+
+        boolean hasLocalPassword =
+                user.getPassword() != null
+                        && !user.getPassword().isBlank();
+
         return new LoginResponse(
                 user.getId(),
                 user.getFirstName(),
@@ -21,7 +27,8 @@ public record LoginResponse(
                 user.getEmail(),
                 user.getCountryCode(),
                 user.getPhoneNumber(),
-                user.getRole()
+                user.getRole(),
+                hasLocalPassword
         );
     }
 }

@@ -11,10 +11,16 @@ public record UserProfileResponse(
         String countryCode,
         String phoneNumber,
         Role role,
-        boolean enabled
+        boolean enabled,
+        boolean hasLocalPassword
 ) {
 
     public static UserProfileResponse from(User user) {
+
+        boolean hasLocalPassword =
+                user.getPassword() != null
+                        && !user.getPassword().isBlank();
+
         return new UserProfileResponse(
                 user.getId(),
                 user.getFirstName(),
@@ -23,7 +29,8 @@ public record UserProfileResponse(
                 user.getCountryCode(),
                 user.getPhoneNumber(),
                 user.getRole(),
-                user.isEnabled()
+                user.isEnabled(),
+                hasLocalPassword
         );
     }
 }
