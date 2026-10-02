@@ -12,12 +12,20 @@ public record LoginRequest(
         String email,
 
         @NotBlank
-        String password
+        String password,
+
+        @NotBlank(
+                message = "La vérification reCAPTCHA est obligatoire"
+        )
+        String recaptchaToken
+
 
 ) {
 
     public LoginRequest {
-        email = email == null ? null : email.trim();
+        email = email == null
+                ? null
+                : email.trim();
     }
 
     @Override

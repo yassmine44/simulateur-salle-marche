@@ -35,16 +35,30 @@ public record RegisterRequest(
 
         @NotBlank
         @Size(min = 8, max = 72)
-        String password
+        String password,
+
+        @NotBlank(
+                message = "La vérification reCAPTCHA est obligatoire"
+        )
+        String recaptchaToken
+
 ) {
 
     public RegisterRequest {
-        firstName = firstName == null ? null : firstName.trim();
-        lastName = lastName == null ? null : lastName.trim();
+
+        firstName = firstName == null
+                ? null
+                : firstName.trim();
+
+        lastName = lastName == null
+                ? null
+                : lastName.trim();
 
         countryCode = countryCode == null
                 ? null
-                : countryCode.trim().toUpperCase(Locale.ROOT);
+                : countryCode
+                .trim()
+                .toUpperCase(Locale.ROOT);
 
         phoneNumber = phoneNumber == null
                 ? null
