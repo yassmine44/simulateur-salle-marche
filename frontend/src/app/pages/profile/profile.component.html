@@ -3,7 +3,9 @@
   <!-- PAGE HEADER -->
 
   <div class="page-header">
+
     <div>
+
       <span class="eyebrow">
         MON COMPTE
       </span>
@@ -15,7 +17,9 @@
       <p>
         Gérez vos informations personnelles et les paramètres associés à votre compte.
       </p>
+
     </div>
+
   </div>
 
 
@@ -29,18 +33,24 @@
 
   } @else {
 
+
     <!-- PROFILE MESSAGES -->
 
     @if (successMessage) {
+
       <div class="alert success-alert">
         {{ successMessage }}
       </div>
+
     }
 
+
     @if (errorMessage) {
+
       <div class="alert error-alert">
         {{ errorMessage }}
       </div>
+
     }
 
 
@@ -217,11 +227,11 @@
                       track country.code
                     ) {
 
-                      <option
-                        [value]="country.code"
-                      >
+                      <option [value]="country.code">
+
                         {{ country.name }}
                         ({{ country.dialCode }})
+
                       </option>
 
                     }
@@ -256,6 +266,7 @@
 
                   }
 
+
                   @if (
                     form.controls.phoneNumber.touched &&
                     form.controls.phoneNumber.hasError('maxlength')
@@ -279,7 +290,7 @@
 
 
         <!-- ========================================= -->
-        <!-- SECURITY                                  -->
+        <!-- SECURITY                                   -->
         <!-- ========================================= -->
 
         <section class="card">
@@ -305,7 +316,9 @@
           </div>
 
 
-          <!-- CHANGE PASSWORD -->
+          <!-- ========================================= -->
+          <!-- PASSWORD                                  -->
+          <!-- ========================================= -->
 
           <div class="password-section">
 
@@ -314,11 +327,34 @@
               <div>
 
                 <strong>
-                  Modifier le mot de passe
+
+                  @if (hasLocalPassword) {
+
+                    Modifier le mot de passe
+
+                  } @else {
+
+                    Définir un mot de passe
+
+                  }
+
                 </strong>
 
+
                 <span>
-                  Utilisez un mot de passe différent de votre mot de passe actuel.
+
+                  @if (hasLocalPassword) {
+
+                    Utilisez un mot de passe différent de votre mot de passe actuel.
+
+                  } @else {
+
+                    Votre compte utilise actuellement une authentification sociale.
+                    Vous pouvez définir un mot de passe afin de vous connecter
+                    également avec votre adresse e-mail.
+
+                  }
+
                 </span>
 
               </div>
@@ -355,53 +391,74 @@
             >
 
 
-              <!-- CURRENT PASSWORD -->
+              <!-- ========================================= -->
+              <!-- CURRENT PASSWORD                           -->
+              <!-- uniquement si mot de passe local existant -->
+              <!-- ========================================= -->
 
-              <div class="form-field">
+              @if (hasLocalPassword) {
 
-                <label for="currentPassword">
-                  Mot de passe actuel
-                </label>
+                <div class="form-field">
 
-                <input
-                  id="currentPassword"
-                  type="password"
-                  formControlName="currentPassword"
-                  placeholder="Votre mot de passe actuel"
-                  autocomplete="current-password"
-                />
+                  <label for="currentPassword">
+                    Mot de passe actuel
+                  </label>
 
-                @if (
-                  passwordForm.controls.currentPassword.touched &&
-                  passwordForm.controls.currentPassword.hasError('required')
-                ) {
+                  <input
+                    id="currentPassword"
+                    type="password"
+                    formControlName="currentPassword"
+                    placeholder="Votre mot de passe actuel"
+                    autocomplete="current-password"
+                  />
 
-                  <small class="field-error">
-                    Le mot de passe actuel est obligatoire.
-                  </small>
+                  @if (
+                    passwordForm.controls.currentPassword.touched &&
+                    passwordForm.controls.currentPassword.hasError('required')
+                  ) {
 
-                }
+                    <small class="field-error">
+                      Le mot de passe actuel est obligatoire.
+                    </small>
 
-              </div>
+                  }
+
+                </div>
+
+              }
 
 
-              <!-- NEW + CONFIRM -->
+              <!-- ========================================= -->
+              <!-- NEW PASSWORD / CONFIRMATION               -->
+              <!-- ========================================= -->
 
               <div class="form-grid">
 
                 <div class="form-field">
 
                   <label for="newPassword">
-                    Nouveau mot de passe
+
+                    @if (hasLocalPassword) {
+
+                      Nouveau mot de passe
+
+                    } @else {
+
+                      Mot de passe
+
+                    }
+
                   </label>
+
 
                   <input
                     id="newPassword"
                     type="password"
                     formControlName="newPassword"
-                    placeholder="Nouveau mot de passe"
+                    placeholder="Minimum 8 caractères"
                     autocomplete="new-password"
                   />
+
 
                   @if (
                     passwordForm.controls.newPassword.touched &&
@@ -409,10 +466,21 @@
                   ) {
 
                     <small class="field-error">
-                      Le nouveau mot de passe est obligatoire.
+
+                      @if (hasLocalPassword) {
+
+                        Le nouveau mot de passe est obligatoire.
+
+                      } @else {
+
+                        Le mot de passe est obligatoire.
+
+                      }
+
                     </small>
 
                   }
+
 
                   @if (
                     passwordForm.controls.newPassword.touched &&
@@ -424,6 +492,7 @@
                     </small>
 
                   }
+
 
                   @if (
                     passwordForm.controls.newPassword.touched &&
@@ -453,6 +522,7 @@
                     autocomplete="new-password"
                   />
 
+
                   @if (
                     passwordForm.controls.confirmPassword.touched &&
                     passwordForm.controls.confirmPassword.hasError('required')
@@ -464,10 +534,36 @@
 
                   }
 
+
+                  @if (
+                    passwordForm.controls.confirmPassword.touched &&
+                    passwordForm.controls.confirmPassword.hasError('minlength')
+                  ) {
+
+                    <small class="field-error">
+                      La confirmation doit contenir au moins 8 caractères.
+                    </small>
+
+                  }
+
+
+                  @if (
+                    passwordForm.controls.confirmPassword.touched &&
+                    passwordForm.controls.confirmPassword.hasError('maxlength')
+                  ) {
+
+                    <small class="field-error">
+                      La confirmation ne doit pas dépasser 72 caractères.
+                    </small>
+
+                  }
+
                 </div>
 
               </div>
 
+
+              <!-- PASSWORD HELP -->
 
               <div class="password-help">
 
@@ -475,12 +571,25 @@
                   Minimum 8 caractères.
                 </span>
 
-                <span>
-                  Le nouveau mot de passe doit être différent de l'ancien.
-                </span>
+                @if (hasLocalPassword) {
+
+                  <span>
+                    Le nouveau mot de passe doit être différent de l'ancien.
+                  </span>
+
+                } @else {
+
+                  <span>
+                    Vous pourrez ensuite utiliser Google ou votre
+                    e-mail et votre mot de passe.
+                  </span>
+
+                }
 
               </div>
 
+
+              <!-- PASSWORD ACTION -->
 
               <div class="password-actions">
 
@@ -495,11 +604,27 @@
 
                   @if (changingPassword) {
 
-                    Modification...
+                    @if (hasLocalPassword) {
+
+                      Modification...
+
+                    } @else {
+
+                      Configuration...
+
+                    }
 
                   } @else {
 
-                    Modifier le mot de passe
+                    @if (hasLocalPassword) {
+
+                      Modifier le mot de passe
+
+                    } @else {
+
+                      Définir un mot de passe
+
+                    }
 
                   }
 
@@ -509,10 +634,40 @@
 
             </form>
 
+
+            <!-- INFO COMPTE SOCIAL -->
+
+            @if (!hasLocalPassword) {
+
+              <div class="security-item">
+
+                <div>
+
+                  <strong>
+                    Compte avec authentification sociale
+                  </strong>
+
+                  <span>
+                    Définir un mot de passe ne supprimera pas votre
+                    connexion Google. Les deux méthodes pourront être utilisées.
+                  </span>
+
+                </div>
+
+                <span class="coming-soon">
+                  Social
+                </span>
+
+              </div>
+
+            }
+
           </div>
 
 
-          <!-- SOCIAL LOGIN -->
+          <!-- ========================================= -->
+          <!-- SOCIAL LOGIN                              -->
+          <!-- ========================================= -->
 
           <div class="security-item">
 
@@ -523,13 +678,14 @@
               </strong>
 
               <span>
-                Google, Microsoft et Apple pourront être associés à votre compte.
+                Connexion avec Google disponible.
+                Microsoft et Apple seront ajoutés ultérieurement.
               </span>
 
             </div>
 
             <span class="coming-soon">
-              Bientôt disponible
+              Google disponible
             </span>
 
           </div>
@@ -540,7 +696,7 @@
 
 
       <!-- ========================================= -->
-      <!-- RIGHT COLUMN                              -->
+      <!-- RIGHT COLUMN                               -->
       <!-- ========================================= -->
 
       <aside class="side-column">
@@ -649,7 +805,18 @@
             </strong>
 
             <p>
-              Votre mot de passe est stocké de manière sécurisée.
+
+              @if (hasLocalPassword) {
+
+                Votre mot de passe est protégé par un hachage sécurisé.
+
+              } @else {
+
+                Votre compte est actuellement protégé par votre
+                authentification sociale.
+
+              }
+
             </p>
 
           </div>
