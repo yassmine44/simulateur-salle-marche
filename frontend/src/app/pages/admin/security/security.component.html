@@ -1,0 +1,1512 @@
+<section class="security-page">
+
+  <!-- ========================================= -->
+  <!-- HEADER                                    -->
+  <!-- ========================================= -->
+
+  <header class="page-header">
+
+    <div>
+
+      <span class="eyebrow">
+        ADMINISTRATION
+      </span>
+
+      <h1>
+        Security Center
+      </h1>
+
+      <p>
+        Supervision des connexions,
+        événements sensibles et actions
+        administrateur.
+      </p>
+
+    </div>
+
+
+    <button
+      type="button"
+      class="refresh-button"
+      (click)="loadAll()"
+      [disabled]="
+        loadingLogs ||
+        loadingStats ||
+        loadingActivity ||
+        loadingDistribution
+      "
+    >
+      ↻ Actualiser
+    </button>
+
+  </header>
+
+
+  <!-- ========================================= -->
+  <!-- ERROR                                     -->
+  <!-- ========================================= -->
+
+  @if (errorMessage) {
+
+    <div class="error-banner">
+
+      {{ errorMessage }}
+
+    </div>
+
+  }
+
+
+  <!-- ========================================= -->
+  <!-- STATISTICS                                -->
+  <!-- ========================================= -->
+
+  <section class="stats-grid">
+
+
+    <!-- TOTAL EVENTS -->
+
+    <article class="stat-card">
+
+      <div class="stat-icon">
+        ◉
+      </div>
+
+      <div>
+
+        <span>
+          Événements aujourd'hui
+        </span>
+
+        <strong>
+          {{ stats.totalEventsToday }}
+        </strong>
+
+      </div>
+
+    </article>
+
+
+    <!-- SUCCESSFUL LOGINS -->
+
+    <article class="stat-card success-card">
+
+      <div class="stat-icon">
+        ✓
+      </div>
+
+      <div>
+
+        <span>
+          Connexions réussies
+        </span>
+
+        <strong>
+          {{ stats.successfulLoginsToday }}
+        </strong>
+
+      </div>
+
+    </article>
+
+
+    <!-- FAILED LOGINS -->
+
+    <article class="stat-card danger-card">
+
+      <div class="stat-icon">
+        !
+      </div>
+
+      <div>
+
+        <span>
+          Connexions échouées
+        </span>
+
+        <strong>
+          {{ stats.failedLoginsToday }}
+        </strong>
+
+      </div>
+
+    </article>
+
+
+    <!-- RATE LIMIT -->
+
+    <article class="stat-card warning-card">
+
+      <div class="stat-icon">
+        ⏱
+      </div>
+
+      <div>
+
+        <span>
+          Rate limits
+        </span>
+
+        <strong>
+          {{ stats.rateLimitExceededToday }}
+        </strong>
+
+      </div>
+
+    </article>
+
+
+    <!-- RECAPTCHA -->
+
+    <article class="stat-card danger-card">
+
+      <div class="stat-icon">
+        ⛨
+      </div>
+
+      <div>
+
+        <span>
+          reCAPTCHA rejetés
+        </span>
+
+        <strong>
+          {{ stats.recaptchaRejectedToday }}
+        </strong>
+
+      </div>
+
+    </article>
+
+
+    <!-- ADMIN ACTIONS -->
+
+    <article class="stat-card admin-card">
+
+      <div class="stat-icon">
+        ⚙
+      </div>
+
+      <div>
+
+        <span>
+          Actions administrateur
+        </span>
+
+        <strong>
+          {{ stats.adminActionsToday }}
+        </strong>
+
+      </div>
+
+    </article>
+
+  </section>
+
+
+  <!-- ========================================= -->
+  <!-- SECURITY ACTIVITY                         -->
+  <!-- ========================================= -->
+
+  <section class="activity-card">
+
+    <header class="activity-header">
+
+      <div>
+
+        <span class="section-label">
+          ACTIVITÉ
+        </span>
+
+        <h2>
+          Connexions
+        </h2>
+
+        <p>
+          Historique des connexions réussies
+          et échouées.
+        </p>
+
+      </div>
+
+
+      <div class="period-selector">
+
+        <button
+          type="button"
+          [class.active]="activityDays === 7"
+          (click)="changeActivityDays(7)"
+        >
+          7J
+        </button>
+
+
+        <button
+          type="button"
+          [class.active]="activityDays === 14"
+          (click)="changeActivityDays(14)"
+        >
+          14J
+        </button>
+
+
+        <button
+          type="button"
+          [class.active]="activityDays === 30"
+          (click)="changeActivityDays(30)"
+        >
+          30J
+        </button>
+
+      </div>
+
+    </header>
+
+
+    <div class="activity-legend">
+
+      <span>
+
+        <i class="legend-dot success"></i>
+
+        Connexions réussies
+
+      </span>
+
+
+      <span>
+
+        <i class="legend-dot failed"></i>
+
+        Connexions échouées
+
+      </span>
+
+    </div>
+
+
+    @if (loadingActivity) {
+
+      <div class="activity-loading">
+
+        <div class="spinner"></div>
+
+        Chargement de l'activité...
+
+      </div>
+
+    } @else if (activity.length === 0) {
+
+      <div class="activity-empty">
+
+        Aucune donnée disponible.
+
+      </div>
+
+    } @else {
+
+      <div class="chart-wrapper">
+
+        <!-- Y AXIS -->
+
+        <div class="chart-y-axis">
+
+          <span>
+            {{ maxLoginActivity }}
+          </span>
+
+          <span>
+            {{
+              (maxLoginActivity / 2)
+                | number:'1.0-0'
+            }}
+          </span>
+
+          <span>
+            0
+          </span>
+
+        </div>
+
+
+        <!-- CHART -->
+
+        <div class="activity-chart">
+
+          <div class="chart-grid">
+
+            <span></span>
+
+            <span></span>
+
+            <span></span>
+
+          </div>
+
+
+          @for (
+            point of activity;
+            track point.date
+          ) {
+
+            <div class="activity-day">
+
+              <div class="bars-container">
+
+                <!-- SUCCESS -->
+
+                <div
+                  class="chart-bar success-bar"
+                  [style.height.%]="
+                    barHeight(
+                      point.successfulLogins
+                    )
+                  "
+                  [title]="
+                    point.successfulLogins
+                    + ' connexion(s) réussie(s)'
+                  "
+                >
+
+                  @if (
+                    point.successfulLogins > 0
+                  ) {
+
+                    <span class="bar-value">
+                      {{ point.successfulLogins }}
+                    </span>
+
+                  }
+
+                </div>
+
+
+                <!-- FAILED -->
+
+                <div
+                  class="chart-bar failed-bar"
+                  [style.height.%]="
+                    barHeight(
+                      point.failedLogins
+                    )
+                  "
+                  [title]="
+                    point.failedLogins
+                    + ' connexion(s) échouée(s)'
+                  "
+                >
+
+                  @if (
+                    point.failedLogins > 0
+                  ) {
+
+                    <span class="bar-value">
+                      {{ point.failedLogins }}
+                    </span>
+
+                  }
+
+                </div>
+
+              </div>
+
+
+              <span class="day-label">
+
+                {{
+                  formatActivityDate(
+                    point.date
+                  )
+                }}
+
+              </span>
+
+            </div>
+
+          }
+
+        </div>
+
+      </div>
+
+    }
+
+  </section>
+
+
+  <!-- ========================================= -->
+  <!-- EVENT DISTRIBUTION                        -->
+  <!-- ========================================= -->
+
+  <section class="distribution-card">
+
+    <header class="distribution-header">
+
+      <div>
+
+        <span class="section-label">
+          ANALYSE
+        </span>
+
+        <h2>
+          Répartition des événements
+        </h2>
+
+        <p>
+          Distribution des événements de sécurité
+          sur les {{ activityDays }} derniers jours.
+        </p>
+
+      </div>
+
+    </header>
+
+
+    @if (loadingDistribution) {
+
+      <div class="distribution-loading">
+
+        <div class="spinner"></div>
+
+        <span>
+          Chargement de la répartition...
+        </span>
+
+      </div>
+
+    } @else if (
+      distribution.length === 0
+    ) {
+
+      <div class="distribution-empty">
+
+        Aucun événement disponible
+        sur cette période.
+
+      </div>
+
+    } @else {
+
+      <div class="distribution-list">
+
+        @for (
+          item of distribution;
+          track item.eventType
+        ) {
+
+          <div class="distribution-row">
+
+
+            <!-- EVENT -->
+
+            <div class="distribution-name">
+
+              <span
+                class="distribution-indicator"
+                [ngClass]="
+                  distributionClass(
+                    item.eventType
+                  )
+                "
+              ></span>
+
+
+              <div>
+
+                <strong>
+                  {{
+                    eventLabel(
+                      item.eventType
+                    )
+                  }}
+                </strong>
+
+                <small>
+                  {{ item.eventType }}
+                </small>
+
+              </div>
+
+            </div>
+
+
+            <!-- BAR -->
+
+            <div class="distribution-progress">
+
+              <div class="distribution-track">
+
+                <div
+                  class="distribution-fill"
+                  [ngClass]="
+                    distributionClass(
+                      item.eventType
+                    )
+                  "
+                  [style.width.%]="
+                    item.percentage
+                  "
+                ></div>
+
+              </div>
+
+            </div>
+
+
+            <!-- COUNT -->
+
+            <div class="distribution-value">
+
+              <strong>
+                {{ item.count }}
+              </strong>
+
+              <span>
+
+                {{
+                  item.percentage
+                    | number:'1.1-1'
+                }}%
+
+              </span>
+
+            </div>
+
+          </div>
+
+        }
+
+      </div>
+
+    }
+
+  </section>
+
+<!-- ========================================= -->
+<!-- SECURITY ALERTS                           -->
+<!-- ========================================= -->
+
+<section class="security-alerts-card">
+
+  <header class="security-alerts-header">
+
+    <div>
+
+      <span class="section-label">
+        DÉTECTION
+      </span>
+
+      <h2>
+        Activité suspecte
+      </h2>
+
+      <p>
+        Adresses IP présentant plusieurs
+        tentatives de connexion échouées
+        durant les dernières 24 heures.
+      </p>
+
+    </div>
+
+
+    <div
+      class="alert-counter"
+      [class.has-alerts]="
+        suspiciousIps.length > 0
+      "
+    >
+
+      {{ suspiciousIps.length }}
+
+      alerte{{
+        suspiciousIps.length > 1
+          ? 's'
+          : ''
+      }}
+
+    </div>
+
+  </header>
+
+
+  @if (loadingSuspiciousIps) {
+
+    <div class="security-alert-state">
+
+      <div class="spinner"></div>
+
+      Analyse de l'activité...
+
+    </div>
+
+  }
+
+  @else if (
+    suspiciousIps.length === 0
+  ) {
+
+    <div class="security-safe-state">
+
+      <div class="safe-icon">
+        ✓
+      </div>
+
+      <div>
+
+        <strong>
+          Aucune activité suspecte détectée
+        </strong>
+
+        <span>
+          Aucun seuil d'alerte n'a été dépassé.
+        </span>
+
+      </div>
+
+    </div>
+
+  }
+
+  @else {
+
+    <div class="suspicious-ip-list">
+
+      @for (
+        item of suspiciousIps;
+        track item.ipAddress
+      ) {
+
+        <article
+          class="suspicious-ip-item"
+          [ngClass]="
+            riskClass(
+              item.riskLevel
+            )
+          "
+        >
+
+          <!-- IP -->
+
+          <div class="suspicious-ip-main">
+
+            <div class="ip-icon">
+              !
+            </div>
+
+
+            <div>
+
+              <span>
+                Adresse IP
+              </span>
+
+              <code>
+                {{ item.ipAddress }}
+              </code>
+
+            </div>
+
+          </div>
+
+
+          <!-- FAILED ATTEMPTS -->
+
+          <div class="security-metric">
+
+            <span>
+              Échecs
+            </span>
+
+            <strong>
+              {{ item.failedAttempts }}
+            </strong>
+
+          </div>
+
+
+          <!-- TARGETS -->
+
+          <div class="security-metric">
+
+            <span>
+              Comptes ciblés
+            </span>
+
+            <strong>
+              {{ item.distinctEmails }}
+            </strong>
+
+          </div>
+
+
+          <!-- LAST ATTEMPT -->
+
+          <div class="security-metric">
+
+            <span>
+              Dernière tentative
+            </span>
+
+            <strong>
+
+              {{
+                item.lastAttempt
+                  | date:'dd/MM HH:mm'
+              }}
+
+            </strong>
+
+          </div>
+
+
+          <!-- RISK -->
+
+          <div>
+
+            <span
+              class="risk-badge"
+              [ngClass]="
+                riskClass(
+                  item.riskLevel
+                )
+              "
+            >
+
+              {{
+                riskLabel(
+                  item.riskLevel
+                )
+              }}
+
+            </span>
+
+          </div>
+
+        </article>
+
+      }
+
+    </div>
+
+  }
+
+</section>
+  <!-- ========================================= -->
+  <!-- UNIFIED AUDIT JOURNAL                     -->
+  <!-- ========================================= -->
+
+  <section class="filter-card">
+
+    <div class="filter-header">
+
+      <div>
+
+        <span class="section-label">
+          INVESTIGATION
+        </span>
+
+        <h2>
+          Journal de sécurité
+        </h2>
+
+        <p>
+          Connexions, authentification,
+          actions administrateur et événements
+          sensibles.
+        </p>
+
+      </div>
+
+
+      <div class="event-count">
+
+        {{ totalElements }}
+
+        événement{{
+          totalElements > 1
+            ? 's'
+            : ''
+        }}
+
+      </div>
+
+    </div>
+
+
+    <!-- ===================================== -->
+    <!-- FILTERS                               -->
+    <!-- ===================================== -->
+
+    <div class="filters-grid">
+
+
+      <!-- SEARCH -->
+
+      <div class="filter-field search-field">
+
+        <label for="search">
+          Utilisateur / e-mail
+        </label>
+
+        <input
+          id="search"
+          type="search"
+          [(ngModel)]="search"
+          placeholder="Rechercher un e-mail..."
+          (keyup.enter)="applyFilters()"
+        />
+
+      </div>
+
+
+      <!-- EVENT TYPE -->
+
+      <div class="filter-field">
+
+        <label for="eventType">
+          Événement
+        </label>
+
+        <select
+          id="eventType"
+          [(ngModel)]="selectedEventType"
+        >
+
+          <option value="">
+            Tous les événements
+          </option>
+
+
+          @for (
+            event of eventTypes;
+            track event
+          ) {
+
+            <option
+              [value]="event"
+            >
+
+              {{ eventLabel(event) }}
+
+            </option>
+
+          }
+
+        </select>
+
+      </div>
+
+
+      <!-- RESULT -->
+
+      <div class="filter-field">
+
+        <label for="success">
+          Résultat
+        </label>
+
+        <select
+          id="success"
+          [(ngModel)]="selectedSuccess"
+        >
+
+          <option [ngValue]="null">
+            Tous
+          </option>
+
+          <option [ngValue]="true">
+            Succès
+          </option>
+
+          <option [ngValue]="false">
+            Échec
+          </option>
+
+        </select>
+
+      </div>
+
+
+      <!-- FROM -->
+
+      <div class="filter-field">
+
+        <label for="from">
+          Du
+        </label>
+
+        <input
+          id="from"
+          type="datetime-local"
+          [(ngModel)]="from"
+        />
+
+      </div>
+
+
+      <!-- TO -->
+
+      <div class="filter-field">
+
+        <label for="to">
+          Au
+        </label>
+
+        <input
+          id="to"
+          type="datetime-local"
+          [(ngModel)]="to"
+        />
+
+      </div>
+
+
+      <!-- PAGE SIZE -->
+
+      <div class="filter-field">
+
+        <label for="pageSize">
+          Lignes
+        </label>
+
+        <select
+          id="pageSize"
+          [(ngModel)]="pageSize"
+          (change)="changePageSize()"
+        >
+
+          <option [ngValue]="10">
+            10
+          </option>
+
+          <option [ngValue]="20">
+            20
+          </option>
+
+          <option [ngValue]="50">
+            50
+          </option>
+
+          <option [ngValue]="100">
+            100
+          </option>
+
+        </select>
+
+      </div>
+
+    </div>
+
+
+    <!-- FILTER BUTTONS -->
+
+    <div class="filter-actions">
+
+      <button
+        type="button"
+        class="secondary-button"
+        (click)="resetFilters()"
+      >
+        Réinitialiser
+      </button>
+
+
+      <button
+        type="button"
+        class="primary-button"
+        (click)="applyFilters()"
+        [disabled]="loadingLogs"
+      >
+        Appliquer les filtres
+      </button>
+
+    </div>
+
+  </section>
+
+
+  <!-- ========================================= -->
+  <!-- UNIFIED AUDIT TABLE                       -->
+  <!-- ========================================= -->
+
+  <section class="audit-card">
+
+
+    <!-- LOADING -->
+
+    @if (loadingLogs) {
+
+      <div class="loading-state">
+
+        <div class="spinner"></div>
+
+        <span>
+          Chargement du journal...
+        </span>
+
+      </div>
+
+    }
+
+
+    <!-- EMPTY -->
+
+    @else if (
+      logs.length === 0
+    ) {
+
+      <div class="empty-state">
+
+        <span class="empty-icon">
+          ◌
+        </span>
+
+        <h3>
+          Aucun événement
+        </h3>
+
+        <p>
+          Aucun événement ne correspond
+          aux filtres sélectionnés.
+        </p>
+
+      </div>
+
+    }
+
+
+    <!-- TABLE -->
+
+    @else {
+
+      <div class="table-wrapper">
+
+        <table>
+
+          <thead>
+
+            <tr>
+
+              <th>
+                Date
+              </th>
+
+              <th>
+                Événement
+              </th>
+
+              <th>
+                Utilisateur
+              </th>
+
+              <th>
+                Méthode
+              </th>
+
+              <th>
+                Acteur
+              </th>
+
+              <th>
+                Adresse IP
+              </th>
+
+              <th>
+                Résultat
+              </th>
+
+              <th>
+                Détails
+              </th>
+
+            </tr>
+
+          </thead>
+
+
+          <tbody>
+
+            @for (
+              log of logs;
+              track log.id
+            ) {
+
+              <tr>
+
+
+                <!-- ========================= -->
+                <!-- DATE                      -->
+                <!-- ========================= -->
+
+                <td class="date-cell">
+
+                  <strong>
+
+                    {{
+                      log.createdAt
+                        | date:'dd/MM/yyyy'
+                    }}
+
+                  </strong>
+
+                  <span>
+
+                    {{
+                      log.createdAt
+                        | date:'HH:mm:ss'
+                    }}
+
+                  </span>
+
+                </td>
+
+
+                <!-- ========================= -->
+                <!-- EVENT                     -->
+                <!-- ========================= -->
+
+                <td>
+
+                  <span
+                    class="event-badge"
+                    [ngClass]="
+                      eventClass(
+                        log.eventType
+                      )
+                    "
+                  >
+
+                    {{
+                      eventLabel(
+                        log.eventType
+                      )
+                    }}
+
+                  </span>
+
+                </td>
+
+
+                <!-- ========================= -->
+                <!-- USER                      -->
+                <!-- ========================= -->
+
+                <td>
+
+                  <div class="identity-cell">
+
+                    <strong>
+
+                      {{
+                        log.email
+                          || '—'
+                      }}
+
+                    </strong>
+
+
+                    @if (
+                      log.userId
+                    ) {
+
+                      <span>
+                        ID #{{ log.userId }}
+                      </span>
+
+                    }
+
+                  </div>
+
+                </td>
+
+
+                <!-- ========================= -->
+                <!-- AUTH METHOD               -->
+                <!-- ========================= -->
+
+                <td>
+
+                  @if (
+                    log.eventType ===
+                      'GOOGLE_LOGIN_SUCCESS'
+                    ||
+                    log.eventType ===
+                      'GOOGLE_LOGIN_FAILED'
+                  ) {
+
+                    <span
+                      class="login-method google"
+                    >
+                      Google
+                    </span>
+
+                  }
+
+                  @else if (
+                    log.eventType ===
+                      'LOGIN_SUCCESS'
+                    ||
+                    log.eventType ===
+                      'LOGIN_FAILED'
+                  ) {
+
+                    <span
+                      class="login-method"
+                    >
+                      Local
+                    </span>
+
+                  }
+
+                  @else {
+
+                    <span class="not-applicable">
+                      —
+                    </span>
+
+                  }
+
+                </td>
+
+
+                <!-- ========================= -->
+                <!-- ACTOR                     -->
+                <!-- ========================= -->
+
+                <td>
+
+                  @if (
+                    log.actorEmail
+                  ) {
+
+                    <div class="actor-cell">
+
+                      <strong>
+                        {{ log.actorEmail }}
+                      </strong>
+
+                      @if (
+                        log.actorEmail === log.email
+                      ) {
+
+                        <span>
+                          Même utilisateur
+                        </span>
+
+                      }
+
+                    </div>
+
+                  }
+
+                  @else {
+
+                    <span class="not-applicable">
+                      —
+                    </span>
+
+                  }
+
+                </td>
+
+
+                <!-- ========================= -->
+                <!-- IP ADDRESS                -->
+                <!-- ========================= -->
+
+                <td>
+
+                  @if (
+                    log.ipAddress
+                  ) {
+
+                    <code>
+                      {{ log.ipAddress }}
+                    </code>
+
+                  }
+
+                  @else {
+
+                    <span class="not-applicable">
+                      —
+                    </span>
+
+                  }
+
+                </td>
+
+
+                <!-- ========================= -->
+                <!-- RESULT                    -->
+                <!-- ========================= -->
+
+                <td>
+
+                  @if (
+                    log.success
+                  ) {
+
+                    <span
+                      class="status-badge success"
+                    >
+                      SUCCESS
+                    </span>
+
+                  }
+
+                  @else {
+
+                    <span
+                      class="status-badge failed"
+                    >
+                      FAILED
+                    </span>
+
+                  }
+
+                </td>
+
+
+                <!-- ========================= -->
+                <!-- DETAILS                   -->
+                <!-- ========================= -->
+
+                <td class="details-cell">
+
+                  <span
+                    [title]="
+                      log.details || ''
+                    "
+                  >
+
+                    {{
+                      log.details
+                        || '—'
+                    }}
+
+                  </span>
+
+
+                  @if (
+                    log.endpoint
+                  ) {
+
+                    <code>
+                      {{ log.endpoint }}
+                    </code>
+
+                  }
+
+
+                  @if (
+                    log.userAgent
+                  ) {
+
+                    <span
+                      class="user-agent"
+                      [title]="log.userAgent"
+                    >
+                      {{ log.userAgent }}
+                    </span>
+
+                  }
+
+                </td>
+
+              </tr>
+
+            }
+
+          </tbody>
+
+        </table>
+
+      </div>
+
+
+      <!-- ===================================== -->
+      <!-- PAGINATION                            -->
+      <!-- ===================================== -->
+
+      <footer class="pagination">
+
+        <div class="pagination-info">
+
+          Page
+
+          <strong>
+            {{ currentPage + 1 }}
+          </strong>
+
+          sur
+
+          <strong>
+            {{ totalPages }}
+          </strong>
+
+        </div>
+
+
+        <div class="pagination-controls">
+
+          <!-- PREVIOUS -->
+
+          <button
+            type="button"
+            (click)="previousPage()"
+            [disabled]="
+              currentPage === 0
+            "
+          >
+            ‹
+          </button>
+
+
+          <!-- PAGE NUMBERS -->
+
+          @for (
+            page of pageNumbers;
+            track page
+          ) {
+
+            <button
+              type="button"
+              class="page-button"
+              [class.active]="
+                page === currentPage
+              "
+              (click)="
+                goToPage(page)
+              "
+            >
+
+              {{ page + 1 }}
+
+            </button>
+
+          }
+
+
+          <!-- NEXT -->
+
+          <button
+            type="button"
+            (click)="nextPage()"
+            [disabled]="
+              currentPage >=
+              totalPages - 1
+            "
+          >
+            ›
+          </button>
+
+        </div>
+
+      </footer>
+
+    }
+
+  </section>
+
+</section>

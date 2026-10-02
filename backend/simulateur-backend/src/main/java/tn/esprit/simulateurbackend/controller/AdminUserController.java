@@ -1,5 +1,6 @@
 package tn.esprit.simulateurbackend.controller;
 
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 
 import org.springframework.data.domain.Page;
@@ -9,8 +10,11 @@ import org.springframework.web.bind.annotation.*;
 import tn.esprit.simulateurbackend.dto.AdminUserResponse;
 import tn.esprit.simulateurbackend.dto.UpdateUserRoleRequest;
 import tn.esprit.simulateurbackend.dto.UpdateUserStatusRequest;
+
 import tn.esprit.simulateurbackend.entity.Role;
+
 import tn.esprit.simulateurbackend.service.AdminUserService;
+
 
 @RestController
 @RequestMapping("/api/admin/users")
@@ -18,9 +22,11 @@ public class AdminUserController {
 
     private final AdminUserService adminUserService;
 
+
     public AdminUserController(
             AdminUserService adminUserService
     ) {
+
         this.adminUserService =
                 adminUserService;
     }
@@ -47,6 +53,7 @@ public class AdminUserController {
 
             @RequestParam(defaultValue = "10")
             int size
+
     ) {
 
         return adminUserService.getUsers(
@@ -69,7 +76,9 @@ public class AdminUserController {
     ) {
 
         return adminUserService
-                .getUserById(userId);
+                .getUserById(
+                        userId
+                );
     }
 
 
@@ -86,13 +95,17 @@ public class AdminUserController {
             @RequestBody
             UpdateUserStatusRequest request,
 
-            Authentication authentication
+            Authentication authentication,
+
+            HttpServletRequest httpRequest
+
     ) {
 
         return adminUserService.updateStatus(
                 userId,
                 request.enabled(),
-                authentication
+                authentication,
+                httpRequest
         );
     }
 
@@ -110,13 +123,17 @@ public class AdminUserController {
             @RequestBody
             UpdateUserRoleRequest request,
 
-            Authentication authentication
+            Authentication authentication,
+
+            HttpServletRequest httpRequest
+
     ) {
 
         return adminUserService.updateRole(
                 userId,
                 request.role(),
-                authentication
+                authentication,
+                httpRequest
         );
     }
 }

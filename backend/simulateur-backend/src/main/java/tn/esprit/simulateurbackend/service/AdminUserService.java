@@ -1,32 +1,54 @@
 package tn.esprit.simulateurbackend.service;
 
+import jakarta.servlet.http.HttpServletRequest;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+
 import org.springframework.http.HttpStatus;
+
 import org.springframework.security.core.Authentication;
+
 import org.springframework.stereotype.Service;
+
 import org.springframework.transaction.annotation.Transactional;
+
 import org.springframework.web.server.ResponseStatusException;
 
 import tn.esprit.simulateurbackend.dto.AdminUserResponse;
+
+import tn.esprit.simulateurbackend.entity.AuditEventType;
 import tn.esprit.simulateurbackend.entity.Role;
 import tn.esprit.simulateurbackend.entity.User;
+
 import tn.esprit.simulateurbackend.repository.UserRepository;
+
 
 @Service
 @Transactional(readOnly = true)
 public class AdminUserService {
 
-    private static final int MAX_PAGE_SIZE = 50;
+    private static final int MAX_PAGE_SIZE =
+            50;
+
 
     private final UserRepository userRepository;
 
+    private final AuditService auditService;
+
+
     public AdminUserService(
-            UserRepository userRepository
+            UserRepository userRepository,
+            AuditService auditService
     ) {
-        this.userRepository = userRepository;
+
+        this.userRepository =
+                userRepository;
+
+        this.auditService =
+                auditService;
     }
 
 
@@ -43,26 +65,39 @@ public class AdminUserService {
     ) {
 
         int safePage =
-                Math.max(page, 0);
+                Math.max(
+                        page,
+                        0
+                );
+
 
         int safeSize =
                 Math.min(
-                        Math.max(size, 1),
+                        Math.max(
+                                size,
+                                1
+                        ),
                         MAX_PAGE_SIZE
                 );
 
+
         String normalizedSearch =
-                normalizeSearch(search);
+                normalizeSearch(
+                        search
+                );
+
 
         Pageable pageable =
                 PageRequest.of(
                         safePage,
                         safeSize,
+
                         Sort.by(
                                 Sort.Direction.DESC,
                                 "createdAt"
                         )
                 );
+
 
         return userRepository
                 .searchUsers(
@@ -71,7 +106,9 @@ public class AdminUserService {
                         enabled,
                         pageable
                 )
-                .map(AdminUserResponse::from);
+                .map(
+                        AdminUserResponse::from
+                );
     }
 
 
@@ -84,9 +121,14 @@ public class AdminUserService {
     ) {
 
         User user =
-                findUserById(userId);
+                findUserById(
+                        userId
+                );
 
-        return AdminUserResponse.from(user);
+
+        return AdminUserResponse.from(
+                user
+        );
     }
 
 
@@ -98,21 +140,34 @@ public class AdminUserService {
     public AdminUserResponse updateStatus(
             Long userId,
             boolean enabled,
-            Authentication authentication
+            Authentication authentication,
+            HttpServletRequest httpRequest
     ) {
 
         User targetUser =
-                findUserById(userId);
+                findUserById(
+                        userId
+                );
+
 
         User currentAdmin =
-                findCurrentUser(authentication);
+                findCurrentUser(
+                        authentication
+                );
 
-        // Un admin ne peut pas désactiver
-        // son propre compte.
+
+        /*
+         * Un administrateur ne peut pas
+         * se désactiver lui-même.
+         */
         if (
-                targetUser.getId()
-                        .equals(currentAdmin.getId())
-                        && !enabled
+                targetUser
+                        .getId()
+                        .equals(
+                                currentAdmin.getId()
+                        )
+                        &&
+                        !enabled
         ) {
 
             throw new ResponseStatusException(
@@ -121,12 +176,66 @@ public class AdminUserService {
             );
         }
 
-        targetUser.setEnabled(enabled);
+
+        /*
+         * Aucun changement nécessaire.
+         */
+        if (
+                targetUser.isEnabled()
+                        == enabled
+        ) {
+
+            return AdminUserResponse.from(
+                    targetUser
+            );
+        }
+
+
+        targetUser.setEnabled(
+                enabled
+        );
+
 
         User savedUser =
-                userRepository.save(targetUser);
+                userRepository.save(
+                        targetUser
+                );
 
-        return AdminUserResponse.from(savedUser);
+
+        /*
+         * =========================================
+         * AUDIT
+         * =========================================
+         */
+
+        AuditEventType eventType =
+                enabled
+                        ? AuditEventType.USER_ENABLED
+                        : AuditEventType.USER_DISABLED;
+
+
+        auditService.log(
+                eventType,
+
+                savedUser.getId(),
+
+                savedUser.getEmail(),
+
+                currentAdmin.getEmail(),
+
+                true,
+
+                enabled
+                        ? "Compte utilisateur activé par un administrateur."
+                        : "Compte utilisateur désactivé par un administrateur.",
+
+                httpRequest
+        );
+
+
+        return AdminUserResponse.from(
+                savedUser
+        );
     }
 
 
@@ -138,21 +247,34 @@ public class AdminUserService {
     public AdminUserResponse updateRole(
             Long userId,
             Role newRole,
-            Authentication authentication
+            Authentication authentication,
+            HttpServletRequest httpRequest
     ) {
 
         User targetUser =
-                findUserById(userId);
+                findUserById(
+                        userId
+                );
+
 
         User currentAdmin =
-                findCurrentUser(authentication);
+                findCurrentUser(
+                        authentication
+                );
 
-        // Empêche un administrateur de retirer
-        // son propre rôle ADMIN.
+
+        /*
+         * Empêche un administrateur
+         * de retirer son propre rôle ADMIN.
+         */
         if (
-                targetUser.getId()
-                        .equals(currentAdmin.getId())
-                        && newRole != Role.ADMIN
+                targetUser
+                        .getId()
+                        .equals(
+                                currentAdmin.getId()
+                        )
+                        &&
+                        newRole != Role.ADMIN
         ) {
 
             throw new ResponseStatusException(
@@ -161,12 +283,64 @@ public class AdminUserService {
             );
         }
 
-        targetUser.setRole(newRole);
+
+        Role oldRole =
+                targetUser.getRole();
+
+
+        /*
+         * Pas de changement réel.
+         */
+        if (
+                oldRole == newRole
+        ) {
+
+            return AdminUserResponse.from(
+                    targetUser
+            );
+        }
+
+
+        targetUser.setRole(
+                newRole
+        );
+
 
         User savedUser =
-                userRepository.save(targetUser);
+                userRepository.save(
+                        targetUser
+                );
 
-        return AdminUserResponse.from(savedUser);
+
+        /*
+         * =========================================
+         * AUDIT : ROLE_CHANGED
+         * =========================================
+         */
+
+        auditService.log(
+                AuditEventType.ROLE_CHANGED,
+
+                savedUser.getId(),
+
+                savedUser.getEmail(),
+
+                currentAdmin.getEmail(),
+
+                true,
+
+                "Rôle modifié : "
+                        + oldRole.name()
+                        + " -> "
+                        + newRole.name(),
+
+                httpRequest
+        );
+
+
+        return AdminUserResponse.from(
+                savedUser
+        );
     }
 
 
@@ -179,12 +353,16 @@ public class AdminUserService {
     ) {
 
         return userRepository
-                .findById(userId)
+                .findById(
+                        userId
+                )
                 .orElseThrow(() ->
+
                         new ResponseStatusException(
                                 HttpStatus.NOT_FOUND,
                                 "Utilisateur introuvable."
                         )
+
                 );
     }
 
@@ -195,7 +373,8 @@ public class AdminUserService {
 
         if (
                 authentication == null
-                        || !authentication.isAuthenticated()
+                        ||
+                        !authentication.isAuthenticated()
         ) {
 
             throw new ResponseStatusException(
@@ -204,15 +383,18 @@ public class AdminUserService {
             );
         }
 
+
         return userRepository
                 .findByEmailIgnoreCase(
                         authentication.getName()
                 )
                 .orElseThrow(() ->
+
                         new ResponseStatusException(
                                 HttpStatus.UNAUTHORIZED,
                                 "Utilisateur authentifié introuvable."
                         )
+
                 );
     }
 
@@ -223,10 +405,13 @@ public class AdminUserService {
 
         if (
                 search == null
-                        || search.isBlank()
+                        ||
+                        search.isBlank()
         ) {
+
             return null;
         }
+
 
         return search.trim();
     }
