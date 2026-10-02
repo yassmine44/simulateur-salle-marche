@@ -9,6 +9,12 @@ export interface RegisterRequest {
   phoneNumber: string;
   email: string;
   password: string;
+  recaptchaToken: string;
+}
+
+export interface ForgotPasswordRequest {
+  email: string;
+  recaptchaToken: string;
 }
 
 export interface UserResponse {
@@ -25,6 +31,7 @@ export interface UserResponse {
 export interface LoginRequest {
   email: string;
   password: string;
+  recaptchaToken: string;
 }
 
 export interface LoginResponse {
@@ -47,9 +54,7 @@ export interface MessageResponse {
   message: string;
 }
 
-export interface ForgotPasswordRequest {
-  email: string;
-}
+
 
 export interface ResetPasswordRequest {
   token: string;

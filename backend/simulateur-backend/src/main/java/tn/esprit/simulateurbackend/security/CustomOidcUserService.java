@@ -63,122 +63,85 @@ public class CustomOidcUserService
     ) throws OAuth2AuthenticationException {
 
         /*
-         * Laisse d'abord Spring Security effectuer
-         * le vrai traitement OpenID Connect :
+         * Spring effectue :
          *
          * - échange authorization code
          * - validation ID Token
-         * - récupération des claims
+         * - récupération des claims OIDC
          */
         OidcUser oidcUser =
                 delegate.loadUser(userRequest);
 
 
-        // ==========================================
-        // PROVIDER
-        // ==========================================
+        /*
+         * ==========================================
+         * PROVIDER
+         * ==========================================
+         */
 
         String registrationId =
                 userRequest
                         .getClientRegistration()
-                        .getRegistrationId();
+                        .getRegistrationId()
+                        .toLowerCase(Locale.ROOT);
 
 
-        if (!"google".equalsIgnoreCase(
-                registrationId
-        )) {
-
-            throw oauthError(
-                    "unsupported_provider",
-                    "Fournisseur OAuth non pris en charge."
-            );
-        }
+        AuthProvider provider =
+                resolveProvider(registrationId);
 
 
-        // ==========================================
-        // GOOGLE SUBJECT (sub)
-        // ==========================================
+        /*
+         * ==========================================
+         * PROVIDER SUBJECT
+         * ==========================================
+         */
 
         String providerSubject =
-                oidcUser.getSubject();
-
-
-        if (
-                providerSubject == null
-                        || providerSubject.isBlank()
-        ) {
-
-            throw oauthError(
-                    "missing_subject",
-                    "Identifiant Google manquant."
-            );
-        }
-
-
-        // ==========================================
-        // EMAIL
-        // ==========================================
-
-        String rawEmail =
-                oidcUser.getEmail();
-
-
-        if (
-                rawEmail == null
-                        || rawEmail.isBlank()
-        ) {
-
-            throw oauthError(
-                    "missing_email",
-                    "Adresse e-mail Google manquante."
-            );
-        }
-
-
-        String email =
-                rawEmail
-                        .trim()
-                        .toLowerCase(
-                                Locale.ROOT
-                        );
-
-
-        // ==========================================
-        // EMAIL VERIFIED
-        // ==========================================
-
-        Boolean emailVerified =
-                oidcUser.getClaimAsBoolean(
-                        "email_verified"
+                resolveProviderSubject(
+                        provider,
+                        oidcUser
                 );
 
 
-        if (!Boolean.TRUE.equals(
-                emailVerified
-        )) {
+        /*
+         * ==========================================
+         * EMAIL
+         * ==========================================
+         */
 
-            throw oauthError(
-                    "email_not_verified",
-                    "L'adresse e-mail Google n'est pas vérifiée."
-            );
-        }
+        String email =
+                resolveEmail(
+                        provider,
+                        oidcUser
+                );
 
 
-        // ==========================================
-        // FIND / CREATE APPLICATION USER
-        // ==========================================
+        /*
+         * ==========================================
+         * PROVIDER-SPECIFIC VALIDATION
+         * ==========================================
+         */
+
+        validateProviderClaims(
+                provider,
+                oidcUser
+        );
+
+
+        /*
+         * ==========================================
+         * APPLICATION USER
+         * ==========================================
+         */
 
         User applicationUser =
                 findOrCreateUser(
+                        provider,
                         oidcUser,
                         providerSubject,
                         email
                 );
 
-
-        // ==========================================
-        // DISABLED ACCOUNT
-        // ==========================================
 
         if (!applicationUser.isEnabled()) {
 
@@ -189,9 +152,32 @@ public class CustomOidcUserService
         }
 
 
-        // ==========================================
-        // APPLICATION ROLE
-        // ==========================================
+        /*
+         * L'application utilise actuellement
+         * authentication.getName() comme e-mail.
+         *
+         * On évite donc qu'un changement d'e-mail
+         * chez le fournisseur casse la session.
+         */
+        if (
+                applicationUser.getEmail() == null
+                        || !applicationUser
+                        .getEmail()
+                        .equalsIgnoreCase(email)
+        ) {
+
+            throw oauthError(
+                    "email_mismatch",
+                    "L'adresse e-mail du fournisseur ne correspond plus au compte associé."
+            );
+        }
+
+
+        /*
+         * ==========================================
+         * AUTHORITIES
+         * ==========================================
+         */
 
         Set<GrantedAuthority> authorities =
                 new HashSet<>(
@@ -210,23 +196,25 @@ public class CustomOidcUserService
 
 
         /*
-         * IMPORTANT :
+         * ==========================================
+         * PRINCIPAL NAME
+         * ==========================================
          *
-         * On utilise "email" comme attribut principal
-         * du principal Spring.
-         *
-         * Ainsi :
+         * Notre application recherche ensuite
+         * l'utilisateur avec :
          *
          * authentication.getName()
          *
-         * retournera l'e-mail et restera compatible
-         * avec le code existant :
-         *
-         * /api/auth/me
-         * profile
-         * admin
-         * etc.
+         * Il faut donc que ce nom corresponde
+         * à l'e-mail stocké dans users.
          */
+
+        String nameAttributeKey =
+                resolveNameAttributeKey(
+                        provider,
+                        oidcUser
+                );
+
 
         if (oidcUser.getUserInfo() != null) {
 
@@ -234,7 +222,7 @@ public class CustomOidcUserService
                     authorities,
                     oidcUser.getIdToken(),
                     oidcUser.getUserInfo(),
-                    "email"
+                    nameAttributeKey
             );
         }
 
@@ -242,29 +230,258 @@ public class CustomOidcUserService
         return new DefaultOidcUser(
                 authorities,
                 oidcUser.getIdToken(),
-                "email"
+                nameAttributeKey
         );
     }
 
 
-    // ==========================================
-    // FIND OR CREATE USER
-    // ==========================================
+    /*
+     * ==========================================
+     * PROVIDER
+     * ==========================================
+     */
+
+    private AuthProvider resolveProvider(
+            String registrationId
+    ) {
+
+        return switch (registrationId) {
+
+            case "google" ->
+                    AuthProvider.GOOGLE;
+
+            case "microsoft" ->
+                    AuthProvider.MICROSOFT;
+
+            default ->
+                    throw oauthError(
+                            "unsupported_provider",
+                            "Fournisseur OAuth non pris en charge."
+                    );
+        };
+    }
+
+
+    /*
+     * ==========================================
+     * PROVIDER SUBJECT
+     * ==========================================
+     */
+
+    private String resolveProviderSubject(
+            AuthProvider provider,
+            OidcUser oidcUser
+    ) {
+
+        if (provider == AuthProvider.GOOGLE) {
+
+            String subject =
+                    clean(
+                            oidcUser.getSubject()
+                    );
+
+            if (subject == null) {
+
+                throw oauthError(
+                        "missing_subject",
+                        "Identifiant Google manquant."
+                );
+            }
+
+            return subject;
+        }
+
+
+        /*
+         * Microsoft :
+         *
+         * oid = identifiant objet utilisateur
+         * tid = identifiant du tenant
+         *
+         * La combinaison tid + oid constitue
+         * une identité Microsoft robuste.
+         */
+
+        String tenantId =
+                clean(
+                        oidcUser.getClaimAsString(
+                                "tid"
+                        )
+                );
+
+        String objectId =
+                clean(
+                        oidcUser.getClaimAsString(
+                                "oid"
+                        )
+                );
+
+
+        if (
+                tenantId != null
+                        && objectId != null
+        ) {
+
+            return tenantId + ":" + objectId;
+        }
+
+
+        /*
+         * Fallback OIDC standard.
+         */
+        String subject =
+                clean(
+                        oidcUser.getSubject()
+                );
+
+
+        if (subject == null) {
+
+            throw oauthError(
+                    "missing_subject",
+                    "Identifiant Microsoft manquant."
+            );
+        }
+
+
+        return subject;
+    }
+
+
+    /*
+     * ==========================================
+     * EMAIL
+     * ==========================================
+     */
+
+    private String resolveEmail(
+            AuthProvider provider,
+            OidcUser oidcUser
+    ) {
+
+        String rawEmail = null;
+
+
+        /*
+         * Google fournit normalement "email".
+         */
+        if (provider == AuthProvider.GOOGLE) {
+
+            rawEmail =
+                    clean(
+                            oidcUser.getEmail()
+                    );
+        }
+
+
+        /*
+         * Microsoft :
+         *
+         * "email" n'est pas garanti.
+         *
+         * preferred_username est donc utilisé
+         * comme fallback d'affichage/login.
+         */
+        if (provider == AuthProvider.MICROSOFT) {
+
+            rawEmail =
+                    clean(
+                            oidcUser.getEmail()
+                    );
+
+
+            if (rawEmail == null) {
+
+                rawEmail =
+                        clean(
+                                oidcUser.getClaimAsString(
+                                        "preferred_username"
+                                )
+                        );
+            }
+        }
+
+
+        if (
+                rawEmail == null
+                        || !rawEmail.contains("@")
+        ) {
+
+            throw oauthError(
+                    "missing_email",
+                    "Aucune adresse e-mail exploitable n'a été fournie."
+            );
+        }
+
+
+        return rawEmail
+                .trim()
+                .toLowerCase(
+                        Locale.ROOT
+                );
+    }
+
+
+    /*
+     * ==========================================
+     * CLAIM VALIDATION
+     * ==========================================
+     */
+
+    private void validateProviderClaims(
+            AuthProvider provider,
+            OidcUser oidcUser
+    ) {
+
+        /*
+         * Google fournit email_verified.
+         */
+        if (provider == AuthProvider.GOOGLE) {
+
+            Boolean emailVerified =
+                    oidcUser.getClaimAsBoolean(
+                            "email_verified"
+                    );
+
+
+            if (!Boolean.TRUE.equals(
+                    emailVerified
+            )) {
+
+                throw oauthError(
+                        "email_not_verified",
+                        "L'adresse e-mail Google n'est pas vérifiée."
+                );
+            }
+        }
+
+
+        /*
+         * Microsoft ne fournit pas de claim
+         * standard email_verified équivalent
+         * utilisable comme celui de Google.
+         *
+         * On ne fabrique donc pas cette validation.
+         */
+    }
+
+
+    /*
+     * ==========================================
+     * FIND / CREATE USER
+     * ==========================================
+     */
 
     private User findOrCreateUser(
+            AuthProvider provider,
             OidcUser oidcUser,
             String providerSubject,
             String email
     ) {
 
-        /*
-         * CAS 1 :
-         *
-         * L'identité Google existe déjà.
-         */
         return userIdentityRepository
                 .findByProviderAndProviderSubject(
-                        AuthProvider.GOOGLE,
+                        provider,
                         providerSubject
                 )
                 .map(identity -> {
@@ -272,10 +489,21 @@ public class CustomOidcUserService
                     User user =
                             identity.getUser();
 
-                    /*
-                     * On met éventuellement à jour
-                     * l'e-mail observé chez Google.
-                     */
+
+                    if (
+                            user.getEmail() == null
+                                    || !user
+                                    .getEmail()
+                                    .equalsIgnoreCase(email)
+                    ) {
+
+                        throw oauthError(
+                                "email_mismatch",
+                                "L'adresse e-mail du fournisseur a changé."
+                        );
+                    }
+
+
                     identity.setEmailAtProvider(
                             email
                     );
@@ -284,16 +512,13 @@ public class CustomOidcUserService
                             identity
                     );
 
+
                     return user;
                 })
 
-                /*
-                 * CAS 2 / CAS 3 :
-                 *
-                 * Pas encore d'identité Google.
-                 */
                 .orElseGet(() ->
                         linkOrCreateUser(
+                                provider,
                                 oidcUser,
                                 providerSubject,
                                 email
@@ -302,38 +527,79 @@ public class CustomOidcUserService
     }
 
 
-    // ==========================================
-    // LINK EXISTING USER OR CREATE NEW USER
-    // ==========================================
+    /*
+     * ==========================================
+     * LINK / CREATE
+     * ==========================================
+     */
 
     private User linkOrCreateUser(
+            AuthProvider provider,
             OidcUser oidcUser,
             String providerSubject,
             String email
     ) {
 
-        /*
-         * CAS 2 :
-         *
-         * Un compte local avec le même email
-         * existe déjà.
-         *
-         * Comme Google nous fournit un email
-         * vérifié, on relie l'identité Google
-         * à ce compte.
-         */
+        User user;
 
-        User user =
-                userRepository
-                        .findByEmailIgnoreCase(
-                                email
-                        )
-                        .orElseGet(() ->
-                                createGoogleUser(
-                                        oidcUser,
-                                        email
-                                )
-                        );
+
+        /*
+         * GOOGLE
+         *
+         * Google nous fournit email_verified=true.
+         *
+         * On peut donc relier un compte local
+         * existant ayant exactement le même e-mail.
+         */
+        if (provider == AuthProvider.GOOGLE) {
+
+            user =
+                    userRepository
+                            .findByEmailIgnoreCase(
+                                    email
+                            )
+                            .orElseGet(() ->
+                                    createSocialUser(
+                                            oidcUser,
+                                            email
+                                    )
+                            );
+
+        } else {
+
+            /*
+             * MICROSOFT
+             *
+             * Microsoft ne fournit pas le même
+             * mécanisme email_verified que Google.
+             *
+             * Pour éviter une liaison automatique
+             * dangereuse sur simple égalité d'e-mail,
+             * on refuse si un compte existe déjà.
+             */
+
+            var existingUser =
+                    userRepository
+                            .findByEmailIgnoreCase(
+                                    email
+                            );
+
+
+            if (existingUser.isPresent()) {
+
+                throw oauthError(
+                        "email_already_registered",
+                        "Un compte existe déjà avec cette adresse e-mail. Connectez-vous d'abord avec votre méthode existante."
+                );
+            }
+
+
+            user =
+                    createSocialUser(
+                            oidcUser,
+                            email
+                    );
+        }
 
 
         if (!user.isEnabled()) {
@@ -354,7 +620,7 @@ public class CustomOidcUserService
         );
 
         identity.setProvider(
-                AuthProvider.GOOGLE
+                provider
         );
 
         identity.setProviderSubject(
@@ -375,11 +641,13 @@ public class CustomOidcUserService
     }
 
 
-    // ==========================================
-    // CREATE GOOGLE USER
-    // ==========================================
+    /*
+     * ==========================================
+     * CREATE SOCIAL USER
+     * ==========================================
+     */
 
-    private User createGoogleUser(
+    private User createSocialUser(
             OidcUser oidcUser,
             String email
     ) {
@@ -402,36 +670,52 @@ public class CustomOidcUserService
                 );
 
 
+        /*
+         * Certains providers ne fournissent
+         * pas given_name / family_name.
+         */
+        if (
+                givenName == null
+                        && fullName != null
+        ) {
+
+            String[] parts =
+                    fullName.split(
+                            "\\s+",
+                            2
+                    );
+
+
+            givenName =
+                    clean(
+                            parts[0]
+                    );
+
+
+            if (
+                    familyName == null
+                            && parts.length > 1
+            ) {
+
+                familyName =
+                        clean(
+                                parts[1]
+                        );
+            }
+        }
+
+
         User user =
                 new User();
 
 
-        /*
-         * given_name n'est pas toujours garanti.
-         */
-        if (givenName != null) {
-
-            user.setFirstName(
-                    givenName
-            );
-
-        } else if (fullName != null) {
-
-            user.setFirstName(
-                    fullName
-            );
-
-        } else {
-
-            user.setFirstName(
-                    "Utilisateur"
-            );
-        }
+        user.setFirstName(
+                givenName != null
+                        ? givenName
+                        : "Utilisateur"
+        );
 
 
-        /*
-         * family_name peut également être absent.
-         */
         user.setLastName(
                 familyName != null
                         ? familyName
@@ -445,9 +729,9 @@ public class CustomOidcUserService
 
 
         /*
-         * IMPORTANT :
+         * Compte social :
          *
-         * Aucun faux mot de passe.
+         * aucun faux mot de passe.
          */
         user.setPassword(
                 null
@@ -455,7 +739,8 @@ public class CustomOidcUserService
 
 
         /*
-         * Google ne peut JAMAIS créer un ADMIN.
+         * Un provider externe ne peut
+         * jamais attribuer ADMIN.
          */
         user.setRole(
                 Role.USER
@@ -467,13 +752,10 @@ public class CustomOidcUserService
         );
 
 
-        /*
-         * Google ne fournit pas ces informations
-         * dans notre flow actuel.
-         */
         user.setCountryCode(
                 null
         );
+
 
         user.setPhoneNumber(
                 null
@@ -486,9 +768,56 @@ public class CustomOidcUserService
     }
 
 
-    // ==========================================
-    // HELPERS
-    // ==========================================
+    /*
+     * ==========================================
+     * PRINCIPAL NAME ATTRIBUTE
+     * ==========================================
+     */
+
+    private String resolveNameAttributeKey(
+            AuthProvider provider,
+            OidcUser oidcUser
+    ) {
+
+        if (provider == AuthProvider.GOOGLE) {
+
+            return "email";
+        }
+
+
+        /*
+         * Microsoft possède parfois "email".
+         */
+        String emailClaim =
+                clean(
+                        oidcUser.getClaimAsString(
+                                "email"
+                        )
+                );
+
+
+        if (
+                emailClaim != null
+                        && emailClaim.contains("@")
+        ) {
+
+            return "email";
+        }
+
+
+        /*
+         * Sinon notre resolveEmail() a utilisé
+         * preferred_username.
+         */
+        return "preferred_username";
+    }
+
+
+    /*
+     * ==========================================
+     * HELPERS
+     * ==========================================
+     */
 
     private String clean(
             String value
@@ -498,8 +827,10 @@ public class CustomOidcUserService
                 value == null
                         || value.isBlank()
         ) {
+
             return null;
         }
+
 
         return value.trim();
     }
