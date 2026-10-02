@@ -16,6 +16,7 @@ import tn.esprit.simulateurbackend.dto.RegisterRequest;
 import tn.esprit.simulateurbackend.dto.ResetPasswordRequest;
 import tn.esprit.simulateurbackend.dto.UserResponse;
 
+import tn.esprit.simulateurbackend.security.RateLimitService;
 import tn.esprit.simulateurbackend.security.RecaptchaService;
 
 import tn.esprit.simulateurbackend.service.AuthenticationService;
@@ -39,13 +40,16 @@ public class AuthController {
 
     private final RecaptchaService recaptchaService;
 
+    private final RateLimitService rateLimitService;
+
 
     public AuthController(
             RegistrationService registration,
             AuthenticationService authentication,
             PasswordResetService passwordResetService,
             EmailPasswordResetDeliveryService passwordResetDelivery,
-            RecaptchaService recaptchaService
+            RecaptchaService recaptchaService,
+            RateLimitService rateLimitService
     ) {
 
         this.registration =
@@ -62,6 +66,9 @@ public class AuthController {
 
         this.recaptchaService =
                 recaptchaService;
+
+        this.rateLimitService =
+                rateLimitService;
     }
 
 
@@ -79,8 +86,18 @@ public class AuthController {
     ) {
 
         /*
-         * Vérification anti-bot AVANT
-         * toute création de compte.
+         * 1. Rate limiting
+         *
+         * Bloque les requêtes excessives
+         * avant même d'appeler Google reCAPTCHA.
+         */
+        rateLimitService.checkRegister(
+                httpRequest
+        );
+
+
+        /*
+         * 2. reCAPTCHA Enterprise
          */
         recaptchaService.verify(
                 request.recaptchaToken(),
@@ -89,6 +106,9 @@ public class AuthController {
         );
 
 
+        /*
+         * 3. Création du compte
+         */
         return registration.register(
                 request
         );
@@ -109,8 +129,15 @@ public class AuthController {
     ) {
 
         /*
-         * Vérification anti-bot AVANT
-         * AuthenticationManager.
+         * 1. Rate limiting
+         */
+        rateLimitService.checkLogin(
+                httpRequest
+        );
+
+
+        /*
+         * 2. reCAPTCHA Enterprise
          */
         recaptchaService.verify(
                 request.recaptchaToken(),
@@ -119,6 +146,9 @@ public class AuthController {
         );
 
 
+        /*
+         * 3. Authentification
+         */
         return authentication.login(
                 request,
                 httpRequest,
@@ -160,6 +190,7 @@ public class AuthController {
         var session =
                 request.getSession(false);
 
+
         if (session != null) {
 
             session.invalidate();
@@ -180,12 +211,18 @@ public class AuthController {
     ) {
 
         /*
-         * Vérification anti-bot AVANT
-         * génération du token et envoi SMTP.
+         * 1. Rate limiting
          *
-         * Très important pour éviter qu'un bot
-         * utilise cet endpoint pour envoyer
-         * massivement des e-mails.
+         * Important ici pour empêcher
+         * le spam d'e-mails.
+         */
+        rateLimitService.checkForgotPassword(
+                httpRequest
+        );
+
+
+        /*
+         * 2. reCAPTCHA Enterprise
          */
         recaptchaService.verify(
                 request.recaptchaToken(),
@@ -194,6 +231,10 @@ public class AuthController {
         );
 
 
+        /*
+         * 3. Génération du token
+         * et envoi de l'e-mail.
+         */
         passwordResetService
                 .createResetToken(
                         request.email()
@@ -209,7 +250,8 @@ public class AuthController {
 
         /*
          * Réponse volontairement générique
-         * pour éviter l'énumération des comptes.
+         * pour éviter l'énumération
+         * des comptes existants.
          */
         return new MessageResponse(
                 "Si un compte correspond à cette adresse, un lien de réinitialisation a été envoyé."

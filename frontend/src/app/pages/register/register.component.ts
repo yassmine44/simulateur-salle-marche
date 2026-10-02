@@ -340,63 +340,73 @@ export class RegisterComponent {
           },
 
 
-          error: (
-            error: HttpErrorResponse
-          ) => {
+error: (
+  error: HttpErrorResponse
+) => {
 
-            this.isSubmitting =
-              false;
-
-
-            if (
-              error.status === 409
-            ) {
-
-              this.errorMessage =
-                'Cette adresse e-mail est déjà utilisée.';
-
-              return;
-            }
+  this.isSubmitting =
+    false;
 
 
-            if (
-              error.status === 400
-            ) {
+  if (
+    error.status === 409
+  ) {
 
-              this.errorMessage =
-                'Vérifiez les informations saisies, notamment le pays et le numéro de téléphone.';
+    this.errorMessage =
+      'Cette adresse e-mail est déjà utilisée.';
 
-              return;
-            }
-
-
-            if (
-              error.status === 403
-            ) {
-
-              this.errorMessage =
-                'La vérification de sécurité a échoué. Veuillez réessayer.';
-
-              return;
-            }
+    return;
+  }
 
 
-            if (
-              error.status === 503
-            ) {
+  if (
+    error.status === 400
+  ) {
 
-              this.errorMessage =
-                'Le service de vérification de sécurité est temporairement indisponible.';
+    this.errorMessage =
+      'Vérifiez les informations saisies, notamment le pays et le numéro de téléphone.';
 
-              return;
-            }
+    return;
+  }
 
 
-            this.errorMessage =
-              'Une erreur est survenue. Veuillez réessayer.';
+  if (
+    error.status === 403
+  ) {
 
-          }
+    this.errorMessage =
+      'La vérification de sécurité a échoué. Veuillez réessayer.';
 
+    return;
+  }
+
+
+  if (
+    error.status === 503
+  ) {
+
+    this.errorMessage =
+      'Le service de vérification de sécurité est temporairement indisponible.';
+
+    return;
+  }
+
+
+  if (
+    error.status === 429
+  ) {
+
+    this.errorMessage =
+      'Trop de tentatives de création de compte. Veuillez patienter avant de réessayer.';
+
+    return;
+  }
+
+
+  this.errorMessage =
+    'Une erreur est survenue. Veuillez réessayer.';
+
+}
         });
 
 

@@ -130,6 +130,16 @@ export class ForgotPasswordComponent {
               return;
             }
 
+  if (
+    error.status === 429
+  ) {
+
+    this.errorMessage =
+      'Trop de tentatives de création de compte. Veuillez patienter avant de réessayer.';
+
+    return;
+  }
+
             this.errorMessage =
               'Une erreur est survenue. Veuillez réessayer.';
 
