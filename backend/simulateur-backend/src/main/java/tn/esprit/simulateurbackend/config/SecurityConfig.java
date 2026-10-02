@@ -1,7 +1,9 @@
 package tn.esprit.simulateurbackend.config;
 
 import java.util.List;
+import java.util.Locale;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -18,18 +20,44 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
+import tn.esprit.simulateurbackend.entity.AuditEventType;
+import tn.esprit.simulateurbackend.entity.User;
+import tn.esprit.simulateurbackend.repository.UserRepository;
 import tn.esprit.simulateurbackend.security.CustomOidcUserService;
+import tn.esprit.simulateurbackend.service.AuditService;
+
 
 @Configuration
 public class SecurityConfig {
 
     private final CustomOidcUserService customOidcUserService;
 
+    private final AuditService auditService;
+
+    private final UserRepository userRepository;
+
+    private final String frontendBaseUrl;
+
+
     public SecurityConfig(
-            CustomOidcUserService customOidcUserService
+            CustomOidcUserService customOidcUserService,
+            AuditService auditService,
+            UserRepository userRepository,
+            @Value("${app.frontend.base-url}")
+            String frontendBaseUrl
     ) {
+
         this.customOidcUserService =
                 customOidcUserService;
+
+        this.auditService =
+                auditService;
+
+        this.userRepository =
+                userRepository;
+
+        this.frontendBaseUrl =
+                frontendBaseUrl;
     }
 
 
@@ -68,7 +96,6 @@ public class SecurityConfig {
                 // =========================
                 .authorizeHttpRequests(auth -> auth
 
-                        // Angular CORS preflight
                         .requestMatchers(
                                 HttpMethod.OPTIONS,
                                 "/**"
@@ -76,7 +103,6 @@ public class SecurityConfig {
                         .permitAll()
 
 
-                        // Health check
                         .requestMatchers(
                                 HttpMethod.GET,
                                 "/api/health"
@@ -84,7 +110,6 @@ public class SecurityConfig {
                         .permitAll()
 
 
-                        // Public authentication endpoints
                         .requestMatchers(
                                 HttpMethod.POST,
                                 "/api/auth/register",
@@ -95,7 +120,6 @@ public class SecurityConfig {
                         .permitAll()
 
 
-                        // OAuth2 / OIDC endpoints
                         .requestMatchers(
                                 "/oauth2/**",
                                 "/login/oauth2/**"
@@ -103,21 +127,19 @@ public class SecurityConfig {
                         .permitAll()
 
 
-                        // ADMIN only
                         .requestMatchers(
                                 "/api/admin/**"
                         )
                         .hasRole("ADMIN")
 
 
-                        // Everything else requires authentication
                         .anyRequest()
                         .authenticated()
                 )
 
 
                 // =========================
-                // GOOGLE OAUTH2 / OIDC
+                // GOOGLE OAuth2 / OIDC
                 // =========================
                 .oauth2Login(oauth -> oauth
 
@@ -128,20 +150,99 @@ public class SecurityConfig {
                                         )
                         )
 
+
+                        // =========================
+                        // GOOGLE SUCCESS
+                        // =========================
                         .successHandler(
-                                (request, response, authentication) -> {
+                                (
+                                        request,
+                                        response,
+                                        authentication
+                                ) -> {
+
+                                    String email =
+                                            authentication
+                                                    .getName()
+                                                    .trim()
+                                                    .toLowerCase(
+                                                            Locale.ROOT
+                                                    );
+
+
+                                    User user =
+                                            userRepository
+                                                    .findByEmailIgnoreCase(
+                                                            email
+                                                    )
+                                                    .orElse(null);
+
+
+                                    auditService.log(
+                                            AuditEventType.GOOGLE_LOGIN_SUCCESS,
+
+                                            user != null
+                                                    ? user.getId()
+                                                    : null,
+
+                                            email,
+
+                                            email,
+
+                                            true,
+
+                                            "Connexion Google OAuth2/OIDC réussie.",
+
+                                            request
+                                    );
+
 
                                     response.sendRedirect(
-                                            "http://localhost:4200/auth/oauth2/callback"
+                                            frontendBaseUrl
+                                                    + "/auth/oauth2/callback"
                                     );
                                 }
                         )
 
+
+                        // =========================
+                        // GOOGLE FAILURE
+                        // =========================
                         .failureHandler(
-                                (request, response, exception) -> {
+                                (
+                                        request,
+                                        response,
+                                        exception
+                                ) -> {
+
+                                    /*
+                                     * On n'enregistre pas de token,
+                                     * pas de credential,
+                                     * pas de données sensibles.
+                                     */
+                                    auditService.log(
+                                            AuditEventType.GOOGLE_LOGIN_FAILED,
+
+                                            null,
+
+                                            null,
+
+                                            null,
+
+                                            false,
+
+                                            "Échec de connexion Google : "
+                                                    + exception
+                                                    .getClass()
+                                                    .getSimpleName(),
+
+                                            request
+                                    );
+
 
                                     response.sendRedirect(
-                                            "http://localhost:4200/login?oauthError=google"
+                                            frontendBaseUrl
+                                                    + "/login?oauthError=google"
                                     );
                                 }
                         )
@@ -149,18 +250,20 @@ public class SecurityConfig {
 
 
                 // =========================
-                // No Spring form login
+                // NO FORM LOGIN
                 // =========================
                 .formLogin(
-                        form -> form.disable()
+                        form ->
+                                form.disable()
                 )
 
 
                 // =========================
-                // No HTTP Basic
+                // NO HTTP BASIC
                 // =========================
                 .httpBasic(
-                        basic -> basic.disable()
+                        basic ->
+                                basic.disable()
                 );
 
 
@@ -187,7 +290,8 @@ public class SecurityConfig {
     // =========================
 
     @Bean
-    SecurityContextRepository securityContextRepository() {
+    SecurityContextRepository
+    securityContextRepository() {
 
         return new HttpSessionSecurityContextRepository();
     }
@@ -198,16 +302,19 @@ public class SecurityConfig {
     // =========================
 
     @Bean
-    CorsConfigurationSource corsConfigurationSource() {
+    CorsConfigurationSource
+    corsConfigurationSource() {
 
         CorsConfiguration configuration =
                 new CorsConfiguration();
 
+
         configuration.setAllowedOrigins(
                 List.of(
-                        "http://localhost:4200"
+                        frontendBaseUrl
                 )
         );
+
 
         configuration.setAllowedMethods(
                 List.of(
@@ -220,9 +327,11 @@ public class SecurityConfig {
                 )
         );
 
+
         configuration.setAllowedHeaders(
                 List.of("*")
         );
+
 
         configuration.setAllowCredentials(
                 true
@@ -232,10 +341,12 @@ public class SecurityConfig {
         UrlBasedCorsConfigurationSource source =
                 new UrlBasedCorsConfigurationSource();
 
+
         source.registerCorsConfiguration(
                 "/**",
                 configuration
         );
+
 
         return source;
     }

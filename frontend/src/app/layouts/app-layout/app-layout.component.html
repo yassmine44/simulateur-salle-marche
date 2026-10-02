@@ -2,24 +2,37 @@
 
   <header class="topbar">
 
-    <!-- BRAND -->
+    <!-- ========================= -->
+    <!-- BRAND                     -->
+    <!-- ========================= -->
 
     <a
       routerLink="/app/dashboard"
       class="brand"
     >
+
       <span class="brand-icon">
         ↗
       </span>
 
       <div class="brand-copy">
-        <strong>Trading Room</strong>
-        <small>Market Simulator</small>
+
+        <strong>
+          Trading Room
+        </strong>
+
+        <small>
+          Market Simulator
+        </small>
+
       </div>
+
     </a>
 
 
-    <!-- MAIN NAVIGATION -->
+    <!-- ========================= -->
+    <!-- MAIN NAVIGATION           -->
+    <!-- ========================= -->
 
     <nav class="main-navigation">
 
@@ -30,12 +43,14 @@
         Dashboard
       </a>
 
+
       <a
         routerLink="/app/markets"
         routerLinkActive="active"
       >
         Marchés
       </a>
+
 
       <a
         routerLink="/app/trading"
@@ -44,12 +59,14 @@
         Trading
       </a>
 
+
       <a
         routerLink="/app/portfolio"
         routerLinkActive="active"
       >
         Portefeuille
       </a>
+
 
       <a
         routerLink="/app/risk"
@@ -58,12 +75,14 @@
         Risque
       </a>
 
+
       <a
         routerLink="/app/analytics"
         routerLinkActive="active"
       >
         Analyse
       </a>
+
 
       <a
         routerLink="/app/ai"
@@ -72,22 +91,119 @@
         IA
       </a>
 
-    @if ((user$ | async)?.role === 'ADMIN') {
-        <a routerLink="/app/admin/users" routerLinkActive="active">Administration</a>
+
+      <!-- ========================= -->
+      <!-- ADMIN MENU                -->
+      <!-- ========================= -->
+
+      @if ((user$ | async)?.role === 'ADMIN') {
+
+        <div
+          class="admin-menu"
+          [class.open]="adminMenuOpen"
+          routerLinkActive="active"
+        >
+
+          <button
+            type="button"
+            class="admin-trigger"
+            aria-haspopup="true"
+            [attr.aria-expanded]="adminMenuOpen"
+            (click)="toggleAdminMenu()"
+          >
+
+            Administration
+
+            <span class="admin-chevron">
+              ▾
+            </span>
+
+          </button>
+
+
+          <div
+            class="admin-dropdown"
+            [class.open]="adminMenuOpen"
+          >
+
+            <!-- USERS -->
+
+            <a
+              routerLink="/app/admin/users"
+              routerLinkActive="active"
+              (click)="closeAdminMenu()"
+            >
+
+              <span class="admin-item-icon">
+                ♙
+              </span>
+
+              <div class="admin-item-content">
+
+                <strong>
+                  Utilisateurs
+                </strong>
+
+                <small>
+                  Comptes, rôles et statuts
+                </small>
+
+              </div>
+
+            </a>
+
+
+            <!-- SECURITY CENTER -->
+
+            <a
+              routerLink="/app/admin/security"
+              routerLinkActive="active"
+              (click)="closeAdminMenu()"
+            >
+
+              <span class="admin-item-icon">
+                ⛨
+              </span>
+
+              <div class="admin-item-content">
+
+                <strong>
+                  Security Center
+                </strong>
+
+                <small>
+                  Audit et supervision
+                </small>
+
+              </div>
+
+            </a>
+
+          </div>
+
+        </div>
+
       }
+
     </nav>
 
 
-    <!-- USER AREA -->
+    <!-- ========================= -->
+    <!-- USER AREA                 -->
+    <!-- ========================= -->
 
     @if (user$ | async; as user) {
 
       <div class="user-area">
 
         <div class="market-indicator">
+
           <span class="market-dot"></span>
+
           Live
+
         </div>
+
 
         <button
           type="button"
@@ -97,6 +213,7 @@
           ♢
         </button>
 
+
         <button
           type="button"
           class="theme-button"
@@ -105,30 +222,40 @@
           ☀
         </button>
 
-       <a
-  routerLink="/app/profile"
-  class="user-profile"
->
 
-  <div class="avatar">
-    {{ user.firstName.charAt(0) }}
-    {{ user.lastName.charAt(0) }}
-  </div>
+        <!-- PROFILE -->
 
-  <div class="user-details">
+        <a
+          routerLink="/app/profile"
+          class="user-profile"
+        >
 
-    <strong>
-      {{ user.firstName }}
-      {{ user.lastName }}
-    </strong>
+          <div class="avatar">
 
-    <span>
-      {{ user.role }}
-    </span>
+            {{ user.firstName.charAt(0) }}
+            {{ user.lastName.charAt(0) }}
 
-  </div>
+          </div>
 
-</a>
+
+          <div class="user-details">
+
+            <strong>
+              {{ user.firstName }}
+              {{ user.lastName }}
+            </strong>
+
+            <span>
+              {{ user.role }}
+            </span>
+
+          </div>
+
+        </a>
+
+
+        <!-- LOGOUT -->
+
         <button
           type="button"
           class="logout-button"
@@ -143,6 +270,10 @@
 
   </header>
 
+
+  <!-- ========================= -->
+  <!-- PAGE CONTENT              -->
+  <!-- ========================= -->
 
   <main class="app-content">
 

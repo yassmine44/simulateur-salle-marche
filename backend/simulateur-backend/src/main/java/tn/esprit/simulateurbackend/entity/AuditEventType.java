@@ -1,0 +1,31 @@
+package tn.esprit.simulateurbackend.entity;
+
+public enum AuditEventType {
+
+    LOGIN_SUCCESS,
+    LOGIN_FAILED,
+
+    LOGOUT,
+
+    REGISTER_SUCCESS,
+    REGISTER_FAILED,
+
+    GOOGLE_LOGIN_SUCCESS,
+    GOOGLE_LOGIN_FAILED,
+
+    PASSWORD_RESET_REQUEST,
+    PASSWORD_RESET_SUCCESS,
+
+    PASSWORD_CHANGED,
+
+    RECAPTCHA_REJECTED,
+
+    RATE_LIMIT_EXCEEDED,
+
+    USER_ENABLED,
+    USER_DISABLED,
+
+    ROLE_CHANGED,
+
+    PROFILE_UPDATED
+}

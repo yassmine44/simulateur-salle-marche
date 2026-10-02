@@ -16,9 +16,12 @@ import tn.esprit.simulateurbackend.dto.RegisterRequest;
 import tn.esprit.simulateurbackend.dto.ResetPasswordRequest;
 import tn.esprit.simulateurbackend.dto.UserResponse;
 
+import tn.esprit.simulateurbackend.entity.AuditEventType;
+
 import tn.esprit.simulateurbackend.security.RateLimitService;
 import tn.esprit.simulateurbackend.security.RecaptchaService;
 
+import tn.esprit.simulateurbackend.service.AuditService;
 import tn.esprit.simulateurbackend.service.AuthenticationService;
 import tn.esprit.simulateurbackend.service.EmailPasswordResetDeliveryService;
 import tn.esprit.simulateurbackend.service.PasswordResetService;
@@ -42,6 +45,8 @@ public class AuthController {
 
     private final RateLimitService rateLimitService;
 
+    private final AuditService auditService;
+
 
     public AuthController(
             RegistrationService registration,
@@ -49,7 +54,8 @@ public class AuthController {
             PasswordResetService passwordResetService,
             EmailPasswordResetDeliveryService passwordResetDelivery,
             RecaptchaService recaptchaService,
-            RateLimitService rateLimitService
+            RateLimitService rateLimitService,
+            AuditService auditService
     ) {
 
         this.registration =
@@ -69,6 +75,9 @@ public class AuthController {
 
         this.rateLimitService =
                 rateLimitService;
+
+        this.auditService =
+                auditService;
     }
 
 
@@ -87,9 +96,6 @@ public class AuthController {
 
         /*
          * 1. Rate limiting
-         *
-         * Bloque les requêtes excessives
-         * avant même d'appeler Google reCAPTCHA.
          */
         rateLimitService.checkRegister(
                 httpRequest
@@ -97,7 +103,7 @@ public class AuthController {
 
 
         /*
-         * 2. reCAPTCHA Enterprise
+         * 2. reCAPTCHA
          */
         recaptchaService.verify(
                 request.recaptchaToken(),
@@ -107,11 +113,54 @@ public class AuthController {
 
 
         /*
-         * 3. Création du compte
+         * 3. Inscription
          */
-        return registration.register(
-                request
-        );
+        try {
+
+            UserResponse response =
+                    registration.register(
+                            request
+                    );
+
+
+            /*
+             * AUDIT : REGISTER SUCCESS
+             */
+            auditService.log(
+                    AuditEventType.REGISTER_SUCCESS,
+                    null,
+                    request.email(),
+                    null,
+                    true,
+                    "Création de compte réussie.",
+                    httpRequest
+            );
+
+
+            return response;
+
+
+        } catch (RuntimeException exception) {
+
+            /*
+             * AUDIT : REGISTER FAILED
+             *
+             * Important :
+             * on ne stocke jamais le mot de passe.
+             */
+            auditService.log(
+                    AuditEventType.REGISTER_FAILED,
+                    null,
+                    request.email(),
+                    null,
+                    false,
+                    "Échec de création du compte.",
+                    httpRequest
+            );
+
+
+            throw exception;
+        }
     }
 
 
@@ -129,16 +178,16 @@ public class AuthController {
     ) {
 
         /*
-         * 1. Rate limiting
+         * LOGIN_SUCCESS et LOGIN_FAILED
+         * sont maintenant enregistrés dans
+         * AuthenticationService.
          */
+
         rateLimitService.checkLogin(
                 httpRequest
         );
 
 
-        /*
-         * 2. reCAPTCHA Enterprise
-         */
         recaptchaService.verify(
                 request.recaptchaToken(),
                 "login",
@@ -146,9 +195,6 @@ public class AuthController {
         );
 
 
-        /*
-         * 3. Authentification
-         */
         return authentication.login(
                 request,
                 httpRequest,
@@ -184,8 +230,40 @@ public class AuthController {
     @PostMapping("/logout")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void logout(
-            HttpServletRequest request
+            HttpServletRequest request,
+            Authentication authentication
     ) {
+
+        /*
+         * Il faut récupérer l'identité AVANT
+         * de détruire la session.
+         */
+        String email = null;
+
+
+        if (
+                authentication != null &&
+                        authentication.isAuthenticated()
+        ) {
+
+            email =
+                    authentication.getName();
+        }
+
+
+        /*
+         * AUDIT : LOGOUT
+         */
+        auditService.log(
+                AuditEventType.LOGOUT,
+                null,
+                email,
+                email,
+                true,
+                "Déconnexion utilisateur.",
+                request
+        );
+
 
         var session =
                 request.getSession(false);
@@ -212,9 +290,6 @@ public class AuthController {
 
         /*
          * 1. Rate limiting
-         *
-         * Important ici pour empêcher
-         * le spam d'e-mails.
          */
         rateLimitService.checkForgotPassword(
                 httpRequest
@@ -222,7 +297,7 @@ public class AuthController {
 
 
         /*
-         * 2. reCAPTCHA Enterprise
+         * 2. reCAPTCHA
          */
         recaptchaService.verify(
                 request.recaptchaToken(),
@@ -231,28 +306,62 @@ public class AuthController {
         );
 
 
-        /*
-         * 3. Génération du token
-         * et envoi de l'e-mail.
-         */
-        passwordResetService
-                .createResetToken(
-                        request.email()
-                )
-                .ifPresent(token ->
+        try {
 
-                        passwordResetDelivery.deliver(
-                                request.email(),
-                                token
-                        )
-                );
+            /*
+             * On garde volontairement la réponse
+             * générique pour empêcher
+             * l'énumération des comptes.
+             */
+            passwordResetService
+                    .createResetToken(
+                            request.email()
+                    )
+                    .ifPresent(token ->
+
+                            passwordResetDelivery.deliver(
+                                    request.email(),
+                                    token
+                            )
+                    );
 
 
-        /*
-         * Réponse volontairement générique
-         * pour éviter l'énumération
-         * des comptes existants.
-         */
+            /*
+             * AUDIT :
+             * demande de réinitialisation acceptée.
+             *
+             * success=true signifie que la requête
+             * a été traitée, PAS que l'adresse
+             * existe forcément.
+             */
+            auditService.log(
+                    AuditEventType.PASSWORD_RESET_REQUEST,
+                    null,
+                    request.email(),
+                    null,
+                    true,
+                    "Demande de réinitialisation de mot de passe traitée.",
+                    httpRequest
+            );
+
+
+        } catch (RuntimeException exception) {
+
+            auditService.log(
+                    AuditEventType.PASSWORD_RESET_REQUEST,
+                    null,
+                    request.email(),
+                    null,
+                    false,
+                    "Erreur pendant le traitement de la demande de réinitialisation.",
+                    httpRequest
+            );
+
+
+            throw exception;
+        }
+
+
         return new MessageResponse(
                 "Si un compte correspond à cette adresse, un lien de réinitialisation a été envoyé."
         );
@@ -267,12 +376,57 @@ public class AuthController {
 
     @PostMapping("/reset-password")
     public MessageResponse resetPassword(
-            @Valid @RequestBody ResetPasswordRequest request
+            @Valid @RequestBody ResetPasswordRequest request,
+            HttpServletRequest httpRequest
     ) {
 
-        passwordResetService.resetPassword(
-                request
-        );
+        try {
+
+            passwordResetService.resetPassword(
+                    request
+            );
+
+
+            /*
+             * AUDIT : PASSWORD RESET SUCCESS
+             *
+             * Pour l'instant nous ne mettons pas
+             * l'e-mail car le ResetPasswordRequest
+             * utilise normalement le token.
+             *
+             * On récupérera l'utilisateur directement
+             * depuis PasswordResetService au prochain step.
+             */
+            auditService.log(
+                    AuditEventType.PASSWORD_RESET_SUCCESS,
+                    null,
+                    null,
+                    null,
+                    true,
+                    "Mot de passe réinitialisé avec succès.",
+                    httpRequest
+            );
+
+
+        } catch (RuntimeException exception) {
+
+            /*
+             * On utilise le même événement avec
+             * success=false.
+             */
+            auditService.log(
+                    AuditEventType.PASSWORD_RESET_SUCCESS,
+                    null,
+                    null,
+                    null,
+                    false,
+                    "Échec de réinitialisation du mot de passe.",
+                    httpRequest
+            );
+
+
+            throw exception;
+        }
 
 
         return new MessageResponse(

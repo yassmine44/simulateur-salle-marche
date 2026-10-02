@@ -8,6 +8,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
+import tn.esprit.simulateurbackend.entity.AuditEventType;
+import tn.esprit.simulateurbackend.service.AuditService;
+
 import java.time.Duration;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -15,18 +18,21 @@ import java.util.concurrent.ConcurrentHashMap;
 @Service
 public class RateLimitService {
 
-    /*
-     * Un bucket distinct par :
-     *
-     * action + IP
-     *
-     * Exemples :
-     * login:127.0.0.1
-     * register:127.0.0.1
-     * forgot-password:127.0.0.1
-     */
     private final ConcurrentHashMap<String, Bucket>
-            buckets = new ConcurrentHashMap<>();
+            buckets =
+            new ConcurrentHashMap<>();
+
+
+    private final AuditService auditService;
+
+
+    public RateLimitService(
+            AuditService auditService
+    ) {
+
+        this.auditService =
+                auditService;
+    }
 
 
     /*
@@ -36,6 +42,7 @@ public class RateLimitService {
      * 5 tentatives / minute / IP
      * ==========================================
      */
+
     public void checkLogin(
             HttpServletRequest request
     ) {
@@ -44,7 +51,8 @@ public class RateLimitService {
                 "login",
                 resolveClientIp(request),
                 5,
-                Duration.ofMinutes(1)
+                Duration.ofMinutes(1),
+                request
         );
     }
 
@@ -53,9 +61,10 @@ public class RateLimitService {
      * ==========================================
      * REGISTER
      *
-     * 3 créations / 10 minutes / IP
+     * 3 tentatives / 10 minutes / IP
      * ==========================================
      */
+
     public void checkRegister(
             HttpServletRequest request
     ) {
@@ -64,7 +73,8 @@ public class RateLimitService {
                 "register",
                 resolveClientIp(request),
                 3,
-                Duration.ofMinutes(10)
+                Duration.ofMinutes(10),
+                request
         );
     }
 
@@ -76,6 +86,7 @@ public class RateLimitService {
      * 3 demandes / 15 minutes / IP
      * ==========================================
      */
+
     public void checkForgotPassword(
             HttpServletRequest request
     ) {
@@ -84,7 +95,8 @@ public class RateLimitService {
                 "forgot-password",
                 resolveClientIp(request),
                 3,
-                Duration.ofMinutes(15)
+                Duration.ofMinutes(15),
+                request
         );
     }
 
@@ -94,25 +106,32 @@ public class RateLimitService {
      * GENERIC CHECK
      * ==========================================
      */
+
     private void check(
             String action,
             String clientIp,
             long capacity,
-            Duration refillDuration
+            Duration refillDuration,
+            HttpServletRequest request
     ) {
 
         String key =
-                action + ":" + clientIp;
+                action
+                        + ":"
+                        + clientIp;
 
 
         Bucket bucket =
                 buckets.computeIfAbsent(
+
                         key,
+
                         ignored ->
                                 createBucket(
                                         capacity,
                                         refillDuration
                                 )
+
                 );
 
 
@@ -122,11 +141,30 @@ public class RateLimitService {
 
         if (!allowed) {
 
+            /*
+             * =========================================
+             * AUDIT : RATE LIMIT
+             * =========================================
+             */
+
+            auditService.log(
+                    AuditEventType.RATE_LIMIT_EXCEEDED,
+                    null,
+                    null,
+                    null,
+                    false,
+                    "Limite dépassée pour l'action : "
+                            + action,
+                    request
+            );
+
+
             throw new ResponseStatusException(
                     HttpStatus.TOO_MANY_REQUESTS,
                     "Trop de tentatives. Veuillez réessayer plus tard."
             );
         }
+
     }
 
 
@@ -135,6 +173,7 @@ public class RateLimitService {
      * CREATE BUCKET
      * ==========================================
      */
+
     private Bucket createBucket(
             long capacity,
             Duration duration
@@ -144,12 +183,10 @@ public class RateLimitService {
 
                 .addLimit(limit ->
                         limit
-                                .capacity(capacity)
+                                .capacity(
+                                        capacity
+                                )
 
-                                /*
-                                 * Recharge les tokens
-                                 * à la fin de la période.
-                                 */
                                 .refillIntervally(
                                         capacity,
                                         duration
@@ -165,6 +202,7 @@ public class RateLimitService {
      * CLIENT IP
      * ==========================================
      */
+
     private String resolveClientIp(
             HttpServletRequest request
     ) {
@@ -184,4 +222,5 @@ public class RateLimitService {
 
         return ip;
     }
+
 }
