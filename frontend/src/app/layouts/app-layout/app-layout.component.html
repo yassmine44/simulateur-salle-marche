@@ -3,7 +3,7 @@
   <header class="topbar">
 
     <!-- ========================= -->
-    <!-- BRAND                     -->
+    <!-- BRAND -->
     <!-- ========================= -->
 
     <a
@@ -31,10 +31,12 @@
 
 
     <!-- ========================= -->
-    <!-- MAIN NAVIGATION           -->
+    <!-- MAIN NAVIGATION -->
     <!-- ========================= -->
 
     <nav class="main-navigation">
+
+      <!-- DASHBOARD -->
 
       <a
         routerLink="/app/dashboard"
@@ -44,13 +46,19 @@
       </a>
 
 
-      <a
-        routerLink="/app/markets"
-        routerLinkActive="active"
+      <!-- MARKETS - FUTURE MODULE -->
+
+      <span
+        class="nav-disabled"
+        title="Module bientôt disponible"
       >
         Marchés
-      </a>
+      </span>
 
+
+      <!-- ========================= -->
+      <!-- TRADING -->
+      <!-- ========================= -->
 
       <a
         routerLink="/app/trading"
@@ -60,40 +68,48 @@
       </a>
 
 
-      <a
-        routerLink="/app/portfolio"
-        routerLinkActive="active"
+      <!-- PORTFOLIO - FUTURE MODULE -->
+
+      <span
+        class="nav-disabled"
+        title="Module bientôt disponible"
       >
         Portefeuille
-      </a>
+      </span>
 
 
-      <a
-        routerLink="/app/risk"
-        routerLinkActive="active"
+      <!-- RISK - FUTURE MODULE -->
+
+      <span
+        class="nav-disabled"
+        title="Module bientôt disponible"
       >
         Risque
-      </a>
+      </span>
 
 
-      <a
-        routerLink="/app/analytics"
-        routerLinkActive="active"
+      <!-- ANALYTICS - FUTURE MODULE -->
+
+      <span
+        class="nav-disabled"
+        title="Module bientôt disponible"
       >
         Analyse
-      </a>
+      </span>
 
 
-      <a
-        routerLink="/app/ai"
-        routerLinkActive="active"
+      <!-- AI - FUTURE MODULE -->
+
+      <span
+        class="nav-disabled"
+        title="Module bientôt disponible"
       >
         IA
-      </a>
+      </span>
 
 
       <!-- ========================= -->
-      <!-- ADMIN MENU                -->
+      <!-- ADMIN MENU -->
       <!-- ========================= -->
 
       @if ((user$ | async)?.role === 'ADMIN') {
@@ -101,7 +117,6 @@
         <div
           class="admin-menu"
           [class.open]="adminMenuOpen"
-          routerLinkActive="active"
         >
 
           <button
@@ -189,12 +204,14 @@
 
 
     <!-- ========================= -->
-    <!-- USER AREA                 -->
+    <!-- USER AREA -->
     <!-- ========================= -->
 
     @if (user$ | async; as user) {
 
       <div class="user-area">
+
+        <!-- MARKET STATUS -->
 
         <div class="market-indicator">
 
@@ -205,28 +222,37 @@
         </div>
 
 
+        <!-- NOTIFICATIONS -->
+
         <button
           type="button"
           class="notification-button"
           aria-label="Notifications"
+          title="Notifications"
         >
           ♢
         </button>
 
 
+        <!-- THEME -->
+
         <button
           type="button"
           class="theme-button"
           aria-label="Changer le thème"
+          title="Changer le thème"
         >
           ☀
         </button>
 
 
+        <!-- ========================= -->
         <!-- PROFILE -->
+        <!-- ========================= -->
 
         <a
           routerLink="/app/profile"
+          routerLinkActive="active"
           class="user-profile"
         >
 
@@ -241,8 +267,10 @@
           <div class="user-details">
 
             <strong>
+
               {{ user.firstName }}
               {{ user.lastName }}
+
             </strong>
 
             <span>
@@ -254,7 +282,9 @@
         </a>
 
 
+        <!-- ========================= -->
         <!-- LOGOUT -->
+        <!-- ========================= -->
 
         <button
           type="button"
@@ -272,12 +302,13 @@
 
 
   <!-- ========================= -->
-  <!-- PAGE CONTENT              -->
+  <!-- PAGE CONTENT -->
   <!-- ========================= -->
 
   <main class="app-content">
 
-    <router-outlet></router-outlet>
+    <router-outlet>
+    </router-outlet>
 
   </main>
 

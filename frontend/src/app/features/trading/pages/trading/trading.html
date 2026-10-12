@@ -1,0 +1,913 @@
+<div class="trading-page">
+
+  <!-- ========================================= -->
+  <!-- HEADER -->
+  <!-- ========================================= -->
+
+  <header class="trading-header">
+
+    <div>
+
+      <span class="eyebrow">
+        SIMULATEUR DE MARCHÉ
+      </span>
+
+      <h1>
+        Trading virtuel
+      </h1>
+
+      <p>
+        Passez des ordres et observez leur exécution
+        dans le carnet virtuel.
+      </p>
+
+    </div>
+
+
+<div class="market-selector">
+
+  <label for="symbol">
+    Actif
+  </label>
+
+  <div class="symbol-search">
+
+<select
+  id="symbol"
+  [formControl]="orderForm.controls.assetSymbol"
+  (change)="loadSymbol()"
+>
+
+  @for (
+    asset of assets;
+    track asset.id
+  ) {
+
+    <option
+      [value]="asset.symbol"
+    >
+      {{ asset.name }}
+      —
+      {{ asset.symbol }}
+      —
+      {{ asset.type }}
+    </option>
+
+  }
+
+</select>
+  </div>
+
+</div>
+
+  </header>
+
+
+  <!-- ========================================= -->
+  <!-- MESSAGES -->
+  <!-- ========================================= -->
+
+  <div
+    *ngIf="successMessage"
+    class="alert alert-success"
+  >
+    {{ successMessage }}
+  </div>
+
+
+  <div
+    *ngIf="errorMessage"
+    class="alert alert-error"
+  >
+    {{ errorMessage }}
+  </div>
+
+
+  <!-- ========================================= -->
+  <!-- MARKET SUMMARY -->
+  <!-- ========================================= -->
+
+  <section class="market-summary">
+
+    <div class="market-main">
+
+      <span class="symbol">
+        {{ normalizedSymbol }}
+      </span>
+
+      <span class="market-badge">
+        VIRTUAL MARKET
+      </span>
+
+    </div>
+
+
+    <div class="market-metric">
+
+      <span>
+        Meilleur BID
+      </span>
+
+      <strong class="buy-text">
+        {{ bestBid !== null
+          ? (bestBid | number:'1.2-8')
+          : '—' }}
+      </strong>
+
+    </div>
+
+
+    <div class="market-metric">
+
+      <span>
+        Meilleur ASK
+      </span>
+
+      <strong class="sell-text">
+        {{ bestAsk !== null
+          ? (bestAsk | number:'1.2-8')
+          : '—' }}
+      </strong>
+
+    </div>
+
+
+    <div class="market-metric">
+
+      <span>
+        Spread
+      </span>
+
+      <strong>
+        {{ spread !== null
+          ? (spread | number:'1.2-8')
+          : '—' }}
+      </strong>
+
+    </div>
+
+  </section>
+
+
+  <!-- ========================================= -->
+  <!-- MAIN TRADING AREA -->
+  <!-- ========================================= -->
+
+  <section class="trading-grid">
+
+
+    <!-- ======================================= -->
+    <!-- ORDER FORM -->
+    <!-- ======================================= -->
+
+    <article class="panel order-panel">
+
+      <div class="panel-header">
+
+        <div>
+
+          <span class="panel-kicker">
+            EXÉCUTION
+          </span>
+
+          <h2>
+            Passer un ordre
+          </h2>
+
+        </div>
+
+      </div>
+
+
+      <form
+        [formGroup]="orderForm"
+        (ngSubmit)="submitOrder()"
+      >
+
+
+        <!-- BUY / SELL -->
+
+        <div class="side-selector">
+
+          <button
+            type="button"
+            class="side-button buy-button"
+            [class.active]="
+              orderForm.controls.side.value === 'BUY'
+            "
+            (click)="selectSide('BUY')"
+          >
+            Acheter
+          </button>
+
+
+          <button
+            type="button"
+            class="side-button sell-button"
+            [class.active]="
+              orderForm.controls.side.value === 'SELL'
+            "
+            (click)="selectSide('SELL')"
+          >
+            Vendre
+          </button>
+
+        </div>
+
+
+        <!-- TYPE -->
+
+        <div class="form-group">
+
+          <label>
+            Type d'ordre
+          </label>
+
+          <select
+            formControlName="type"
+          >
+            <option value="LIMIT">
+              Ordre limite
+            </option>
+
+            <option
+              value="MARKET"
+              disabled
+            >
+              Ordre au marché — bientôt
+            </option>
+          </select>
+
+        </div>
+
+
+        <!-- QUANTITY -->
+
+        <div class="form-group">
+
+          <label>
+            Quantité
+          </label>
+
+          <input
+            type="number"
+            min="0.00000001"
+            step="any"
+            formControlName="quantity"
+          />
+
+          <small
+            *ngIf="
+              orderForm.controls.quantity.touched
+              &&
+              orderForm.controls.quantity.invalid
+            "
+            class="field-error"
+          >
+            La quantité doit être positive.
+          </small>
+
+        </div>
+
+
+        <!-- LIMIT PRICE -->
+
+        <div class="form-group">
+
+          <label>
+            Prix limite
+          </label>
+
+          <div class="input-with-unit">
+
+            <input
+              type="number"
+              min="0.00000001"
+              step="any"
+              formControlName="limitPrice"
+            />
+
+            <span>
+              USD
+            </span>
+
+          </div>
+
+        </div>
+
+
+        <!-- ORDER SUMMARY -->
+
+        <div class="order-summary">
+
+          <div>
+
+            <span>
+              Sens
+            </span>
+
+            <strong
+              [class.buy-text]="
+                orderForm.controls.side.value === 'BUY'
+              "
+              [class.sell-text]="
+                orderForm.controls.side.value === 'SELL'
+              "
+            >
+              {{ orderForm.controls.side.value }}
+            </strong>
+
+          </div>
+
+
+          <div>
+
+            <span>
+              Actif
+            </span>
+
+            <strong>
+              {{ normalizedSymbol }}
+            </strong>
+
+          </div>
+
+
+          <div>
+
+            <span>
+              Valeur estimée
+            </span>
+
+            <strong>
+
+              {{
+                (
+                  orderForm.controls.quantity.value
+                  *
+                  orderForm.controls.limitPrice.value
+                )
+                | number:'1.2-2'
+              }}
+
+              USD
+
+            </strong>
+
+          </div>
+
+        </div>
+
+
+        <!-- SUBMIT -->
+
+        <button
+          type="submit"
+          class="submit-order"
+          [class.submit-buy]="
+            orderForm.controls.side.value === 'BUY'
+          "
+          [class.submit-sell]="
+            orderForm.controls.side.value === 'SELL'
+          "
+          [disabled]="
+            submitting
+            ||
+            orderForm.invalid
+          "
+        >
+
+          <span *ngIf="!submitting">
+
+            {{
+              orderForm.controls.side.value === 'BUY'
+                ? 'Placer l’ordre d’achat'
+                : 'Placer l’ordre de vente'
+            }}
+
+          </span>
+
+          <span *ngIf="submitting">
+            Envoi...
+          </span>
+
+        </button>
+
+      </form>
+
+    </article>
+
+
+    <!-- ======================================= -->
+    <!-- ORDER BOOK -->
+    <!-- ======================================= -->
+
+    <article class="panel orderbook-panel">
+
+      <div class="panel-header">
+
+        <div>
+
+          <span class="panel-kicker">
+            MARKET DEPTH
+          </span>
+
+          <h2>
+            Carnet d'ordres
+          </h2>
+
+        </div>
+
+
+        <button
+          type="button"
+          class="refresh-button"
+          (click)="refreshOrderBook()"
+        >
+          Actualiser
+        </button>
+
+      </div>
+
+
+      <div class="book-columns">
+
+
+        <!-- BIDS -->
+
+        <div class="book-side">
+
+          <div class="book-title buy-text">
+
+            <span>
+              BID
+            </span>
+
+            <small>
+              Achats
+            </small>
+
+          </div>
+
+
+          <div class="book-table">
+
+            <div class="book-row book-head">
+
+              <span>
+                Prix
+              </span>
+
+              <span>
+                Quantité
+              </span>
+
+              <span>
+                Ordres
+              </span>
+
+            </div>
+
+
+            <div
+              *ngFor="
+                let bid of orderBook?.bids
+              "
+              class="book-row bid-row"
+            >
+
+              <strong>
+                {{ bid.price | number:'1.2-8' }}
+              </strong>
+
+              <span>
+                {{ bid.totalQuantity | number:'1.0-8' }}
+              </span>
+
+              <span>
+                {{ bid.orderCount }}
+              </span>
+
+            </div>
+
+
+            <div
+              *ngIf="
+                !orderBook
+                ||
+                orderBook.bids.length === 0
+              "
+              class="empty-book"
+            >
+              Aucun ordre d'achat.
+            </div>
+
+          </div>
+
+        </div>
+
+
+        <!-- ASKS -->
+
+        <div class="book-side">
+
+          <div class="book-title sell-text">
+
+            <span>
+              ASK
+            </span>
+
+            <small>
+              Ventes
+            </small>
+
+          </div>
+
+
+          <div class="book-table">
+
+            <div class="book-row book-head">
+
+              <span>
+                Prix
+              </span>
+
+              <span>
+                Quantité
+              </span>
+
+              <span>
+                Ordres
+              </span>
+
+            </div>
+
+
+            <div
+              *ngFor="
+                let ask of orderBook?.asks
+              "
+              class="book-row ask-row"
+            >
+
+              <strong>
+                {{ ask.price | number:'1.2-8' }}
+              </strong>
+
+              <span>
+                {{ ask.totalQuantity | number:'1.0-8' }}
+              </span>
+
+              <span>
+                {{ ask.orderCount }}
+              </span>
+
+            </div>
+
+
+            <div
+              *ngIf="
+                !orderBook
+                ||
+                orderBook.asks.length === 0
+              "
+              class="empty-book"
+            >
+              Aucun ordre de vente.
+            </div>
+
+          </div>
+
+        </div>
+
+      </div>
+
+    </article>
+
+  </section>
+
+
+  <!-- ========================================= -->
+  <!-- MY ORDERS -->
+  <!-- ========================================= -->
+
+  <section class="panel table-panel">
+
+    <div class="panel-header">
+
+      <div>
+
+        <span class="panel-kicker">
+          ORDERS
+        </span>
+
+        <h2>
+          Mes ordres
+        </h2>
+
+      </div>
+
+      <span class="count-badge">
+        {{ myOrders.length }}
+      </span>
+
+    </div>
+
+
+    <div class="table-wrapper">
+
+      <table>
+
+        <thead>
+
+          <tr>
+
+            <th>
+              ID
+            </th>
+
+            <th>
+              Actif
+            </th>
+
+            <th>
+              Sens
+            </th>
+
+            <th>
+              Prix
+            </th>
+
+            <th>
+              Quantité
+            </th>
+
+            <th>
+              Restante
+            </th>
+
+            <th>
+              Statut
+            </th>
+
+            <th>
+              Date
+            </th>
+
+            <th>
+              Action
+            </th>
+
+          </tr>
+
+        </thead>
+
+
+        <tbody>
+
+          <tr
+            *ngFor="let order of myOrders"
+          >
+
+            <td class="id-cell">
+              #{{ order.id }}
+            </td>
+
+            <td>
+              <strong>
+                {{ order.assetSymbol }}
+              </strong>
+            </td>
+
+            <td>
+
+              <span
+                class="side-badge"
+                [class.side-buy]="
+                  order.side === 'BUY'
+                "
+                [class.side-sell]="
+                  order.side === 'SELL'
+                "
+              >
+                {{ order.side }}
+              </span>
+
+            </td>
+
+            <td>
+              {{ order.limitPrice | number:'1.2-8' }}
+            </td>
+
+            <td>
+              {{ order.quantity | number:'1.0-8' }}
+            </td>
+
+            <td>
+              {{ order.remainingQuantity | number:'1.0-8' }}
+            </td>
+
+            <td>
+
+              <span
+                class="status"
+                [ngClass]="
+                  'status-' +
+                  order.status.toLowerCase()
+                "
+              >
+
+                {{ statusLabel(order.status) }}
+
+              </span>
+
+            </td>
+
+            <td>
+              {{ order.createdAt | date:'dd/MM/yyyy HH:mm:ss' }}
+            </td>
+
+            <td>
+
+              <button
+                *ngIf="canCancel(order)"
+                type="button"
+                class="cancel-button"
+                (click)="cancelOrder(order)"
+              >
+                Annuler
+              </button>
+
+              <span
+                *ngIf="!canCancel(order)"
+                class="no-action"
+              >
+                —
+              </span>
+
+            </td>
+
+          </tr>
+
+
+          <tr *ngIf="myOrders.length === 0">
+
+            <td
+              colspan="9"
+              class="empty-table"
+            >
+              Aucun ordre pour le moment.
+            </td>
+
+          </tr>
+
+        </tbody>
+
+      </table>
+
+    </div>
+
+  </section>
+
+
+  <!-- ========================================= -->
+  <!-- MY TRADES -->
+  <!-- ========================================= -->
+
+  <section class="panel table-panel">
+
+    <div class="panel-header">
+
+      <div>
+
+        <span class="panel-kicker">
+          EXECUTIONS
+        </span>
+
+        <h2>
+          Mes transactions
+        </h2>
+
+      </div>
+
+      <span class="count-badge">
+        {{ myTrades.length }}
+      </span>
+
+    </div>
+
+
+    <div class="table-wrapper">
+
+      <table>
+
+        <thead>
+
+          <tr>
+
+            <th>
+              Trade
+            </th>
+
+            <th>
+              Ordre
+            </th>
+
+            <th>
+              Actif
+            </th>
+
+            <th>
+              Sens
+            </th>
+
+            <th>
+              Prix d'exécution
+            </th>
+
+            <th>
+              Quantité
+            </th>
+
+            <th>
+              Date
+            </th>
+
+          </tr>
+
+        </thead>
+
+
+        <tbody>
+
+          <tr
+            *ngFor="let trade of myTrades"
+          >
+
+            <td class="id-cell">
+              #{{ trade.id }}
+            </td>
+
+            <td>
+              #{{ trade.orderId }}
+            </td>
+
+            <td>
+              <strong>
+                {{ trade.assetSymbol }}
+              </strong>
+            </td>
+
+            <td>
+
+              <span
+                class="side-badge"
+                [class.side-buy]="
+                  trade.side === 'BUY'
+                "
+                [class.side-sell]="
+                  trade.side === 'SELL'
+                "
+              >
+                {{ trade.side }}
+              </span>
+
+            </td>
+
+            <td>
+              <strong>
+                {{ trade.executionPrice | number:'1.2-8' }}
+              </strong>
+            </td>
+
+            <td>
+              {{ trade.quantity | number:'1.0-8' }}
+            </td>
+
+            <td>
+              {{ trade.createdAt | date:'dd/MM/yyyy HH:mm:ss' }}
+            </td>
+
+          </tr>
+
+
+          <tr *ngIf="myTrades.length === 0">
+
+            <td
+              colspan="7"
+              class="empty-table"
+            >
+              Aucune transaction exécutée.
+            </td>
+
+          </tr>
+
+        </tbody>
+
+      </table>
+
+    </div>
+
+  </section>
+
+</div>

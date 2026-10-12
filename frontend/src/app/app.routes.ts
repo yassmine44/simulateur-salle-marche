@@ -119,6 +119,26 @@ export const routes: Routes = [
 
 
       // =====================
+      // TRADING
+      // =====================
+
+      {
+        path: 'trading',
+
+        loadComponent: () =>
+
+          import(
+            './features/trading/pages/trading/trading'
+          )
+
+            .then(
+              module =>
+                module.Trading
+            )
+      },
+
+
+      // =====================
       // ADMIN USERS
       // =====================
 

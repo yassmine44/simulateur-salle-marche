@@ -1,266 +1,135 @@
 <section class="dashboard-page">
 
-  @if (user$ | async; as user) {
+  <!-- HEADER -->
 
-    <div class="dashboard-header">
+  <header class="dashboard-header">
 
-      <div>
-        <span class="eyebrow">
-          VUE GÉNÉRALE
-        </span>
+    <div>
 
-        <h1>
-          Bonjour {{ user.firstName }}
-        </h1>
+      <span class="eyebrow">
+        TABLEAU DE BORD
+      </span>
 
-        <p>
-          Voici un aperçu de votre activité et des marchés.
-        </p>
-      </div>
+      <h1>
+        Vue d’ensemble
+      </h1>
 
-      <div class="market-session">
-        <span class="market-dot"></span>
-
-        <div>
-          <strong>Marchés ouverts</strong>
-          <small>Session active</small>
-        </div>
-      </div>
+      <p>
+        Suivez votre capital virtuel,
+        vos positions, vos performances
+        et vos principaux indicateurs de risque.
+      </p>
 
     </div>
 
+  </header>
 
-    <!-- KPI -->
 
-    <div class="kpi-grid">
+  <!-- KPI -->
 
-      <article class="kpi-card">
+  <section class="metrics-grid">
 
-        <span class="kpi-label">
-          Valeur du portefeuille
+    @for (
+      metric of metrics;
+      track metric.label
+    ) {
+
+      <article class="metric-card">
+
+        <span class="metric-label">
+          {{ metric.label }}
         </span>
 
-        <strong class="kpi-value">
-          124 850,24 DT
+        <strong class="metric-value">
+          {{ metric.value }}
         </strong>
 
-        <span class="kpi-change positive">
-          +8,24 %
-        </span>
+        @if (metric.variation) {
 
-      </article>
-
-
-      <article class="kpi-card">
-
-        <span class="kpi-label">
-          P&amp;L journalier
-        </span>
-
-        <strong class="kpi-value">
-          +3 420,18 DT
-        </strong>
-
-        <span class="kpi-change positive">
-          +2,81 %
-        </span>
-
-      </article>
-
-
-      <article class="kpi-card">
-
-        <span class="kpi-label">
-          Exposition
-        </span>
-
-        <strong class="kpi-value">
-          82 400 DT
-        </strong>
-
-        <span class="kpi-meta">
-          66 % du portefeuille
-        </span>
-
-      </article>
-
-
-      <article class="kpi-card">
-
-        <span class="kpi-label">
-          Niveau de risque
-        </span>
-
-        <strong class="kpi-value">
-          Modéré
-        </strong>
-
-        <span class="risk-badge">
-          12,4 %
-        </span>
-
-      </article>
-
-    </div>
-
-
-    <!-- MAIN GRID -->
-
-    <div class="dashboard-grid">
-
-      <!-- PERFORMANCE -->
-
-      <article class="panel performance-panel">
-
-        <div class="panel-header">
-
-          <div>
-            <span class="panel-label">
-              PERFORMANCE
-            </span>
-
-            <h2>
-              Évolution du portefeuille
-            </h2>
-          </div>
-
-          <select>
-            <option>1 jour</option>
-            <option>1 semaine</option>
-            <option>1 mois</option>
-            <option>1 an</option>
-          </select>
-
-        </div>
-
-        <div class="chart-container">
-
-          <svg
-            viewBox="0 0 900 260"
-            preserveAspectRatio="none"
-            aria-hidden="true"
+          <span
+            class="metric-variation"
+            [class.positive]="metric.positive"
+            [class.negative]="metric.positive === false"
           >
 
-            <defs>
-              <linearGradient
-                id="portfolioGradient"
-                x1="0"
-                y1="0"
-                x2="0"
-                y2="1"
-              >
-                <stop
-                  offset="0%"
-                  stop-color="#2563eb"
-                  stop-opacity=".18"
-                />
+            {{ metric.variation }}
 
-                <stop
-                  offset="100%"
-                  stop-color="#2563eb"
-                  stop-opacity="0"
-                />
-              </linearGradient>
-            </defs>
+          </span>
 
-            <path
-              class="chart-area"
-              d="
-                M0 210
-                L70 195
-                L140 202
-                L210 165
-                L280 178
-                L350 145
-                L420 152
-                L490 110
-                L560 125
-                L630 85
-                L700 92
-                L770 60
-                L840 70
-                L900 38
-                L900 260
-                L0 260 Z
-              "
-            />
-
-            <path
-              class="chart-line"
-              d="
-                M0 210
-                L70 195
-                L140 202
-                L210 165
-                L280 178
-                L350 145
-                L420 152
-                L490 110
-                L560 125
-                L630 85
-                L700 92
-                L770 60
-                L840 70
-                L900 38
-              "
-            />
-
-          </svg>
-
-        </div>
+        }
 
       </article>
 
+    }
 
-      <!-- MARKET INDICES -->
+  </section>
 
-      <article class="panel market-panel">
 
-        <div class="panel-header">
+  <!-- PORTFOLIO PERFORMANCE -->
 
-          <div>
-            <span class="panel-label">
-              MARCHÉS
-            </span>
+  <section class="dashboard-grid">
 
-            <h2>
-              Indices suivis
-            </h2>
-          </div>
+    <article class="dashboard-card performance-card">
+
+      <header class="card-header">
+
+        <div>
+
+          <span class="section-label">
+            PORTEFEUILLE
+          </span>
+
+          <h2>
+            Performance
+          </h2>
 
         </div>
 
-        <div class="market-list">
+      </header>
 
-          @for (market of marketIndices; track market.name) {
 
-            <div class="market-row">
+      <div class="performance-chart">
 
-              <div>
-                <strong>
-                  {{ market.name }}
-                </strong>
+        <div class="chart-grid">
 
-                <span>
-                  Marché
-                </span>
-              </div>
+          <span></span>
 
-              <div class="market-value">
+          <span></span>
 
-                <strong>
-                  {{ market.value }}
-                </strong>
+          <span></span>
+
+          <span></span>
+
+        </div>
+
+
+        <div class="chart-points">
+
+          @for (
+            point of portfolioHistory;
+            track $index
+          ) {
+
+            <div
+              class="chart-column"
+            >
+
+              <div class="point-area">
 
                 <span
-                  [class.positive]="market.variation >= 0"
-                  [class.negative]="market.variation < 0"
-                >
-                  {{ market.variation >= 0 ? '+' : '' }}
-                  {{ market.variation }} %
-                </span>
+                  class="chart-point"
+                  [style.bottom.%]="
+                    pointHeight(point)
+                  "
+                  [title]="point + ' DT'"
+                ></span>
 
               </div>
+
+
+              <small>
+                J{{ $index + 1 }}
+              </small>
 
             </div>
 
@@ -268,162 +137,326 @@
 
         </div>
 
-      </article>
+      </div>
 
-    </div>
+    </article>
 
 
-    <!-- LOWER GRID -->
+    <!-- RISK -->
 
-    <div class="lower-grid">
+    <article class="dashboard-card">
 
-      <!-- POSITIONS -->
+      <header class="card-header">
 
-      <article class="panel positions-panel">
+        <div>
 
-        <div class="panel-header">
+          <span class="section-label">
+            RISQUE
+          </span>
 
-          <div>
-            <span class="panel-label">
-              PORTEFEUILLE
-            </span>
-
-            <h2>
-              Positions ouvertes
-            </h2>
-          </div>
-
-          <button type="button">
-            Voir tout
-          </button>
+          <h2>
+            Indicateurs principaux
+          </h2>
 
         </div>
 
-        <div class="table-wrapper">
-
-          <table>
-
-            <thead>
-              <tr>
-                <th>Actif</th>
-                <th>Type</th>
-                <th>Quantité</th>
-                <th>Prix</th>
-                <th>P&amp;L</th>
-              </tr>
-            </thead>
-
-            <tbody>
-
-              @for (position of positions; track position.asset) {
-
-                <tr>
-
-                  <td>
-                    <strong>
-                      {{ position.asset }}
-                    </strong>
-                  </td>
-
-                  <td>
-                    {{ position.type }}
-                  </td>
-
-                  <td>
-                    {{ position.quantity }}
-                  </td>
-
-                  <td>
-                    {{ position.price }}
-                  </td>
-
-                  <td
-                    [class.positive]="position.pnl >= 0"
-                    [class.negative]="position.pnl < 0"
-                  >
-                    {{ position.pnl >= 0 ? '+' : '' }}
-                    {{ position.pnl }} DT
-                  </td>
-
-                </tr>
-
-              }
-
-            </tbody>
-
-          </table>
-
-        </div>
-
-      </article>
+      </header>
 
 
-      <!-- WATCHLIST -->
+      <div class="risk-list">
 
-      <article class="panel watchlist-panel">
+        @for (
+          risk of riskIndicators;
+          track risk.label
+        ) {
 
-        <div class="panel-header">
+          <div class="risk-row">
 
-          <div>
-            <span class="panel-label">
-              WATCHLIST
-            </span>
+            <div>
 
-            <h2>
-              Actifs surveillés
-            </h2>
-          </div>
+              <span>
+                {{ risk.label }}
+              </span>
 
-        </div>
-
-        <div class="watchlist">
-
-          @for (asset of watchlist; track asset.symbol) {
-
-            <div class="watchlist-row">
-
-              <div class="asset-main">
-                <div class="asset-icon">
-                  {{ asset.symbol.charAt(0) }}
-                </div>
-
-                <div>
-                  <strong>
-                    {{ asset.symbol }}
-                  </strong>
-
-                  <span>
-                    {{ asset.name }}
-                  </span>
-                </div>
-              </div>
-
-              <div class="asset-price">
-
-                <strong>
-                  {{ asset.price }}
-                </strong>
-
-                <span
-                  [class.positive]="asset.change >= 0"
-                  [class.negative]="asset.change < 0"
-                >
-                  {{ asset.change >= 0 ? '+' : '' }}
-                  {{ asset.change }} %
-                </span>
-
-              </div>
+              <strong>
+                {{ risk.value }}
+              </strong>
 
             </div>
 
+
+            <span
+              class="risk-badge"
+              [ngClass]="
+                riskClass(risk.level)
+              "
+            >
+
+              {{ risk.level }}
+
+            </span>
+
+          </div>
+
+        }
+
+      </div>
+
+    </article>
+
+  </section>
+
+
+  <!-- POSITIONS -->
+
+  <section class="dashboard-card table-card">
+
+    <header class="card-header">
+
+      <div>
+
+        <span class="section-label">
+          POSITIONS
+        </span>
+
+        <h2>
+          Positions ouvertes
+        </h2>
+
+      </div>
+
+    </header>
+
+
+    <div class="table-wrapper">
+
+      <table>
+
+        <thead>
+
+          <tr>
+
+            <th>
+              Actif
+            </th>
+
+            <th>
+              Type
+            </th>
+
+            <th>
+              Quantité
+            </th>
+
+            <th>
+              Prix
+            </th>
+
+            <th>
+              P&L
+            </th>
+
+          </tr>
+
+        </thead>
+
+
+        <tbody>
+
+          @for (
+            position of positions;
+            track position.asset
+          ) {
+
+            <tr>
+
+              <td>
+                <strong>
+                  {{ position.asset }}
+                </strong>
+              </td>
+
+
+              <td>
+
+                <span
+                  class="type-badge"
+                  [class.buy]="
+                    position.type === 'BUY'
+                  "
+                  [class.sell]="
+                    position.type === 'SELL'
+                  "
+                >
+
+                  {{ position.type }}
+
+                </span>
+
+              </td>
+
+
+              <td>
+                {{ position.quantity }}
+              </td>
+
+
+              <td>
+                {{ position.price }}
+              </td>
+
+
+              <td>
+
+                <span
+                  [class.positive-value]="
+                    position.pnl >= 0
+                  "
+                  [class.negative-value]="
+                    position.pnl < 0
+                  "
+                >
+
+                  {{
+                    position.pnl >= 0
+                      ? '+'
+                      : ''
+                  }}
+
+                  {{ position.pnl }} DT
+
+                </span>
+
+              </td>
+
+            </tr>
+
           }
 
-        </div>
+        </tbody>
 
-      </article>
+      </table>
 
     </div>
 
-  }
+  </section>
+
+
+  <!-- TRANSACTIONS -->
+
+  <section class="dashboard-card table-card">
+
+    <header class="card-header">
+
+      <div>
+
+        <span class="section-label">
+          HISTORIQUE
+        </span>
+
+        <h2>
+          Transactions récentes
+        </h2>
+
+      </div>
+
+    </header>
+
+
+    <div class="table-wrapper">
+
+      <table>
+
+        <thead>
+
+          <tr>
+
+            <th>
+              Date
+            </th>
+
+            <th>
+              Actif
+            </th>
+
+            <th>
+              Type
+            </th>
+
+            <th>
+              Quantité
+            </th>
+
+            <th>
+              Prix
+            </th>
+
+          </tr>
+
+        </thead>
+
+
+        <tbody>
+
+          @for (
+            transaction of transactions;
+            track $index
+          ) {
+
+            <tr>
+
+              <td>
+                {{ transaction.date }}
+              </td>
+
+
+              <td>
+
+                <strong>
+                  {{ transaction.asset }}
+                </strong>
+
+              </td>
+
+
+              <td>
+
+                <span
+                  class="type-badge"
+                  [class.buy]="
+                    transaction.type === 'BUY'
+                  "
+                  [class.sell]="
+                    transaction.type === 'SELL'
+                  "
+                >
+
+                  {{ transaction.type }}
+
+                </span>
+
+              </td>
+
+
+              <td>
+                {{ transaction.quantity }}
+              </td>
+
+
+              <td>
+                {{ transaction.price }}
+              </td>
+
+            </tr>
+
+          }
+
+        </tbody>
+
+      </table>
+
+    </div>
+
+  </section>
 
 </section>
