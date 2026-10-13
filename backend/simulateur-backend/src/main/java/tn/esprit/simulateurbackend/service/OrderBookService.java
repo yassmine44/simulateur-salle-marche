@@ -1,7 +1,9 @@
 package tn.esprit.simulateurbackend.service;
 
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 
 import tn.esprit.simulateurbackend.dto.OrderBookLevelResponse;
 import tn.esprit.simulateurbackend.dto.OrderBookResponse;
@@ -10,6 +12,7 @@ import tn.esprit.simulateurbackend.entity.Order;
 import tn.esprit.simulateurbackend.entity.OrderSide;
 import tn.esprit.simulateurbackend.entity.OrderStatus;
 
+import tn.esprit.simulateurbackend.repository.AssetRepository;
 import tn.esprit.simulateurbackend.repository.OrderRepository;
 
 import java.math.BigDecimal;
@@ -31,18 +34,43 @@ public class OrderBookService {
             );
 
     private final OrderRepository orderRepository;
+    private final AssetRepository assetRepository;
 
     public OrderBookService(
-            OrderRepository orderRepository
+            OrderRepository orderRepository,
+            AssetRepository assetRepository
     ) {
         this.orderRepository = orderRepository;
+        this.assetRepository = assetRepository;
     }
+
 
     public OrderBookResponse getOrderBook(
             String rawSymbol
     ) {
 
-        String symbol = normalizeSymbol(rawSymbol);
+        String symbol =
+                normalizeSymbol(rawSymbol);
+
+
+        // =========================================
+        // VALIDATION DE L'ACTIF
+        // =========================================
+
+        assetRepository
+                .findBySymbolIgnoreCaseAndActiveTrue(symbol)
+                .orElseThrow(
+                        () ->
+                                new ResponseStatusException(
+                                        HttpStatus.NOT_FOUND,
+                                        "Actif inconnu ou désactivé : " + symbol
+                                )
+                );
+
+
+        // =========================================
+        // BIDS
+        // =========================================
 
         List<Order> bids =
                 orderRepository
@@ -52,6 +80,11 @@ public class OrderBookService {
                                 OPEN_STATUSES
                         );
 
+
+        // =========================================
+        // ASKS
+        // =========================================
+
         List<Order> asks =
                 orderRepository
                         .findByAssetSymbolIgnoreCaseAndSideAndStatusInOrderByLimitPriceAscCreatedAtAsc(
@@ -59,6 +92,7 @@ public class OrderBookService {
                                 OrderSide.SELL,
                                 OPEN_STATUSES
                         );
+
 
         return new OrderBookResponse(
                 symbol,
@@ -68,6 +102,11 @@ public class OrderBookService {
         );
     }
 
+
+    // =========================================
+    // AGREGATION DES NIVEAUX
+    // =========================================
+
     private List<OrderBookLevelResponse> aggregateLevels(
             List<Order> orders
     ) {
@@ -75,23 +114,30 @@ public class OrderBookService {
         Map<BigDecimal, LevelAccumulator> levels =
                 new LinkedHashMap<>();
 
+
         for (Order order : orders) {
 
-            if (order.getLimitPrice() == null) {
-                continue;
-            }
-
             if (
-                    order.getRemainingQuantity() == null
-                            || order.getRemainingQuantity()
-                            .compareTo(BigDecimal.ZERO) <= 0
+                    order.getLimitPrice() == null
             ) {
                 continue;
             }
 
+
+            if (
+                    order.getRemainingQuantity() == null
+                            ||
+                            order.getRemainingQuantity()
+                                    .compareTo(BigDecimal.ZERO) <= 0
+            ) {
+                continue;
+            }
+
+
             BigDecimal normalizedPrice =
                     order.getLimitPrice()
                             .stripTrailingZeros();
+
 
             LevelAccumulator accumulator =
                     levels.computeIfAbsent(
@@ -100,16 +146,20 @@ public class OrderBookService {
                                     new LevelAccumulator()
                     );
 
+
             accumulator.totalQuantity =
                     accumulator.totalQuantity.add(
                             order.getRemainingQuantity()
                     );
 
+
             accumulator.orderCount++;
         }
 
+
         List<OrderBookLevelResponse> response =
                 new ArrayList<>();
+
 
         for (
                 Map.Entry<BigDecimal, LevelAccumulator> entry
@@ -125,8 +175,14 @@ public class OrderBookService {
             );
         }
 
+
         return response;
     }
+
+
+    // =========================================
+    // NORMALISATION DU SYMBOLE
+    // =========================================
 
     private String normalizeSymbol(
             String rawSymbol
@@ -134,24 +190,29 @@ public class OrderBookService {
 
         if (
                 rawSymbol == null
-                        || rawSymbol.isBlank()
+                        ||
+                        rawSymbol.isBlank()
         ) {
 
-            throw new IllegalArgumentException(
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
                     "Le symbole de l'actif est obligatoire."
             );
         }
+
 
         return rawSymbol
                 .trim()
                 .toUpperCase(Locale.ROOT);
     }
 
+
     private static class LevelAccumulator {
 
         private BigDecimal totalQuantity =
                 BigDecimal.ZERO;
 
-        private int orderCount = 0;
+        private int orderCount =
+                0;
     }
 }
