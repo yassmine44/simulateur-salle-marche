@@ -140,3 +140,91 @@ export interface TradeResponse {
 
   createdAt: string;
 }
+// ==========================================
+// ORDER BOOK METRICS
+// ==========================================
+
+export interface OrderBookMetricsResponse {
+
+  assetSymbol: string;
+
+  bestBid: number | null;
+
+  bestAsk: number | null;
+
+  midPrice: number | null;
+
+  spread: number | null;
+
+  relativeSpread: number | null;
+
+  relativeSpreadPercent: number | null;
+
+  totalBidVolume: number;
+
+  totalAskVolume: number;
+
+  orderBookImbalance: number | null;
+
+  weightedBidDepth: number | null;
+
+  weightedAskDepth: number | null;
+
+  generatedAt: string;
+}
+// ==========================================
+// TEMPORAL METRICS
+// ==========================================
+
+export interface OrderBookTemporalMetricsResponse {
+
+  assetSymbol: string;
+
+  currentMidPrice: number | null;
+
+  volatility60s: number | null;
+
+  volatility60sPercent: number | null;
+
+  momentum30s: number | null;
+
+  momentum30sPercent: number | null;
+
+  observationCount: number;
+
+  generatedAt: string;
+}
+
+
+// ==========================================
+// SLIPPAGE ESTIMATE
+// ==========================================
+
+export interface SlippageEstimateResponse {
+
+  assetSymbol: string;
+
+  side: OrderSide;
+
+  requestedQuantity: number;
+
+  executableQuantity: number;
+
+  remainingQuantity: number;
+
+  fullyExecutable: boolean;
+
+  bestPrice: number | null;
+
+  expectedExecutionPrice: number | null;
+
+  absoluteSlippage: number | null;
+
+  relativeSlippage: number | null;
+
+  slippagePercent: number | null;
+
+  levelsConsumed: number;
+
+  generatedAt: string;
+}

@@ -2,354 +2,584 @@
   display: block;
 }
 
+
+/* ============================================================
+   PAGE
+   ============================================================ */
+
 .trading-page {
-  padding: 24px;
+  padding: 28px;
+
   min-height: 100%;
+
   background:
     radial-gradient(
-      circle at 10% 0%,
+      circle at 8% 0%,
       rgba(59, 130, 246, 0.08),
+      transparent 30%
+    ),
+    radial-gradient(
+      circle at 92% 0%,
+      rgba(16, 185, 129, 0.045),
       transparent 28%
     ),
-    #f5f7fb;
+    #f6f8fc;
 
   color: #111827;
 }
 
 
-/* =========================================
+/* ============================================================
    HEADER
-========================================= */
+   ============================================================ */
 
 .trading-header {
   display: flex;
+
   justify-content: space-between;
   align-items: flex-end;
+
   gap: 24px;
-  margin-bottom: 22px;
+
+  margin-bottom: 24px;
 }
+
 
 .eyebrow,
 .panel-kicker {
   display: block;
 
+  margin-bottom: 7px;
+
   font-size: 11px;
   font-weight: 800;
-  letter-spacing: 0.12em;
+
+  letter-spacing: 0.14em;
+
+  text-transform: uppercase;
 
   color: #64748b;
-
-  margin-bottom: 6px;
 }
+
 
 .trading-header h1 {
   margin: 0;
 
-  font-size: 30px;
-  font-weight: 800;
+  font-size: clamp(
+    26px,
+    3vw,
+    34px
+  );
+
+  line-height: 1.1;
+
+  font-weight: 850;
+
+  letter-spacing: -0.025em;
+
+  color: #0f172a;
 }
+
 
 .trading-header p {
-  margin: 8px 0 0;
+  max-width: 650px;
+
+  margin: 9px 0 0;
 
   color: #64748b;
+
+  font-size: 14px;
+
+  line-height: 1.55;
 }
 
+
+/* ============================================================
+   ASSET SELECTOR
+   ============================================================ */
+
 .market-selector {
-  min-width: 280px;
+  min-width: 320px;
 }
+
 
 .market-selector label {
   display: block;
 
   margin-bottom: 7px;
 
-  font-size: 13px;
-  font-weight: 700;
-
   color: #475569;
+
+  font-size: 13px;
+  font-weight: 750;
 }
+
 
 .symbol-search {
   display: flex;
+
   gap: 8px;
 }
 
-.symbol-search input {
-  flex: 1;
-}
 
-.symbol-search button,
-.refresh-button {
-  border: 1px solid #dbe1ea;
-  background: #fff;
+.symbol-search select {
+  min-height: 44px;
 
-  border-radius: 10px;
-
-  padding: 10px 14px;
-
-  cursor: pointer;
-
-  font-weight: 700;
-}
-
-.symbol-search button:hover,
-.refresh-button:hover {
-  background: #f8fafc;
+  background:
+    linear-gradient(
+      180deg,
+      #ffffff,
+      #fbfcfe
+    );
 }
 
 
-/* =========================================
+/* ============================================================
    ALERTS
-========================================= */
+   ============================================================ */
 
 .alert {
-  margin-bottom: 16px;
+  margin-bottom: 18px;
 
   padding: 13px 16px;
 
-  border-radius: 10px;
+  border-radius: 12px;
 
   font-size: 14px;
-  font-weight: 600;
+  font-weight: 650;
+
+  line-height: 1.45;
 }
+
 
 .alert-success {
   background: #ecfdf5;
+
   border: 1px solid #a7f3d0;
 
   color: #047857;
 }
 
+
 .alert-error {
   background: #fef2f2;
+
   border: 1px solid #fecaca;
 
   color: #b91c1c;
 }
 
 
-/* =========================================
-   MARKET SUMMARY
-========================================= */
+/* ============================================================
+   MARKET MICROSTRUCTURE SUMMARY
+   ============================================================ */
 
 .market-summary {
   display: grid;
 
   grid-template-columns:
-    minmax(220px, 1.4fr)
-    repeat(3, minmax(140px, 1fr));
+    minmax(230px, 1.45fr)
+    repeat(
+      4,
+      minmax(145px, 1fr)
+    );
 
-  background: #111827;
-
-  color: white;
-
-  border-radius: 16px;
-
-  margin-bottom: 20px;
+  margin-bottom: 22px;
 
   overflow: hidden;
+
+  border:
+    1px solid
+    rgba(255, 255, 255, 0.055);
+
+  border-radius: 18px;
+
+  background:
+    linear-gradient(
+      145deg,
+      #111827 0%,
+      #172033 55%,
+      #101827 100%
+    );
+
+  box-shadow:
+    0 14px 34px
+    rgba(15, 23, 42, 0.13);
+
+  color: #ffffff;
 }
+
 
 .market-main,
 .market-metric {
+  min-width: 0;
+
   padding: 20px;
 }
 
+
 .market-main {
   display: flex;
-  align-items: center;
-  gap: 12px;
+
+  flex-direction: column;
+
+  justify-content: center;
+
+  align-items: flex-start;
+
+  gap: 9px;
+
+  background:
+    radial-gradient(
+      circle at 0% 50%,
+      rgba(59, 130, 246, 0.11),
+      transparent 70%
+    );
 }
+
 
 .symbol {
-  font-size: 25px;
-  font-weight: 850;
+  font-size: 27px;
+
+  font-weight: 900;
+
+  letter-spacing: -0.025em;
+
+  color: #f8fafc;
 }
 
+
 .market-badge {
+  display: inline-flex;
+
+  align-items: center;
+
+  width: fit-content;
+
   padding: 5px 8px;
 
-  border-radius: 6px;
+  border:
+    1px solid
+    rgba(255, 255, 255, 0.08);
 
-  background: rgba(255, 255, 255, 0.08);
+  border-radius: 7px;
+
+  background:
+    rgba(255, 255, 255, 0.055);
 
   color: #94a3b8;
 
   font-size: 10px;
-  font-weight: 800;
-  letter-spacing: 0.08em;
+  font-weight: 850;
+
+  letter-spacing: 0.09em;
 }
 
+
 .market-metric {
-  border-left: 1px solid rgba(255, 255, 255, 0.08);
+  position: relative;
+
+  border-left:
+    1px solid
+    rgba(255, 255, 255, 0.07);
+
+  border-bottom:
+    1px solid
+    rgba(255, 255, 255, 0.05);
+
+  transition:
+    background-color 0.16s ease,
+    transform 0.16s ease;
 }
+
+
+.market-metric:hover {
+  background:
+    rgba(255, 255, 255, 0.035);
+}
+
 
 .market-metric span {
   display: block;
 
-  margin-bottom: 8px;
+  margin-bottom: 9px;
 
   color: #94a3b8;
 
-  font-size: 12px;
+  font-size: 11px;
+
+  font-weight: 650;
+
+  line-height: 1.35;
 }
+
 
 .market-metric strong {
-  font-size: 18px;
+  display: block;
+
+  overflow: hidden;
+
+  color: #f8fafc;
+
+  font-family:
+    ui-monospace,
+    SFMono-Regular,
+    Menlo,
+    Monaco,
+    Consolas,
+    monospace;
+
+  font-size: 17px;
+
+  font-weight: 850;
+
+  letter-spacing: -0.02em;
+
+  text-overflow: ellipsis;
+
+  white-space: nowrap;
 }
 
 
-/* =========================================
-   PANELS
-========================================= */
+/* ============================================================
+   GENERAL PANELS
+   ============================================================ */
 
 .panel {
-  background: white;
+  overflow: hidden;
 
-  border: 1px solid #e5e7eb;
+  border:
+    1px solid
+    #e5e9f0;
 
-  border-radius: 16px;
+  border-radius: 17px;
+
+  background:
+    rgba(255, 255, 255, 0.96);
 
   box-shadow:
-    0 4px 18px rgba(15, 23, 42, 0.035);
+    0 5px 22px
+    rgba(15, 23, 42, 0.04);
 }
+
 
 .panel-header {
   display: flex;
 
   align-items: center;
+
   justify-content: space-between;
+
+  gap: 16px;
 
   padding: 20px 22px;
 
-  border-bottom: 1px solid #edf0f4;
+  border-bottom:
+    1px solid
+    #edf0f4;
+
+  background:
+    linear-gradient(
+      180deg,
+      #ffffff,
+      #fdfefe
+    );
 }
+
 
 .panel-header h2 {
   margin: 0;
 
-  font-size: 17px;
-  font-weight: 800;
+  color: #111827;
+
+  font-size: 18px;
+
+  font-weight: 850;
+
+  letter-spacing: -0.015em;
 }
 
 
-/* =========================================
-   GRID
-========================================= */
+/* ============================================================
+   MAIN GRID
+   ============================================================ */
 
 .trading-grid {
   display: grid;
 
   grid-template-columns:
-    minmax(300px, 0.75fr)
-    minmax(500px, 1.5fr);
+    minmax(330px, 0.8fr)
+    minmax(560px, 1.55fr);
 
-  gap: 20px;
+  gap: 22px;
 
-  margin-bottom: 20px;
+  margin-bottom: 22px;
+
+  align-items: start;
 }
 
 
-/* =========================================
+/* ============================================================
    ORDER FORM
-========================================= */
+   ============================================================ */
 
 .order-panel form {
-  padding: 20px;
+  padding: 22px;
 }
+
 
 .side-selector {
   display: grid;
 
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns:
+    1fr
+    1fr;
 
-  gap: 8px;
+  gap: 9px;
 
   margin-bottom: 20px;
 }
 
+
 .side-button {
-  padding: 12px;
+  min-height: 45px;
 
-  border-radius: 10px;
+  padding: 11px;
 
-  border: 1px solid #e5e7eb;
+  border:
+    1px solid
+    #e5e7eb;
 
-  background: #fff;
+  border-radius: 11px;
 
-  font-weight: 800;
+  background: #ffffff;
+
+  color: #475569;
+
+  font-weight: 850;
 
   cursor: pointer;
 
-  transition: 0.15s ease;
+  transition:
+    border-color 0.15s ease,
+    background-color 0.15s ease,
+    color 0.15s ease,
+    transform 0.12s ease;
 }
 
-.buy-button.active {
-  color: #047857;
 
+.side-button:hover {
+  background: #f8fafc;
+}
+
+
+.side-button:active {
+  transform: scale(0.985);
+}
+
+
+.buy-button.active {
   border-color: #6ee7b7;
 
   background: #ecfdf5;
+
+  color: #047857;
+
+  box-shadow:
+    inset 0 0 0 1px
+    rgba(16, 185, 129, 0.06);
 }
 
-.sell-button.active {
-  color: #b91c1c;
 
+.sell-button.active {
   border-color: #fca5a5;
 
   background: #fef2f2;
+
+  color: #b91c1c;
+
+  box-shadow:
+    inset 0 0 0 1px
+    rgba(239, 68, 68, 0.05);
 }
 
+
 .form-group {
-  margin-bottom: 16px;
+  margin-bottom: 17px;
 }
+
 
 .form-group label {
   display: block;
 
   margin-bottom: 7px;
 
-  font-size: 13px;
-  font-weight: 700;
-
   color: #475569;
+
+  font-size: 13px;
+
+  font-weight: 750;
 }
+
 
 input,
 select {
   width: 100%;
 
+  min-height: 43px;
+
   box-sizing: border-box;
 
-  padding: 11px 12px;
+  padding: 10px 12px;
 
-  border: 1px solid #d8dee8;
+  border:
+    1px solid
+    #d8dee8;
 
   border-radius: 10px;
 
-  background: white;
-
   outline: none;
 
+  background: #ffffff;
+
+  color: #111827;
+
   font: inherit;
+
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease,
+    background-color 0.15s ease;
 }
+
+
+input:hover,
+select:hover {
+  border-color: #c6ced9;
+}
+
 
 input:focus,
 select:focus {
   border-color: #64748b;
 
   box-shadow:
-    0 0 0 3px rgba(100, 116, 139, 0.08);
+    0 0 0 3px
+    rgba(100, 116, 139, 0.08);
+
+  background: #ffffff;
 }
+
 
 .input-with-unit {
   position: relative;
 }
 
+
 .input-with-unit input {
-  padding-right: 55px;
+  padding-right: 62px;
 }
+
 
 .input-with-unit span {
   position: absolute;
@@ -362,117 +592,299 @@ select:focus {
   color: #94a3b8;
 
   font-size: 12px;
-  font-weight: 700;
+  font-weight: 750;
+
+  pointer-events: none;
 }
+
 
 .field-error {
   display: block;
 
-  margin-top: 5px;
+  margin-top: 6px;
 
   color: #dc2626;
+
+  font-size: 12px;
+
+  line-height: 1.35;
 }
+
+
+/* ============================================================
+   ORDER / SLIPPAGE SUMMARY
+   ============================================================ */
 
 .order-summary {
-  margin: 20px 0;
+  margin: 18px 0;
 
-  border: 1px solid #edf0f4;
+  overflow: hidden;
 
-  border-radius: 12px;
+  border:
+    1px solid
+    #e8edf3;
 
-  background: #f8fafc;
+  border-radius: 13px;
+
+  background:
+    linear-gradient(
+      180deg,
+      #f9fbfd,
+      #f7f9fc
+    );
 }
+
 
 .order-summary > div {
   display: flex;
 
   justify-content: space-between;
 
-  padding: 10px 12px;
+  align-items: center;
+
+  gap: 18px;
+
+  padding: 10px 13px;
+
+  border-bottom:
+    1px solid
+    #e9eef4;
 
   font-size: 13px;
-
-  border-bottom: 1px solid #edf0f4;
 }
+
 
 .order-summary > div:last-child {
   border-bottom: 0;
 }
 
+
 .order-summary span {
   color: #64748b;
+
+  line-height: 1.35;
 }
+
+
+.order-summary strong {
+  min-width: 0;
+
+  max-width: 60%;
+
+  color: #1f2937;
+
+  font-weight: 800;
+
+  text-align: right;
+
+  overflow-wrap: anywhere;
+}
+
+
+/* Highlight special analysis block when MARKET */
+
+.order-summary + .order-summary {
+  border-color: #dbe4ee;
+
+  background:
+    linear-gradient(
+      145deg,
+      #f8fafc,
+      #f3f7fb
+    );
+}
+
+
+/* ============================================================
+   SUBMIT BUTTON
+   ============================================================ */
 
 .submit-order {
   width: 100%;
+
+  min-height: 47px;
 
   padding: 13px 16px;
 
   border: 0;
 
-  border-radius: 10px;
+  border-radius: 11px;
 
   font-weight: 850;
 
   cursor: pointer;
+
+  transition:
+    background-color 0.15s ease,
+    transform 0.12s ease,
+    opacity 0.15s ease,
+    box-shadow 0.15s ease;
 }
+
+
+.submit-order:active:not(:disabled) {
+  transform: scale(0.99);
+}
+
 
 .submit-buy {
-  background: #059669;
-  color: white;
+  background:
+    linear-gradient(
+      135deg,
+      #059669,
+      #047857
+    );
+
+  color: #ffffff;
+
+  box-shadow:
+    0 6px 15px
+    rgba(5, 150, 105, 0.16);
 }
 
-.submit-buy:hover {
-  background: #047857;
+
+.submit-buy:hover:not(:disabled) {
+  background:
+    linear-gradient(
+      135deg,
+      #047857,
+      #065f46
+    );
 }
+
 
 .submit-sell {
-  background: #dc2626;
-  color: white;
+  background:
+    linear-gradient(
+      135deg,
+      #dc2626,
+      #b91c1c
+    );
+
+  color: #ffffff;
+
+  box-shadow:
+    0 6px 15px
+    rgba(220, 38, 38, 0.14);
 }
 
-.submit-sell:hover {
-  background: #b91c1c;
+
+.submit-sell:hover:not(:disabled) {
+  background:
+    linear-gradient(
+      135deg,
+      #b91c1c,
+      #991b1b
+    );
 }
+
 
 .submit-order:disabled {
-  opacity: 0.5;
+  opacity: 0.48;
 
   cursor: not-allowed;
+
+  box-shadow: none;
 }
 
 
-/* =========================================
+/* ============================================================
+   REFRESH BUTTON
+   ============================================================ */
+
+.refresh-button {
+  min-height: 37px;
+
+  padding: 8px 13px;
+
+  border:
+    1px solid
+    #dbe1ea;
+
+  border-radius: 9px;
+
+  background: #ffffff;
+
+  color: #475569;
+
+  font-size: 12px;
+
+  font-weight: 750;
+
+  cursor: pointer;
+
+  transition:
+    background-color 0.15s ease,
+    border-color 0.15s ease;
+}
+
+
+.refresh-button:hover {
+  border-color: #cbd5e1;
+
+  background: #f8fafc;
+}
+
+
+/* ============================================================
    ORDER BOOK
-========================================= */
+   ============================================================ */
 
 .book-columns {
   display: grid;
 
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns:
+    1fr
+    1fr;
 }
 
-.book-side:first-child {
-  border-right: 1px solid #edf0f4;
+
+.book-side {
+  min-width: 0;
 }
+
+
+.book-side:first-child {
+  border-right:
+    1px solid
+    #edf0f4;
+}
+
 
 .book-title {
   display: flex;
 
   justify-content: space-between;
+
   align-items: center;
 
-  padding: 13px 18px;
+  padding: 14px 18px;
+
+  border-bottom:
+    1px solid
+    #eef2f6;
+
+  background: #fbfcfe;
 
   font-size: 13px;
+
   font-weight: 850;
 }
+
 
 .book-title small {
   color: #94a3b8;
 
-  font-weight: 600;
+  font-size: 11px;
+
+  font-weight: 650;
 }
+
+
+.book-table {
+  overflow: hidden;
+}
+
 
 .book-row {
   position: relative;
@@ -486,53 +898,93 @@ select:focus {
 
   gap: 10px;
 
-  padding: 9px 18px;
+  align-items: center;
+
+  padding: 10px 18px;
+
+  border-top:
+    1px solid
+    #f1f5f9;
 
   font-size: 13px;
 
-  border-top: 1px solid #f1f5f9;
+  transition:
+    background-color 0.12s ease;
 }
+
+
+.book-row:not(.book-head):hover {
+  background-color:
+    rgba(248, 250, 252, 0.82);
+}
+
 
 .book-row span:nth-child(2),
 .book-row span:nth-child(3) {
   text-align: right;
 }
 
+
 .book-head {
+  background: #fafbfc;
+
   color: #94a3b8;
 
-  font-size: 11px;
-  font-weight: 700;
+  font-size: 10px;
+
+  font-weight: 750;
+
+  letter-spacing: 0.055em;
+
+  text-transform: uppercase;
 }
+
+
+.book-row strong {
+  font-family:
+    ui-monospace,
+    SFMono-Regular,
+    Menlo,
+    Monaco,
+    Consolas,
+    monospace;
+
+  font-weight: 800;
+}
+
 
 .bid-row strong {
   color: #059669;
 }
 
+
 .ask-row strong {
   color: #dc2626;
 }
+
 
 .bid-row {
   background:
     linear-gradient(
       to left,
-      rgba(16, 185, 129, 0.035),
-      transparent 60%
+      rgba(16, 185, 129, 0.045),
+      transparent 68%
     );
 }
+
 
 .ask-row {
   background:
     linear-gradient(
       to left,
-      rgba(239, 68, 68, 0.035),
-      transparent 60%
+      rgba(239, 68, 68, 0.045),
+      transparent 68%
     );
 }
 
+
 .empty-book {
-  padding: 35px 20px;
+  padding: 42px 20px;
 
   text-align: center;
 
@@ -542,17 +994,25 @@ select:focus {
 }
 
 
-/* =========================================
+/* ============================================================
    TABLES
-========================================= */
+   ============================================================ */
 
 .table-panel {
-  margin-bottom: 20px;
+  margin-bottom: 22px;
 }
+
 
 .table-wrapper {
   overflow-x: auto;
+
+  scrollbar-width: thin;
+
+  scrollbar-color:
+    #cbd5e1
+    transparent;
 }
+
 
 table {
   width: 100%;
@@ -560,35 +1020,54 @@ table {
   border-collapse: collapse;
 }
 
+
 th,
 td {
   padding: 13px 16px;
 
-  text-align: left;
+  border-bottom:
+    1px solid
+    #f1f5f9;
 
-  border-bottom: 1px solid #f1f5f9;
+  text-align: left;
 
   white-space: nowrap;
 }
 
+
 th {
-  background: #fafbfc;
+  background:
+    #fafbfc;
 
   color: #64748b;
 
-  font-size: 11px;
+  font-size: 10px;
+
   font-weight: 800;
-  letter-spacing: 0.04em;
+
+  letter-spacing: 0.055em;
+
   text-transform: uppercase;
 }
 
+
 td {
+  color: #334155;
+
   font-size: 13px;
 }
+
+
+tbody tr {
+  transition:
+    background-color 0.12s ease;
+}
+
 
 tbody tr:hover {
   background: #fafbfc;
 }
+
 
 .id-cell {
   color: #64748b;
@@ -597,8 +1076,15 @@ tbody tr:hover {
     ui-monospace,
     SFMono-Regular,
     Menlo,
+    Monaco,
+    Consolas,
     monospace;
 }
+
+
+/* ============================================================
+   BADGES
+   ============================================================ */
 
 .side-badge,
 .status,
@@ -607,48 +1093,78 @@ tbody tr:hover {
 
   align-items: center;
 
-  padding: 5px 8px;
+  justify-content: center;
+
+  min-height: 23px;
+
+  padding: 4px 8px;
 
   border-radius: 7px;
 
-  font-size: 11px;
+  font-size: 10px;
+
   font-weight: 800;
+
+  letter-spacing: 0.02em;
 }
 
+
 .side-buy {
+  border:
+    1px solid
+    #bbf7d0;
+
   background: #ecfdf5;
+
   color: #047857;
 }
 
+
 .side-sell {
+  border:
+    1px solid
+    #fecaca;
+
   background: #fef2f2;
+
   color: #b91c1c;
 }
+
 
 .status-pending {
   background: #fff7ed;
+
   color: #c2410c;
 }
 
+
 .status-partially_filled {
   background: #eff6ff;
+
   color: #1d4ed8;
 }
 
+
 .status-executed {
   background: #ecfdf5;
+
   color: #047857;
 }
 
+
 .status-cancelled {
   background: #f1f5f9;
+
   color: #64748b;
 }
 
+
 .status-rejected {
   background: #fef2f2;
+
   color: #b91c1c;
 }
+
 
 .count-badge {
   background: #f1f5f9;
@@ -656,33 +1172,50 @@ tbody tr:hover {
   color: #475569;
 }
 
+
+/* ============================================================
+   CANCEL BUTTON
+   ============================================================ */
+
 .cancel-button {
-  border: 1px solid #fecaca;
+  padding: 6px 10px;
 
-  background: #fff;
-
-  color: #dc2626;
+  border:
+    1px solid
+    #fecaca;
 
   border-radius: 8px;
 
-  padding: 6px 9px;
+  background: #ffffff;
+
+  color: #dc2626;
+
+  font-size: 11px;
+
+  font-weight: 750;
 
   cursor: pointer;
 
-  font-size: 12px;
-  font-weight: 700;
+  transition:
+    background-color 0.15s ease,
+    border-color 0.15s ease;
 }
 
+
 .cancel-button:hover {
+  border-color: #fca5a5;
+
   background: #fef2f2;
 }
+
 
 .no-action {
   color: #cbd5e1;
 }
 
+
 .empty-table {
-  padding: 35px !important;
+  padding: 38px !important;
 
   text-align: center !important;
 
@@ -690,73 +1223,42 @@ tbody tr:hover {
 }
 
 
-/* =========================================
-   COLORS
-========================================= */
+/* ============================================================
+   FINANCIAL COLORS
+   ============================================================ */
 
 .buy-text {
   color: #10b981 !important;
 }
+
 
 .sell-text {
   color: #ef4444 !important;
 }
 
 
-/* =========================================
-   RESPONSIVE
-========================================= */
+/* ============================================================
+   FOCUS ACCESSIBILITY
+   ============================================================ */
 
-@media (max-width: 1100px) {
+button:focus-visible,
+input:focus-visible,
+select:focus-visible {
+  outline:
+    2px solid
+    rgba(59, 130, 246, 0.55);
 
-  .trading-grid {
-    grid-template-columns: 1fr;
-  }
-
+  outline-offset: 2px;
 }
 
-@media (max-width: 800px) {
 
-  .trading-page {
-    padding: 14px;
-  }
+/* ============================================================
+   NAV DISABLED
+   ============================================================ */
 
-  .trading-header {
-    flex-direction: column;
-
-    align-items: stretch;
-  }
-
-  .market-selector {
-    min-width: 0;
-  }
-
-  .market-summary {
-    grid-template-columns:
-      repeat(2, 1fr);
-  }
-
-  .market-metric {
-    border-left: 0;
-
-    border-top:
-      1px solid
-      rgba(255, 255, 255, 0.08);
-  }
-
-  .book-columns {
-    grid-template-columns: 1fr;
-  }
-
-  .book-side:first-child {
-    border-right: 0;
-
-    border-bottom: 1px solid #edf0f4;
-  }
-
-}
 .nav-disabled {
   display: inline-flex;
+
   align-items: center;
 
   padding: 8px 10px;
@@ -768,7 +1270,299 @@ tbody tr:hover {
   opacity: 0.65;
 
   font-size: inherit;
+
   font-weight: 500;
 
   user-select: none;
+}
+
+
+/* ============================================================
+   RESPONSIVE — LARGE TABLETS
+   ============================================================ */
+
+@media (max-width: 1280px) {
+
+  .market-summary {
+    grid-template-columns:
+      minmax(210px, 1.3fr)
+      repeat(
+        3,
+        minmax(140px, 1fr)
+      );
+  }
+
+
+  .trading-grid {
+    grid-template-columns:
+      minmax(320px, 0.85fr)
+      minmax(480px, 1.4fr);
+  }
+}
+
+
+/* ============================================================
+   RESPONSIVE — TABLETS
+   ============================================================ */
+
+@media (max-width: 1100px) {
+
+  .trading-grid {
+    grid-template-columns:
+      1fr;
+  }
+
+
+  .order-panel {
+    max-width: none;
+  }
+
+
+  .market-summary {
+    grid-template-columns:
+      repeat(
+        3,
+        1fr
+      );
+  }
+
+
+  .market-main {
+    grid-column:
+      1 / -1;
+
+    flex-direction: row;
+
+    justify-content: flex-start;
+
+    align-items: center;
+  }
+
+
+  .market-main .market-badge {
+    margin-left: 4px;
+  }
+}
+
+
+/* ============================================================
+   RESPONSIVE — MOBILE / SMALL TABLET
+   ============================================================ */
+
+@media (max-width: 800px) {
+
+  .trading-page {
+    padding: 14px;
+  }
+
+
+  .trading-header {
+    flex-direction: column;
+
+    align-items: stretch;
+  }
+
+
+  .market-selector {
+    min-width: 0;
+  }
+
+
+  .market-summary {
+    grid-template-columns:
+      repeat(
+        2,
+        minmax(0, 1fr)
+      );
+
+    border-radius: 14px;
+  }
+
+
+  .market-main {
+    grid-column:
+      1 / -1;
+
+    padding: 17px;
+  }
+
+
+  .market-metric {
+    padding: 16px;
+
+    border-left: 0;
+
+    border-top:
+      1px solid
+      rgba(255, 255, 255, 0.065);
+  }
+
+
+  .market-metric strong {
+    font-size: 15px;
+  }
+
+
+  .book-columns {
+    grid-template-columns:
+      1fr;
+  }
+
+
+  .book-side:first-child {
+    border-right: 0;
+
+    border-bottom:
+      1px solid
+      #edf0f4;
+  }
+
+
+  .panel-header {
+    padding:
+      17px
+      16px;
+  }
+
+
+  .order-panel form {
+    padding: 16px;
+  }
+
+
+  .order-summary > div {
+    gap: 12px;
+  }
+
+
+  .order-summary strong {
+    max-width: 58%;
+  }
+}
+
+
+/* ============================================================
+   RESPONSIVE — SMALL MOBILE
+   ============================================================ */
+
+@media (max-width: 520px) {
+
+  .trading-page {
+    padding: 10px;
+  }
+
+
+  .trading-header {
+    margin-bottom: 17px;
+  }
+
+
+  .trading-header h1 {
+    font-size: 25px;
+  }
+
+
+  .market-summary {
+    grid-template-columns:
+      1fr;
+  }
+
+
+  .market-main {
+    grid-column: auto;
+
+    flex-direction: column;
+
+    align-items: flex-start;
+  }
+
+
+  .market-metric {
+    display: flex;
+
+    align-items: center;
+
+    justify-content: space-between;
+
+    gap: 12px;
+  }
+
+
+  .market-metric span {
+    margin-bottom: 0;
+
+    max-width: 55%;
+  }
+
+
+  .market-metric strong {
+    max-width: 45%;
+
+    text-align: right;
+  }
+
+
+  .side-selector {
+    gap: 6px;
+  }
+
+
+  .side-button {
+    min-height: 43px;
+  }
+
+
+  .order-summary > div {
+    align-items: flex-start;
+  }
+
+
+  .book-row {
+    padding:
+      9px
+      12px;
+
+    font-size: 12px;
+  }
+
+
+  .book-title {
+    padding:
+      12px
+      13px;
+  }
+
+
+  th,
+  td {
+    padding:
+      11px
+      12px;
+  }
+}
+
+
+/* ============================================================
+   REDUCED MOTION
+   ============================================================ */
+
+@media (
+  prefers-reduced-motion:
+  reduce
+) {
+
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+
+    transition-duration:
+      0.001ms !important;
+
+    animation-duration:
+      0.001ms !important;
+
+    animation-iteration-count:
+      1 !important;
+  }
 }

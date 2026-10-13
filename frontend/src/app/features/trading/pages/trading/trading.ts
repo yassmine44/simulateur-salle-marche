@@ -22,20 +22,23 @@ import {
 import {
   AssetResponse,
   CreateOrderRequest,
+  OrderBookMetricsResponse,
   OrderBookResponse,
+  OrderBookTemporalMetricsResponse,
   OrderResponse,
   OrderSide,
   OrderType,
+  SlippageEstimateResponse,
   TradeResponse
 } from '../../models/trading.models';
 
-import { TradingService }
-  from '../../services/trading.service';
+import {
+  TradingService
+} from '../../services/trading.service';
 
 
 @Component({
   selector: 'app-trading',
-
   standalone: true,
 
   imports: [
@@ -44,11 +47,11 @@ import { TradingService }
   ],
 
   templateUrl: './trading.html',
-
   styleUrl: './trading.scss'
 })
 export class Trading
   implements OnInit, OnDestroy {
+
 
   // ==========================================
   // DEPENDENCIES
@@ -70,23 +73,28 @@ export class Trading
 
 
   // ==========================================
-  // STATE
+  // GENERAL STATE
   // ==========================================
 
-  loading = false;
+  loading =
+    false;
 
-  submitting = false;
+  submitting =
+    false;
 
-  successMessage = '';
+  successMessage =
+    '';
 
-  errorMessage = '';
+  errorMessage =
+    '';
 
 
   // ==========================================
   // ASSETS
   // ==========================================
 
-  assets: AssetResponse[] = [];
+  assets:
+    AssetResponse[] = [];
 
 
   // ==========================================
@@ -95,6 +103,39 @@ export class Trading
 
   orderBook:
     OrderBookResponse | null = null;
+
+
+  // ==========================================
+  // MICROSTRUCTURE METRICS
+  // ==========================================
+
+  metrics:
+    OrderBookMetricsResponse | null = null;
+
+
+  // ==========================================
+  // TEMPORAL METRICS
+  // ==========================================
+
+  temporalMetrics:
+    OrderBookTemporalMetricsResponse | null = null;
+
+
+  // ==========================================
+  // SLIPPAGE
+  // ==========================================
+
+  slippageEstimate:
+    SlippageEstimateResponse | null = null;
+
+  slippageLoading =
+    false;
+
+  slippageErrorMessage =
+    '';
+
+  private slippageRequestSequence =
+    0;
 
 
   // ==========================================
@@ -122,7 +163,7 @@ export class Trading
 
 
   // ==========================================
-  // FORM
+  // ORDER FORM
   // ==========================================
 
   readonly orderForm =
@@ -170,22 +211,9 @@ export class Trading
 
   ngOnInit(): void {
 
-    // Configure correctement le champ prix
-    // selon LIMIT / MARKET.
-
     this.onOrderTypeChange();
 
-
-    // ========================================
-    // LOAD ASSETS
-    // ========================================
-
     this.loadAssets();
-
-
-    // ========================================
-    // AUTO REFRESH
-    // ========================================
 
     this.refreshSubscription =
       interval(
@@ -215,7 +243,6 @@ export class Trading
     this.loading =
       true;
 
-
     this.clearMessages();
 
 
@@ -229,10 +256,6 @@ export class Trading
             assets;
 
 
-          // ==================================
-          // NO ASSET
-          // ==================================
-
           if (
             this.assets.length === 0
           ) {
@@ -240,18 +263,12 @@ export class Trading
             this.errorMessage =
               'Aucun actif disponible.';
 
-
             this.loading =
               false;
-
 
             return;
           }
 
-
-          // ==================================
-          // CURRENT SYMBOL
-          // ==================================
 
           const currentSymbol =
             this.normalizedSymbol;
@@ -271,16 +288,6 @@ export class Trading
             );
 
 
-          // ==================================
-          // DEFAULT ASSET
-          // ==================================
-
-          /*
-           * Si AAPL n'existe pas,
-           * on sélectionne automatiquement
-           * le premier actif disponible.
-           */
-
           if (
             !currentAssetExists
           ) {
@@ -294,10 +301,6 @@ export class Trading
               });
           }
 
-
-          // ==================================
-          // LOAD TRADING
-          // ==================================
 
           this.loadAll();
         },
@@ -313,9 +316,7 @@ export class Trading
 
           this.errorMessage =
             this.extractErrorMessage(
-
               error,
-
               'Impossible de charger la liste des actifs.'
             );
 
@@ -328,7 +329,7 @@ export class Trading
 
 
   // ==========================================
-  // LOAD ALL TRADING DATA
+  // LOAD ALL
   // ==========================================
 
   loadAll(): void {
@@ -341,7 +342,6 @@ export class Trading
 
       this.loading =
         false;
-
 
       return;
     }
@@ -359,6 +359,18 @@ export class Trading
             symbol
           ),
 
+      metrics:
+        this.tradingService
+          .getOrderBookMetrics(
+            symbol
+          ),
+
+      temporalMetrics:
+        this.tradingService
+          .getTemporalMetrics(
+            symbol
+          ),
+
       orders:
         this.tradingService
           .getMyOrders(),
@@ -372,6 +384,8 @@ export class Trading
 
         next: ({
           orderBook,
+          metrics,
+          temporalMetrics,
           orders,
           trades
         }) => {
@@ -379,17 +393,23 @@ export class Trading
           this.orderBook =
             orderBook;
 
+          this.metrics =
+            metrics;
+
+          this.temporalMetrics =
+            temporalMetrics;
 
           this.myOrders =
             orders;
 
-
           this.myTrades =
             trades;
 
-
           this.loading =
             false;
+
+
+          this.refreshSlippageEstimate();
         },
 
 
@@ -403,9 +423,7 @@ export class Trading
 
           this.errorMessage =
             this.extractErrorMessage(
-
               error,
-
               'Impossible de charger les données de trading.'
             );
 
@@ -422,11 +440,6 @@ export class Trading
   // ==========================================
 
   private refreshMarketData(): void {
-
-    /*
-     * Pendant la création d'un ordre,
-     * on évite une actualisation parallèle.
-     */
 
     if (
       this.submitting
@@ -454,6 +467,18 @@ export class Trading
             symbol
           ),
 
+      metrics:
+        this.tradingService
+          .getOrderBookMetrics(
+            symbol
+          ),
+
+      temporalMetrics:
+        this.tradingService
+          .getTemporalMetrics(
+            symbol
+          ),
+
       orders:
         this.tradingService
           .getMyOrders(),
@@ -467,6 +492,8 @@ export class Trading
 
         next: ({
           orderBook,
+          metrics,
+          temporalMetrics,
           orders,
           trades
         }) => {
@@ -474,13 +501,20 @@ export class Trading
           this.orderBook =
             orderBook;
 
+          this.metrics =
+            metrics;
+
+          this.temporalMetrics =
+            temporalMetrics;
 
           this.myOrders =
             orders;
 
-
           this.myTrades =
             trades;
+
+
+          this.refreshSlippageEstimate();
         },
 
 
@@ -503,6 +537,12 @@ export class Trading
 
     this.clearMessages();
 
+    this.slippageEstimate =
+      null;
+
+    this.slippageErrorMessage =
+      '';
+
 
     const symbol =
       this.normalizedSymbol;
@@ -513,14 +553,9 @@ export class Trading
       this.errorMessage =
         'Le symbole de l’actif est obligatoire.';
 
-
       return;
     }
 
-
-    // ========================================
-    // ASSET VALIDATION
-    // ========================================
 
     const exists =
       this.assets.some(
@@ -541,14 +576,9 @@ export class Trading
       this.errorMessage =
         'Cet actif n’est pas disponible.';
 
-
       return;
     }
 
-
-    // ========================================
-    // NORMALIZE SYMBOL
-    // ========================================
 
     this.orderForm
       .patchValue({
@@ -559,16 +589,12 @@ export class Trading
       });
 
 
-    // ========================================
-    // RELOAD
-    // ========================================
-
     this.loadAll();
   }
 
 
   // ==========================================
-  // REFRESH ORDER BOOK
+  // MANUAL REFRESH
   // ==========================================
 
   refreshOrderBook(): void {
@@ -583,16 +609,46 @@ export class Trading
     }
 
 
-    this.tradingService
-      .getOrderBook(
-        symbol
-      )
+    forkJoin({
+
+      orderBook:
+        this.tradingService
+          .getOrderBook(
+            symbol
+          ),
+
+      metrics:
+        this.tradingService
+          .getOrderBookMetrics(
+            symbol
+          ),
+
+      temporalMetrics:
+        this.tradingService
+          .getTemporalMetrics(
+            symbol
+          )
+
+    })
       .subscribe({
 
-        next: (book) => {
+        next: ({
+          orderBook,
+          metrics,
+          temporalMetrics
+        }) => {
 
           this.orderBook =
-            book;
+            orderBook;
+
+          this.metrics =
+            metrics;
+
+          this.temporalMetrics =
+            temporalMetrics;
+
+
+          this.refreshSlippageEstimate();
         },
 
 
@@ -606,9 +662,7 @@ export class Trading
 
           this.errorMessage =
             this.extractErrorMessage(
-
               error,
-
               'Impossible de charger le carnet d’ordres.'
             );
         }
@@ -628,6 +682,9 @@ export class Trading
       .patchValue({
         side
       });
+
+
+    this.refreshSlippageEstimate();
   }
 
 
@@ -650,19 +707,6 @@ export class Trading
         .limitPrice;
 
 
-    // ========================================
-    // MARKET
-    // ========================================
-
-    /*
-     * Un MARKET n'a pas besoin
-     * de prix limite.
-     *
-     * Le prix sera obtenu en consommant
-     * les meilleurs niveaux disponibles
-     * dans le carnet.
-     */
-
     if (
       type === 'MARKET'
     ) {
@@ -677,31 +721,170 @@ export class Trading
         });
 
 
+      this.refreshSlippageEstimate();
+
       return;
     }
 
 
-    // ========================================
-    // LIMIT
-    // ========================================
-
-    /*
-     * Un LIMIT nécessite obligatoirement
-     * un prix strictement positif.
-     */
-
     limitPriceControl
       .setValidators([
+
         Validators.required,
+
         Validators.min(
           0.00000001
         )
+
       ]);
 
 
     limitPriceControl
       .updateValueAndValidity({
         emitEvent: false
+      });
+
+
+    this.slippageEstimate =
+      null;
+
+    this.slippageErrorMessage =
+      '';
+
+    this.slippageLoading =
+      false;
+  }
+
+
+  // ==========================================
+  // REFRESH SLIPPAGE
+  // ==========================================
+
+  refreshSlippageEstimate(): void {
+
+    const requestSequence =
+      ++this.slippageRequestSequence;
+
+
+    this.slippageErrorMessage =
+      '';
+
+
+    if (
+      !this.isMarketOrder
+    ) {
+
+      this.slippageEstimate =
+        null;
+
+      this.slippageLoading =
+        false;
+
+      return;
+    }
+
+
+    const symbol =
+      this.normalizedSymbol;
+
+
+    const quantity =
+      Number(
+        this.orderForm
+          .controls
+          .quantity
+          .value
+      );
+
+
+    const side =
+      this.orderForm
+        .controls
+        .side
+        .value;
+
+
+    if (
+      !symbol
+      ||
+      !Number.isFinite(quantity)
+      ||
+      quantity <= 0
+    ) {
+
+      this.slippageEstimate =
+        null;
+
+      this.slippageLoading =
+        false;
+
+      return;
+    }
+
+
+    this.slippageLoading =
+      true;
+
+
+    this.tradingService
+      .estimateSlippage(
+        symbol,
+        side,
+        quantity
+      )
+      .subscribe({
+
+        next: (estimate) => {
+
+          if (
+            requestSequence
+            !==
+            this.slippageRequestSequence
+          ) {
+
+            return;
+          }
+
+
+          this.slippageEstimate =
+            estimate;
+
+          this.slippageLoading =
+            false;
+        },
+
+
+        error: (error) => {
+
+          if (
+            requestSequence
+            !==
+            this.slippageRequestSequence
+          ) {
+
+            return;
+          }
+
+
+          console.error(
+            'Erreur estimation slippage',
+            error
+          );
+
+
+          this.slippageEstimate =
+            null;
+
+          this.slippageLoading =
+            false;
+
+
+          this.slippageErrorMessage =
+            this.extractErrorMessage(
+              error,
+              'Impossible d’estimer le slippage.'
+            );
+        }
       });
   }
 
@@ -715,10 +898,6 @@ export class Trading
     this.clearMessages();
 
 
-    // ========================================
-    // FORM VALIDATION
-    // ========================================
-
     if (
       this.orderForm.invalid
     ) {
@@ -730,14 +909,9 @@ export class Trading
       this.errorMessage =
         'Vérifiez les informations de l’ordre.';
 
-
       return;
     }
 
-
-    // ========================================
-    // FORM VALUES
-    // ========================================
 
     const formValue =
       this.orderForm
@@ -750,10 +924,6 @@ export class Trading
         .trim()
         .toUpperCase();
 
-
-    // ========================================
-    // ASSET VALIDATION
-    // ========================================
 
     const assetExists =
       this.assets.some(
@@ -774,25 +944,9 @@ export class Trading
       this.errorMessage =
         'L’actif sélectionné n’existe pas.';
 
-
       return;
     }
 
-
-    // ========================================
-    // CREATE REQUEST
-    // ========================================
-
-    /*
-     * LIMIT :
-     *
-     * limitPrice = valeur saisie
-     *
-     *
-     * MARKET :
-     *
-     * limitPrice = null
-     */
 
     const request:
       CreateOrderRequest = {
@@ -800,20 +954,16 @@ export class Trading
         assetSymbol:
           symbol,
 
-
         side:
           formValue.side,
 
-
         type:
           formValue.type,
-
 
         quantity:
           Number(
             formValue.quantity
           ),
-
 
         limitPrice:
           formValue.type === 'LIMIT'
@@ -829,10 +979,6 @@ export class Trading
             null
       };
 
-
-    // ========================================
-    // SUBMIT
-    // ========================================
 
     this.submitting =
       true;
@@ -870,9 +1016,7 @@ export class Trading
 
           this.errorMessage =
             this.extractErrorMessage(
-
               error,
-
               'Impossible de placer l’ordre.'
             );
 
@@ -931,9 +1075,7 @@ export class Trading
 
           this.errorMessage =
             this.extractErrorMessage(
-
               error,
-
               'Impossible d’annuler cet ordre.'
             );
         }
@@ -949,20 +1091,17 @@ export class Trading
     order: OrderResponse
   ): boolean {
 
-    /*
-     * Seulement les LIMIT encore ouverts
-     * sont normalement annulables.
-     *
-     * Un MARKET est exécuté ou annulé
-     * immédiatement côté backend.
-     */
-
     return (
+
       order.type === 'LIMIT'
+
       &&
+
       (
         order.status === 'PENDING'
+
         ||
+
         order.status === 'PARTIALLY_FILLED'
       )
     );
@@ -970,7 +1109,7 @@ export class Trading
 
 
   // ==========================================
-  // CURRENT ASSET
+  // SELECTED ASSET
   // ==========================================
 
   get selectedAsset():
@@ -1002,7 +1141,7 @@ export class Trading
 
 
   // ==========================================
-  // CURRENT ORDER TYPE
+  // ORDER TYPE
   // ==========================================
 
   get selectedOrderType():
@@ -1015,10 +1154,6 @@ export class Trading
   }
 
 
-  // ==========================================
-  // IS LIMIT
-  // ==========================================
-
   get isLimitOrder():
     boolean {
 
@@ -1029,10 +1164,6 @@ export class Trading
     );
   }
 
-
-  // ==========================================
-  // IS MARKET
-  // ==========================================
 
   get isMarketOrder():
     boolean {
@@ -1046,111 +1177,205 @@ export class Trading
 
 
   // ==========================================
-  // MARKET INFORMATION
+  // MARKET METRICS
   // ==========================================
 
   get bestBid():
     number | null {
 
-    if (
-      !this.orderBook
-      ||
-      this.orderBook
-        .bids
-        .length === 0
-    ) {
-
-      return null;
-    }
-
-
-    return this.orderBook
-      .bids[0]
-      .price;
+    return this.metrics?.bestBid
+      ?? null;
   }
 
-
-  // ==========================================
-  // BEST ASK
-  // ==========================================
 
   get bestAsk():
     number | null {
 
-    if (
-      !this.orderBook
-      ||
-      this.orderBook
-        .asks
-        .length === 0
-    ) {
-
-      return null;
-    }
-
-
-    return this.orderBook
-      .asks[0]
-      .price;
+    return this.metrics?.bestAsk
+      ?? null;
   }
 
-
-  // ==========================================
-  // SPREAD
-  // ==========================================
-
-  get spread():
-    number | null {
-
-    if (
-      this.bestBid === null
-      ||
-      this.bestAsk === null
-    ) {
-
-      return null;
-    }
-
-
-    return (
-      this.bestAsk
-      -
-      this.bestBid
-    );
-  }
-
-
-  // ==========================================
-  // MID PRICE
-  // ==========================================
-
-  /*
-   * On prépare déjà cette information
-   * pour la future couche IA.
-   *
-   * MidPrice =
-   *
-   * (Best Bid + Best Ask) / 2
-   */
 
   get midPrice():
     number | null {
 
-    if (
-      this.bestBid === null
-      ||
-      this.bestAsk === null
-    ) {
-
-      return null;
-    }
+    return this.metrics?.midPrice
+      ?? null;
+  }
 
 
-    return (
-      this.bestBid
-      +
-      this.bestAsk
-    ) / 2;
+  get spread():
+    number | null {
+
+    return this.metrics?.spread
+      ?? null;
+  }
+
+
+  get relativeSpread():
+    number | null {
+
+    return this.metrics?.relativeSpread
+      ?? null;
+  }
+
+
+  get relativeSpreadPercent():
+    number | null {
+
+    return this.metrics?.relativeSpreadPercent
+      ?? null;
+  }
+
+
+  get orderBookImbalance():
+    number | null {
+
+    return this.metrics?.orderBookImbalance
+      ?? null;
+  }
+
+
+  get totalBidVolume():
+    number {
+
+    return this.metrics?.totalBidVolume
+      ?? 0;
+  }
+
+
+  get totalAskVolume():
+    number {
+
+    return this.metrics?.totalAskVolume
+      ?? 0;
+  }
+
+
+  // ==========================================
+  // WEIGHTED DEPTH
+  // ==========================================
+
+  get weightedBidDepth():
+    number | null {
+
+    return this.metrics?.weightedBidDepth
+      ?? null;
+  }
+
+
+  get weightedAskDepth():
+    number | null {
+
+    return this.metrics?.weightedAskDepth
+      ?? null;
+  }
+
+
+  // ==========================================
+  // TEMPORAL METRICS
+  // ==========================================
+
+  get volatility60s():
+    number | null {
+
+    return this.temporalMetrics
+      ?.volatility60s
+      ?? null;
+  }
+
+
+  get volatility60sPercent():
+    number | null {
+
+    return this.temporalMetrics
+      ?.volatility60sPercent
+      ?? null;
+  }
+
+
+  get momentum30s():
+    number | null {
+
+    return this.temporalMetrics
+      ?.momentum30s
+      ?? null;
+  }
+
+
+  get momentum30sPercent():
+    number | null {
+
+    return this.temporalMetrics
+      ?.momentum30sPercent
+      ?? null;
+  }
+
+
+  get temporalObservationCount():
+    number {
+
+    return this.temporalMetrics
+      ?.observationCount
+      ?? 0;
+  }
+
+
+  // ==========================================
+  // SLIPPAGE GETTERS
+  // ==========================================
+
+  get estimatedExecutionPrice():
+    number | null {
+
+    return this.slippageEstimate
+      ?.expectedExecutionPrice
+      ?? null;
+  }
+
+
+  get estimatedSlippagePercent():
+    number | null {
+
+    return this.slippageEstimate
+      ?.slippagePercent
+      ?? null;
+  }
+
+
+  get executableQuantity():
+    number {
+
+    return this.slippageEstimate
+      ?.executableQuantity
+      ?? 0;
+  }
+
+
+  get remainingMarketQuantity():
+    number {
+
+    return this.slippageEstimate
+      ?.remainingQuantity
+      ?? 0;
+  }
+
+
+  get marketFullyExecutable():
+    boolean {
+
+    return this.slippageEstimate
+      ?.fullyExecutable
+      ?? false;
+  }
+
+
+  get slippageLevelsConsumed():
+    number {
+
+    return this.slippageEstimate
+      ?.levelsConsumed
+      ?? 0;
   }
 
 
@@ -1171,7 +1396,7 @@ export class Trading
 
 
   // ==========================================
-  // DISPLAY HELPERS
+  // STATUS LABEL
   // ==========================================
 
   statusLabel(
@@ -1181,32 +1406,21 @@ export class Trading
     switch (status) {
 
       case 'PENDING':
-
         return 'En attente';
 
-
       case 'PARTIALLY_FILLED':
-
         return 'Partiellement exécuté';
 
-
       case 'EXECUTED':
-
         return 'Exécuté';
 
-
       case 'CANCELLED':
-
         return 'Annulé';
 
-
       case 'REJECTED':
-
         return 'Rejeté';
 
-
       default:
-
         return status;
     }
   }
@@ -1223,32 +1437,22 @@ export class Trading
     switch (type) {
 
       case 'LIMIT':
-
         return 'Limite';
 
-
       case 'MARKET':
-
         return 'Marché';
 
-
       default:
-
         return type;
     }
   }
 
 
   // ==========================================
-  // REFRESH AFTER ACTION
+  // LOAD AFTER ACTION
   // ==========================================
 
   private loadAfterAction(): void {
-
-    /*
-     * On conserve le message de succès
-     * pendant l'actualisation.
-     */
 
     const successMessage =
       this.successMessage;
@@ -1258,11 +1462,29 @@ export class Trading
       this.normalizedSymbol;
 
 
+    if (!symbol) {
+
+      return;
+    }
+
+
     forkJoin({
 
       orderBook:
         this.tradingService
           .getOrderBook(
+            symbol
+          ),
+
+      metrics:
+        this.tradingService
+          .getOrderBookMetrics(
+            symbol
+          ),
+
+      temporalMetrics:
+        this.tradingService
+          .getTemporalMetrics(
             symbol
           ),
 
@@ -1279,6 +1501,8 @@ export class Trading
 
         next: ({
           orderBook,
+          metrics,
+          temporalMetrics,
           orders,
           trades
         }) => {
@@ -1286,17 +1510,23 @@ export class Trading
           this.orderBook =
             orderBook;
 
+          this.metrics =
+            metrics;
+
+          this.temporalMetrics =
+            temporalMetrics;
 
           this.myOrders =
             orders;
 
-
           this.myTrades =
             trades;
 
-
           this.successMessage =
             successMessage;
+
+
+          this.refreshSlippageEstimate();
         },
 
 
@@ -1310,9 +1540,7 @@ export class Trading
 
           this.errorMessage =
             this.extractErrorMessage(
-
               error,
-
               'L’action a été effectuée, mais les données n’ont pas pu être actualisées.'
             );
         }
@@ -1328,9 +1556,6 @@ export class Trading
     order: OrderResponse
   ): string {
 
-    // ========================================
-    // MARKET FULL EXECUTION
-    // ========================================
 
     if (
       order.type === 'MARKET'
@@ -1343,22 +1568,6 @@ export class Trading
       );
     }
 
-
-    // ========================================
-    // MARKET PARTIAL EXECUTION
-    // ========================================
-
-    /*
-     * Notre backend traite la partie restante
-     * d'un MARKET comme annulée.
-     *
-     * Exemple :
-     *
-     * demandé = 10
-     * exécuté = 6
-     * restant = 4
-     * statut = CANCELLED
-     */
 
     if (
       order.type === 'MARKET'
@@ -1376,8 +1585,6 @@ export class Trading
         );
 
 
-      // MARKET partiellement exécuté
-
       if (
         executedQuantity > 0
       ) {
@@ -1392,8 +1599,6 @@ export class Trading
       }
 
 
-      // MARKET sans aucune liquidité
-
       return (
         `Ordre MARKET #${order.id} non exécuté : `
         +
@@ -1401,10 +1606,6 @@ export class Trading
       );
     }
 
-
-    // ========================================
-    // LIMIT EXECUTED
-    // ========================================
 
     if (
       order.status ===
@@ -1416,10 +1617,6 @@ export class Trading
       );
     }
 
-
-    // ========================================
-    // LIMIT PARTIALLY FILLED
-    // ========================================
 
     if (
       order.status ===
@@ -1434,10 +1631,6 @@ export class Trading
     }
 
 
-    // ========================================
-    // LIMIT PENDING
-    // ========================================
-
     if (
       order.status ===
       'PENDING'
@@ -1449,10 +1642,6 @@ export class Trading
     }
 
 
-    // ========================================
-    // DEFAULT
-    // ========================================
-
     return (
       `Ordre #${order.id} créé avec le statut ${order.status}.`
     );
@@ -1460,7 +1649,7 @@ export class Trading
 
 
   // ==========================================
-  // MESSAGES
+  // CLEAR MESSAGES
   // ==========================================
 
   private clearMessages(): void {
@@ -1474,7 +1663,7 @@ export class Trading
 
 
   // ==========================================
-  // ERROR MESSAGE
+  // EXTRACT ERROR
   // ==========================================
 
   private extractErrorMessage(

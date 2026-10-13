@@ -6,8 +6,12 @@ import { Observable } from 'rxjs';
 import {
   AssetResponse,
   CreateOrderRequest,
+  OrderBookMetricsResponse,
   OrderBookResponse,
+  OrderBookTemporalMetricsResponse,
   OrderResponse,
+  OrderSide,
+  SlippageEstimateResponse,
   TradeResponse
 } from '../models/trading.models';
 
@@ -39,6 +43,24 @@ export class TradingService {
       }
     );
   }
+  // ==========================================
+// ORDER BOOK METRICS
+// ==========================================
+
+getOrderBookMetrics(
+  symbol: string
+): Observable<OrderBookMetricsResponse> {
+
+  const normalizedSymbol =
+    symbol.trim().toUpperCase();
+
+  return this.http.get<OrderBookMetricsResponse>(
+    `${this.apiUrl}/order-book/${encodeURIComponent(normalizedSymbol)}/metrics`,
+    {
+      withCredentials: true
+    }
+  );
+}
 
 
   // ==========================================
@@ -125,4 +147,49 @@ export class TradingService {
       }
     );
   }
+  // ==========================================
+// TEMPORAL METRICS
+// ==========================================
+
+getTemporalMetrics(
+  symbol: string
+): Observable<OrderBookTemporalMetricsResponse> {
+
+  const normalizedSymbol =
+    symbol
+      .trim()
+      .toUpperCase();
+
+  return this.http.get<OrderBookTemporalMetricsResponse>(
+    `${this.apiUrl}/order-book/${encodeURIComponent(normalizedSymbol)}/temporal-metrics`,
+    {
+      withCredentials: true
+    }
+  );
+}// ==========================================
+// SLIPPAGE ESTIMATE
+// ==========================================
+
+estimateSlippage(
+  symbol: string,
+  side: OrderSide,
+  quantity: number
+): Observable<SlippageEstimateResponse> {
+
+  const normalizedSymbol =
+    symbol
+      .trim()
+      .toUpperCase();
+
+  return this.http.get<SlippageEstimateResponse>(
+    `${this.apiUrl}/order-book/${encodeURIComponent(normalizedSymbol)}/slippage`,
+    {
+      params: {
+        side,
+        quantity: quantity.toString()
+      },
+      withCredentials: true
+    }
+  );
+}
 }
