@@ -138,6 +138,22 @@ export const routes: Routes = [
       },
 
 
+      {
+        path: 'charts',
+
+        loadComponent: () =>
+
+          import(
+            './pages/charts/charts.component'
+          )
+
+            .then(
+              module =>
+                module.ChartsComponent
+            )
+      },
+
+
       // =====================
       // ADMIN USERS
       // =====================

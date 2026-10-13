@@ -14,6 +14,10 @@ import {
 } from '@angular/forms';
 
 import {
+  ActivatedRoute
+} from '@angular/router';
+
+import {
   forkJoin,
   interval,
   Subscription
@@ -59,6 +63,9 @@ export class Trading
   private readonly tradingService =
     inject(TradingService);
 
+  private readonly route =
+    inject(ActivatedRoute);
+
 
   // ==========================================
   // CONFIGURATION
@@ -100,6 +107,9 @@ export class Trading
 
 
   private refreshSubscription?:
+    Subscription;
+
+  private queryParamSubscription?:
     Subscription;
 
 
@@ -152,6 +162,25 @@ export class Trading
 
   ngOnInit(): void {
 
+    // Le symbole arrive depuis /app/charts
+    // via ?symbol=NVDA avant le chargement.
+
+    this.queryParamSubscription =
+      this.route
+        .queryParamMap
+        .subscribe(params => {
+
+          const symbol =
+            params.get('symbol');
+
+          if (symbol) {
+            this.applyRequestedSymbol(
+              symbol
+            );
+          }
+        });
+
+
     // On charge d'abord les actifs
     // depuis le backend.
 
@@ -176,6 +205,9 @@ export class Trading
   ngOnDestroy(): void {
 
     this.refreshSubscription
+      ?.unsubscribe();
+
+    this.queryParamSubscription
       ?.unsubscribe();
   }
 
@@ -238,6 +270,28 @@ export class Trading
             !currentAssetExists
           ) {
 
+            const requestedSymbol =
+              this.route
+                .snapshot
+                .queryParamMap
+                .get('symbol');
+
+
+            if (
+              requestedSymbol
+              &&
+              requestedSymbol
+                .trim()
+                .toUpperCase()
+              ===
+              currentSymbol
+            ) {
+
+              this.errorMessage =
+                `L’actif ${currentSymbol} n’est pas disponible dans le simulateur.`;
+            }
+
+
             this.orderForm
               .patchValue({
 
@@ -275,6 +329,76 @@ export class Trading
             false;
         }
       });
+  }
+
+
+  // ==========================================
+  // SYMBOL FROM CHARTS
+  // ==========================================
+
+  private applyRequestedSymbol(
+    rawSymbol: string
+  ): void {
+
+    const symbol =
+      rawSymbol
+        .trim()
+        .toUpperCase();
+
+
+    if (
+      !symbol
+      ||
+      symbol === this.normalizedSymbol
+    ) {
+      return;
+    }
+
+
+    // Les actifs ne sont pas encore chargés :
+    // on mémorise le symbole pour loadAssets().
+
+    if (
+      this.assets.length === 0
+    ) {
+
+      this.orderForm
+        .patchValue({
+
+          assetSymbol:
+            symbol
+
+        });
+
+      return;
+    }
+
+
+    const exists =
+      this.assets.some(
+        asset =>
+          asset.symbol
+            .toUpperCase()
+          ===
+          symbol
+      );
+
+
+    if (!exists) {
+      return;
+    }
+
+
+    this.orderForm
+      .patchValue({
+
+        assetSymbol:
+          symbol
+
+      });
+
+
+    this.loadAll();
   }
 
 

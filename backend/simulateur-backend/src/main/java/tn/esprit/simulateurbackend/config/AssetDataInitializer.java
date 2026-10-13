@@ -51,6 +51,27 @@ public class AssetDataInitializer
         );
 
         createAsset(
+                "IXIC",
+                "Nasdaq Composite",
+                AssetType.INDEX,
+                "USD"
+        );
+
+        createAsset(
+                "SPX",
+                "S&P 500",
+                AssetType.INDEX,
+                "USD"
+        );
+
+        createAsset(
+                "XAUUSD",
+                "Gold / US Dollar",
+                AssetType.FOREX,
+                "USD"
+        );
+
+        createAsset(
                 "TSLA",
                 "Tesla",
                 AssetType.STOCK,
