@@ -161,43 +161,50 @@ public class OrderService {
         }
 
 
-        /*
-         * MVP :
-         *
-         * Le carnet supporte actuellement
-         * uniquement les ordres LIMIT.
-         *
-         * MARKET sera ajouté ensuite.
-         */
-
-        if (
-                request.type()
-                        != OrderType.LIMIT
-        ) {
-
-            throw new ResponseStatusException(
-                    HttpStatus.BAD_REQUEST,
-                    "Les ordres MARKET ne sont pas encore pris en charge."
-            );
-        }
-
-
         // =========================================
         // LIMIT PRICE
         // =========================================
 
+        /*
+         * LIMIT :
+         * le prix limite est obligatoire.
+         *
+         * MARKET :
+         * aucun prix limite n'est fourni.
+         */
+
         if (
-                request.limitPrice() == null
-                        ||
-                        request.limitPrice()
-                                .compareTo(BigDecimal.ZERO) <= 0
+                request.type() == OrderType.LIMIT
+                        &&
+                        (
+                                request.limitPrice() == null
+                                        ||
+                                        request.limitPrice()
+                                                .compareTo(BigDecimal.ZERO) <= 0
+                        )
         ) {
 
             throw new ResponseStatusException(
                     HttpStatus.BAD_REQUEST,
-                    "Le prix limite doit être strictement positif."
+                    "Le prix limite doit être strictement positif pour un ordre LIMIT."
             );
         }
+
+
+        // =========================================
+        // MARKET PRICE VALIDATION
+        // =========================================
+
+        /*
+         * Pour éviter une requête incohérente du type :
+         *
+         * MARKET + limitPrice = 200
+         *
+         * on ignore complètement le prix côté MARKET.
+         *
+         * Il sera déterminé par les ordres opposés
+         * présents dans le carnet.
+         */
 
 
         // =========================================
@@ -228,9 +235,26 @@ public class OrderService {
         );
 
 
-        order.setLimitPrice(
-                request.limitPrice()
-        );
+        /*
+         * LIMIT  -> conserve le prix demandé.
+         * MARKET -> aucun prix limite.
+         */
+
+        if (
+                request.type()
+                        == OrderType.LIMIT
+        ) {
+
+            order.setLimitPrice(
+                    request.limitPrice()
+            );
+
+        } else {
+
+            order.setLimitPrice(
+                    null
+            );
+        }
 
 
         order.setQuantity(
@@ -262,6 +286,17 @@ public class OrderService {
         // =========================================
         // MATCHING ENGINE
         // =========================================
+
+        /*
+         * Le moteur décidera ensuite :
+         *
+         * LIMIT :
+         * vérifier la compatibilité des prix.
+         *
+         * MARKET :
+         * consommer directement les meilleurs
+         * ordres disponibles du côté opposé.
+         */
 
         matchingEngineService
                 .matchOrder(

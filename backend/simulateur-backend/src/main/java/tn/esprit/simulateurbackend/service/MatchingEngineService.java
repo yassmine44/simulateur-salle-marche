@@ -8,6 +8,7 @@ import org.springframework.web.server.ResponseStatusException;
 import tn.esprit.simulateurbackend.entity.Order;
 import tn.esprit.simulateurbackend.entity.OrderSide;
 import tn.esprit.simulateurbackend.entity.OrderStatus;
+import tn.esprit.simulateurbackend.entity.OrderType;
 import tn.esprit.simulateurbackend.entity.Trade;
 
 import tn.esprit.simulateurbackend.repository.OrderRepository;
@@ -16,6 +17,7 @@ import tn.esprit.simulateurbackend.repository.TradeRepository;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
+
 
 @Service
 public class MatchingEngineService {
@@ -26,48 +28,90 @@ public class MatchingEngineService {
                     OrderStatus.PARTIALLY_FILLED
             );
 
+
     private final OrderRepository orderRepository;
+
     private final TradeRepository tradeRepository;
+
 
     public MatchingEngineService(
             OrderRepository orderRepository,
             TradeRepository tradeRepository
     ) {
-        this.orderRepository = orderRepository;
-        this.tradeRepository = tradeRepository;
+
+        this.orderRepository =
+                orderRepository;
+
+        this.tradeRepository =
+                tradeRepository;
     }
 
+
+    // =========================================
+    // MATCH ORDER
+    // =========================================
 
     @Transactional
     public List<Trade> matchOrder(
             Long orderId
     ) {
 
+        // =========================================
+        // LOCK DE L'ORDRE ENTRANT
+        // =========================================
+
         Order incomingOrder =
                 orderRepository
-                        .findByIdForUpdate(orderId)
-                        .orElseThrow(() ->
-                                new ResponseStatusException(
-                                        HttpStatus.NOT_FOUND,
-                                        "Ordre introuvable."
-                                )
+                        .findByIdForUpdate(
+                                orderId
+                        )
+                        .orElseThrow(
+                                () ->
+                                        new ResponseStatusException(
+                                                HttpStatus.NOT_FOUND,
+                                                "Ordre introuvable."
+                                        )
                         );
 
 
+        /*
+         * Seuls les ordres ouverts peuvent
+         * participer au matching.
+         */
+
         if (!isOpen(incomingOrder)) {
+
             return List.of();
         }
 
 
+        // =========================================
+        // RECHERCHE DES ORDRES OPPOSÉS
+        // =========================================
+
         List<Order> candidates =
-                findCandidates(incomingOrder);
+                findCandidates(
+                        incomingOrder
+                );
 
 
         List<Trade> executedTrades =
                 new ArrayList<>();
 
 
-        for (Order restingOrder : candidates) {
+        // =========================================
+        // MATCHING
+        // =========================================
+
+        for (
+                Order restingOrder
+                : candidates
+        ) {
+
+            /*
+             * L'ordre entrant est complètement
+             * exécuté.
+             */
 
             if (
                     incomingOrder
@@ -75,18 +119,35 @@ public class MatchingEngineService {
                             .compareTo(BigDecimal.ZERO)
                             <= 0
             ) {
+
                 break;
             }
 
 
+            /*
+             * Protection supplémentaire.
+             */
+
             if (!isOpen(restingOrder)) {
+
                 continue;
             }
 
 
-            // =====================================
-            // EXECUTED QUANTITY
-            // =====================================
+            /*
+             * =====================================
+             * QUANTITÉ EXÉCUTÉE
+             * =====================================
+             *
+             * On prend la plus petite quantité
+             * entre :
+             *
+             * quantité restante ordre entrant
+             *
+             * et
+             *
+             * quantité restante ordre resting.
+             */
 
             BigDecimal executedQuantity =
                     incomingOrder
@@ -98,43 +159,63 @@ public class MatchingEngineService {
 
 
             // =====================================
-            // EXECUTION PRICE
+            // PRIX D'EXÉCUTION
             // =====================================
 
             /*
-             * Le nouvel ordre est l'agresseur.
-             *
              * L'ordre déjà présent dans le carnet
-             * est l'ordre resting.
+             * est le resting order.
              *
-             * On utilise donc son prix comme
-             * prix d'exécution.
+             * Son prix devient le prix
+             * d'exécution.
+             *
+             * Exemple :
+             *
+             * ASK resting = 200
+             * MARKET BUY
+             *
+             * => exécution à 200.
              */
+
             BigDecimal executionPrice =
-                    restingOrder.getLimitPrice();
+                    restingOrder
+                            .getLimitPrice();
 
 
             // =====================================
             // TRADE
             // =====================================
 
-            Trade trade = new Trade();
+            Trade trade =
+                    new Trade();
+
 
             trade.setAssetSymbol(
-                    incomingOrder.getAssetSymbol()
+                    incomingOrder
+                            .getAssetSymbol()
             );
+
 
             trade.setExecutionPrice(
                     executionPrice
             );
+
 
             trade.setQuantity(
                     executedQuantity
             );
 
 
+            /*
+             * Identifier correctement :
+             *
+             * BUY ORDER
+             * SELL ORDER
+             */
+
             if (
-                    incomingOrder.getSide()
+                    incomingOrder
+                            .getSide()
                             == OrderSide.BUY
             ) {
 
@@ -169,6 +250,7 @@ public class MatchingEngineService {
                                     executedQuantity
                             );
 
+
             BigDecimal restingRemaining =
                     restingOrder
                             .getRemainingQuantity()
@@ -180,6 +262,7 @@ public class MatchingEngineService {
             incomingOrder.setRemainingQuantity(
                     incomingRemaining
             );
+
 
             restingOrder.setRemainingQuantity(
                     restingRemaining
@@ -194,6 +277,7 @@ public class MatchingEngineService {
                     incomingOrder
             );
 
+
             updateStatus(
                     restingOrder
             );
@@ -207,11 +291,69 @@ public class MatchingEngineService {
                     restingOrder
             );
 
+
+            Trade savedTrade =
+                    tradeRepository.save(
+                            trade
+                    );
+
+
             executedTrades.add(
-                    tradeRepository.save(trade)
+                    savedTrade
             );
         }
 
+
+        // =========================================
+        // MARKET ORDER REMAINDER
+        // =========================================
+
+        /*
+         * Un ordre MARKET ne doit jamais rester
+         * dans le carnet.
+         *
+         * MARKET = exécution immédiate.
+         *
+         * Si le carnet ne contient pas assez
+         * de liquidité, la quantité non exécutée
+         * est annulée.
+         *
+         * Exemple :
+         *
+         * MARKET BUY 10
+         *
+         * seulement 6 disponibles
+         *
+         * => 6 exécutées
+         * => 4 non exécutées
+         * => ordre terminé en CANCELLED
+         *
+         * Les trades exécutés restent évidemment
+         * enregistrés.
+         */
+
+        if (
+                incomingOrder
+                        .getType()
+                        == OrderType.MARKET
+
+                        &&
+
+                        incomingOrder
+                                .getRemainingQuantity()
+                                .compareTo(BigDecimal.ZERO)
+                                > 0
+        ) {
+
+            incomingOrder.setStatus(
+                    OrderStatus.CANCELLED
+            );
+        }
+
+
+        // =========================================
+        // SAVE FINAL ORDER
+        // =========================================
 
         orderRepository.save(
                 incomingOrder
@@ -222,24 +364,77 @@ public class MatchingEngineService {
     }
 
 
+    // =========================================
+    // FIND CANDIDATES
+    // =========================================
+
     private List<Order> findCandidates(
             Order incomingOrder
     ) {
 
+        /*
+         * =========================================
+         * BUY
+         * =========================================
+         */
+
         if (
-                incomingOrder.getSide()
+                incomingOrder
+                        .getSide()
                         == OrderSide.BUY
         ) {
 
+            /*
+             * MARKET BUY
+             *
+             * Pas de prix maximum.
+             *
+             * On prend les ASK disponibles :
+             *
+             * prix le plus faible d'abord.
+             */
+
+            if (
+                    incomingOrder
+                            .getType()
+                            == OrderType.MARKET
+            ) {
+
+                return orderRepository
+                        .findMarketAsks(
+                                incomingOrder
+                                        .getAssetSymbol(),
+
+                                OrderSide.SELL,
+
+                                OPEN_STATUSES,
+
+                                incomingOrder
+                                        .getUser()
+                                        .getId()
+                        );
+            }
+
+
+            /*
+             * LIMIT BUY
+             *
+             * On prend uniquement :
+             *
+             * ASK <= prix limite.
+             */
+
             return orderRepository
                     .findMatchingAsks(
-                            incomingOrder.getAssetSymbol(),
+                            incomingOrder
+                                    .getAssetSymbol(),
 
                             OrderSide.SELL,
 
                             OPEN_STATUSES,
 
-                            incomingOrder.getLimitPrice(),
+                            incomingOrder
+                                    .getLimitPrice(),
 
                             incomingOrder
                                     .getUser()
@@ -248,15 +443,63 @@ public class MatchingEngineService {
         }
 
 
+        /*
+         * =========================================
+         * SELL
+         * =========================================
+         */
+
+        /*
+         * MARKET SELL
+         *
+         * Pas de prix minimum.
+         *
+         * On prend les BID disponibles :
+         *
+         * prix le plus élevé d'abord.
+         */
+
+        if (
+                incomingOrder
+                        .getType()
+                        == OrderType.MARKET
+        ) {
+
+            return orderRepository
+                    .findMarketBids(
+                            incomingOrder
+                                    .getAssetSymbol(),
+
+                            OrderSide.BUY,
+
+                            OPEN_STATUSES,
+
+                            incomingOrder
+                                    .getUser()
+                                    .getId()
+                    );
+        }
+
+
+        /*
+         * LIMIT SELL
+         *
+         * On prend uniquement :
+         *
+         * BID >= prix limite.
+         */
+
         return orderRepository
                 .findMatchingBids(
-                        incomingOrder.getAssetSymbol(),
+                        incomingOrder
+                                .getAssetSymbol(),
 
                         OrderSide.BUY,
 
                         OPEN_STATUSES,
 
-                        incomingOrder.getLimitPrice(),
+                        incomingOrder
+                                .getLimitPrice(),
 
                         incomingOrder
                                 .getUser()
@@ -264,6 +507,10 @@ public class MatchingEngineService {
                 );
     }
 
+
+    // =========================================
+    // IS OPEN
+    // =========================================
 
     private boolean isOpen(
             Order order
@@ -281,12 +528,21 @@ public class MatchingEngineService {
     }
 
 
+    // =========================================
+    // UPDATE STATUS
+    // =========================================
+
     private void updateStatus(
             Order order
     ) {
 
+        /*
+         * Plus aucune quantité restante.
+         */
+
         if (
-                order.getRemainingQuantity()
+                order
+                        .getRemainingQuantity()
                         .compareTo(BigDecimal.ZERO)
                         == 0
         ) {
@@ -295,11 +551,19 @@ public class MatchingEngineService {
                     OrderStatus.EXECUTED
             );
 
-        } else {
-
-            order.setStatus(
-                    OrderStatus.PARTIALLY_FILLED
-            );
+            return;
         }
+
+
+        /*
+         * Il reste une quantité.
+         *
+         * L'ordre a donc été exécuté
+         * partiellement.
+         */
+
+        order.setStatus(
+                OrderStatus.PARTIALLY_FILLED
+        );
     }
 }

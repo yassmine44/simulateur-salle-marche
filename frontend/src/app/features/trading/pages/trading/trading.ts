@@ -25,6 +25,7 @@ import {
   OrderBookResponse,
   OrderResponse,
   OrderSide,
+  OrderType,
   TradeResponse
 } from '../../models/trading.models';
 
@@ -81,23 +82,40 @@ export class Trading
   errorMessage = '';
 
 
-  // Actifs chargés depuis PostgreSQL
-  // via GET /api/assets
+  // ==========================================
+  // ASSETS
+  // ==========================================
 
   assets: AssetResponse[] = [];
 
+
+  // ==========================================
+  // ORDER BOOK
+  // ==========================================
 
   orderBook:
     OrderBookResponse | null = null;
 
 
+  // ==========================================
+  // USER ORDERS
+  // ==========================================
+
   myOrders:
     OrderResponse[] = [];
 
 
+  // ==========================================
+  // USER TRADES
+  // ==========================================
+
   myTrades:
     TradeResponse[] = [];
 
+
+  // ==========================================
+  // AUTO REFRESH
+  // ==========================================
 
   private refreshSubscription?:
     Subscription;
@@ -124,7 +142,7 @@ export class Trading
       ],
 
       type: [
-        'LIMIT' as const,
+        'LIMIT' as OrderType,
         Validators.required
       ],
 
@@ -152,14 +170,22 @@ export class Trading
 
   ngOnInit(): void {
 
-    // On charge d'abord les actifs
-    // depuis le backend.
+    // Configure correctement le champ prix
+    // selon LIMIT / MARKET.
+
+    this.onOrderTypeChange();
+
+
+    // ========================================
+    // LOAD ASSETS
+    // ========================================
 
     this.loadAssets();
 
 
-    // Actualisation automatique du carnet,
-    // des ordres et des transactions.
+    // ========================================
+    // AUTO REFRESH
+    // ========================================
 
     this.refreshSubscription =
       interval(
@@ -186,7 +212,9 @@ export class Trading
 
   private loadAssets(): void {
 
-    this.loading = true;
+    this.loading =
+      true;
+
 
     this.clearMessages();
 
@@ -201,7 +229,9 @@ export class Trading
             assets;
 
 
-          // Aucun actif disponible
+          // ==================================
+          // NO ASSET
+          // ==================================
 
           if (
             this.assets.length === 0
@@ -210,12 +240,18 @@ export class Trading
             this.errorMessage =
               'Aucun actif disponible.';
 
+
             this.loading =
               false;
+
 
             return;
           }
 
+
+          // ==================================
+          // CURRENT SYMBOL
+          // ==================================
 
           const currentSymbol =
             this.normalizedSymbol;
@@ -223,16 +259,27 @@ export class Trading
 
           const currentAssetExists =
             this.assets.some(
+
               asset =>
+
                 asset.symbol
                   .toUpperCase()
+
                 ===
+
                 currentSymbol
             );
 
 
-          // Si AAPL n'existe pas en BDD,
-          // on sélectionne le premier actif.
+          // ==================================
+          // DEFAULT ASSET
+          // ==================================
+
+          /*
+           * Si AAPL n'existe pas,
+           * on sélectionne automatiquement
+           * le premier actif disponible.
+           */
 
           if (
             !currentAssetExists
@@ -248,11 +295,13 @@ export class Trading
           }
 
 
-          // Une fois les actifs chargés,
-          // on charge le carnet + ordres + trades.
+          // ==================================
+          // LOAD TRADING
+          // ==================================
 
           this.loadAll();
         },
+
 
         error: (error) => {
 
@@ -293,6 +342,7 @@ export class Trading
       this.loading =
         false;
 
+
       return;
     }
 
@@ -329,15 +379,19 @@ export class Trading
           this.orderBook =
             orderBook;
 
+
           this.myOrders =
             orders;
+
 
           this.myTrades =
             trades;
 
+
           this.loading =
             false;
         },
+
 
         error: (error) => {
 
@@ -369,9 +423,15 @@ export class Trading
 
   private refreshMarketData(): void {
 
+    /*
+     * Pendant la création d'un ordre,
+     * on évite une actualisation parallèle.
+     */
+
     if (
       this.submitting
     ) {
+
       return;
     }
 
@@ -381,6 +441,7 @@ export class Trading
 
 
     if (!symbol) {
+
       return;
     }
 
@@ -413,12 +474,15 @@ export class Trading
           this.orderBook =
             orderBook;
 
+
           this.myOrders =
             orders;
+
 
           this.myTrades =
             trades;
         },
+
 
         error: (error) => {
 
@@ -449,16 +513,25 @@ export class Trading
       this.errorMessage =
         'Le symbole de l’actif est obligatoire.';
 
+
       return;
     }
 
 
+    // ========================================
+    // ASSET VALIDATION
+    // ========================================
+
     const exists =
       this.assets.some(
+
         asset =>
+
           asset.symbol
             .toUpperCase()
+
           ===
+
           symbol
       );
 
@@ -468,9 +541,14 @@ export class Trading
       this.errorMessage =
         'Cet actif n’est pas disponible.';
 
+
       return;
     }
 
+
+    // ========================================
+    // NORMALIZE SYMBOL
+    // ========================================
 
     this.orderForm
       .patchValue({
@@ -481,8 +559,9 @@ export class Trading
       });
 
 
-    // Recharge toutes les données
-    // lors du changement d'actif.
+    // ========================================
+    // RELOAD
+    // ========================================
 
     this.loadAll();
   }
@@ -499,6 +578,7 @@ export class Trading
 
 
     if (!symbol) {
+
       return;
     }
 
@@ -514,6 +594,7 @@ export class Trading
           this.orderBook =
             book;
         },
+
 
         error: (error) => {
 
@@ -551,6 +632,81 @@ export class Trading
 
 
   // ==========================================
+  // LIMIT / MARKET
+  // ==========================================
+
+  onOrderTypeChange(): void {
+
+    const type =
+      this.orderForm
+        .controls
+        .type
+        .value;
+
+
+    const limitPriceControl =
+      this.orderForm
+        .controls
+        .limitPrice;
+
+
+    // ========================================
+    // MARKET
+    // ========================================
+
+    /*
+     * Un MARKET n'a pas besoin
+     * de prix limite.
+     *
+     * Le prix sera obtenu en consommant
+     * les meilleurs niveaux disponibles
+     * dans le carnet.
+     */
+
+    if (
+      type === 'MARKET'
+    ) {
+
+      limitPriceControl
+        .clearValidators();
+
+
+      limitPriceControl
+        .updateValueAndValidity({
+          emitEvent: false
+        });
+
+
+      return;
+    }
+
+
+    // ========================================
+    // LIMIT
+    // ========================================
+
+    /*
+     * Un LIMIT nécessite obligatoirement
+     * un prix strictement positif.
+     */
+
+    limitPriceControl
+      .setValidators([
+        Validators.required,
+        Validators.min(
+          0.00000001
+        )
+      ]);
+
+
+    limitPriceControl
+      .updateValueAndValidity({
+        emitEvent: false
+      });
+  }
+
+
+  // ==========================================
   // CREATE ORDER
   // ==========================================
 
@@ -558,6 +714,10 @@ export class Trading
 
     this.clearMessages();
 
+
+    // ========================================
+    // FORM VALIDATION
+    // ========================================
 
     if (
       this.orderForm.invalid
@@ -575,6 +735,10 @@ export class Trading
     }
 
 
+    // ========================================
+    // FORM VALUES
+    // ========================================
+
     const formValue =
       this.orderForm
         .getRawValue();
@@ -587,14 +751,20 @@ export class Trading
         .toUpperCase();
 
 
-    // Vérification frontend supplémentaire.
+    // ========================================
+    // ASSET VALIDATION
+    // ========================================
 
     const assetExists =
       this.assets.some(
+
         asset =>
+
           asset.symbol
             .toUpperCase()
+
           ===
+
           symbol
       );
 
@@ -604,9 +774,25 @@ export class Trading
       this.errorMessage =
         'L’actif sélectionné n’existe pas.';
 
+
       return;
     }
 
+
+    // ========================================
+    // CREATE REQUEST
+    // ========================================
+
+    /*
+     * LIMIT :
+     *
+     * limitPrice = valeur saisie
+     *
+     *
+     * MARKET :
+     *
+     * limitPrice = null
+     */
 
     const request:
       CreateOrderRequest = {
@@ -614,23 +800,39 @@ export class Trading
         assetSymbol:
           symbol,
 
+
         side:
           formValue.side,
 
+
         type:
-          'LIMIT',
+          formValue.type,
+
 
         quantity:
           Number(
             formValue.quantity
           ),
 
+
         limitPrice:
-          Number(
-            formValue.limitPrice
-          )
+          formValue.type === 'LIMIT'
+
+            ?
+
+            Number(
+              formValue.limitPrice
+            )
+
+            :
+
+            null
       };
 
+
+    // ========================================
+    // SUBMIT
+    // ========================================
 
     this.submitting =
       true;
@@ -656,6 +858,7 @@ export class Trading
 
           this.loadAfterAction();
         },
+
 
         error: (error) => {
 
@@ -694,6 +897,7 @@ export class Trading
         order
       )
     ) {
+
       return;
     }
 
@@ -716,6 +920,7 @@ export class Trading
           this.loadAfterAction();
         },
 
+
         error: (error) => {
 
           console.error(
@@ -736,14 +941,30 @@ export class Trading
   }
 
 
+  // ==========================================
+  // CAN CANCEL
+  // ==========================================
+
   canCancel(
     order: OrderResponse
   ): boolean {
 
+    /*
+     * Seulement les LIMIT encore ouverts
+     * sont normalement annulables.
+     *
+     * Un MARKET est exécuté ou annulé
+     * immédiatement côté backend.
+     */
+
     return (
-      order.status === 'PENDING'
-      ||
-      order.status === 'PARTIALLY_FILLED'
+      order.type === 'LIMIT'
+      &&
+      (
+        order.status === 'PENDING'
+        ||
+        order.status === 'PARTIALLY_FILLED'
+      )
     );
   }
 
@@ -760,15 +981,66 @@ export class Trading
 
 
     return (
+
       this.assets.find(
+
         asset =>
+
           asset.symbol
             .toUpperCase()
+
           ===
+
           symbol
       )
+
       ??
+
       null
+    );
+  }
+
+
+  // ==========================================
+  // CURRENT ORDER TYPE
+  // ==========================================
+
+  get selectedOrderType():
+    OrderType {
+
+    return this.orderForm
+      .controls
+      .type
+      .value;
+  }
+
+
+  // ==========================================
+  // IS LIMIT
+  // ==========================================
+
+  get isLimitOrder():
+    boolean {
+
+    return (
+      this.selectedOrderType
+      ===
+      'LIMIT'
+    );
+  }
+
+
+  // ==========================================
+  // IS MARKET
+  // ==========================================
+
+  get isMarketOrder():
+    boolean {
+
+    return (
+      this.selectedOrderType
+      ===
+      'MARKET'
     );
   }
 
@@ -798,6 +1070,10 @@ export class Trading
   }
 
 
+  // ==========================================
+  // BEST ASK
+  // ==========================================
+
   get bestAsk():
     number | null {
 
@@ -819,6 +1095,10 @@ export class Trading
   }
 
 
+  // ==========================================
+  // SPREAD
+  // ==========================================
+
   get spread():
     number | null {
 
@@ -839,6 +1119,44 @@ export class Trading
     );
   }
 
+
+  // ==========================================
+  // MID PRICE
+  // ==========================================
+
+  /*
+   * On prépare déjà cette information
+   * pour la future couche IA.
+   *
+   * MidPrice =
+   *
+   * (Best Bid + Best Ask) / 2
+   */
+
+  get midPrice():
+    number | null {
+
+    if (
+      this.bestBid === null
+      ||
+      this.bestAsk === null
+    ) {
+
+      return null;
+    }
+
+
+    return (
+      this.bestBid
+      +
+      this.bestAsk
+    ) / 2;
+  }
+
+
+  // ==========================================
+  // NORMALIZED SYMBOL
+  // ==========================================
 
   get normalizedSymbol():
     string {
@@ -895,10 +1213,42 @@ export class Trading
 
 
   // ==========================================
+  // ORDER TYPE LABEL
+  // ==========================================
+
+  orderTypeLabel(
+    type: OrderType
+  ): string {
+
+    switch (type) {
+
+      case 'LIMIT':
+
+        return 'Limite';
+
+
+      case 'MARKET':
+
+        return 'Marché';
+
+
+      default:
+
+        return type;
+    }
+  }
+
+
+  // ==========================================
   // REFRESH AFTER ACTION
   // ==========================================
 
   private loadAfterAction(): void {
+
+    /*
+     * On conserve le message de succès
+     * pendant l'actualisation.
+     */
 
     const successMessage =
       this.successMessage;
@@ -936,8 +1286,10 @@ export class Trading
           this.orderBook =
             orderBook;
 
+
           this.myOrders =
             orders;
+
 
           this.myTrades =
             trades;
@@ -946,6 +1298,7 @@ export class Trading
           this.successMessage =
             successMessage;
         },
+
 
         error: (error) => {
 
@@ -975,6 +1328,84 @@ export class Trading
     order: OrderResponse
   ): string {
 
+    // ========================================
+    // MARKET FULL EXECUTION
+    // ========================================
+
+    if (
+      order.type === 'MARKET'
+      &&
+      order.status === 'EXECUTED'
+    ) {
+
+      return (
+        `Ordre MARKET #${order.id} exécuté immédiatement.`
+      );
+    }
+
+
+    // ========================================
+    // MARKET PARTIAL EXECUTION
+    // ========================================
+
+    /*
+     * Notre backend traite la partie restante
+     * d'un MARKET comme annulée.
+     *
+     * Exemple :
+     *
+     * demandé = 10
+     * exécuté = 6
+     * restant = 4
+     * statut = CANCELLED
+     */
+
+    if (
+      order.type === 'MARKET'
+      &&
+      order.status === 'CANCELLED'
+    ) {
+
+      const executedQuantity =
+        Number(
+          order.quantity
+        )
+        -
+        Number(
+          order.remainingQuantity
+        );
+
+
+      // MARKET partiellement exécuté
+
+      if (
+        executedQuantity > 0
+      ) {
+
+        return (
+          `Ordre MARKET #${order.id} partiellement exécuté. `
+          +
+          `${executedQuantity} exécuté(s), `
+          +
+          `${order.remainingQuantity} non exécuté(s) puis annulé(s).`
+        );
+      }
+
+
+      // MARKET sans aucune liquidité
+
+      return (
+        `Ordre MARKET #${order.id} non exécuté : `
+        +
+        `aucune liquidité disponible dans le carnet.`
+      );
+    }
+
+
+    // ========================================
+    // LIMIT EXECUTED
+    // ========================================
+
     if (
       order.status ===
       'EXECUTED'
@@ -985,6 +1416,10 @@ export class Trading
       );
     }
 
+
+    // ========================================
+    // LIMIT PARTIALLY FILLED
+    // ========================================
 
     if (
       order.status ===
@@ -999,6 +1434,10 @@ export class Trading
     }
 
 
+    // ========================================
+    // LIMIT PENDING
+    // ========================================
+
     if (
       order.status ===
       'PENDING'
@@ -1009,6 +1448,10 @@ export class Trading
       );
     }
 
+
+    // ========================================
+    // DEFAULT
+    // ========================================
 
     return (
       `Ordre #${order.id} créé avec le statut ${order.status}.`
@@ -1029,6 +1472,10 @@ export class Trading
       '';
   }
 
+
+  // ==========================================
+  // ERROR MESSAGE
+  // ==========================================
 
   private extractErrorMessage(
     error: unknown,

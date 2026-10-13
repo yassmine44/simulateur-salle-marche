@@ -24,41 +24,46 @@
     </div>
 
 
-<div class="market-selector">
+    <!-- ======================================= -->
+    <!-- ASSET SELECTOR -->
+    <!-- ======================================= -->
 
-  <label for="symbol">
-    Actif
-  </label>
+    <div class="market-selector">
 
-  <div class="symbol-search">
+      <label for="symbol">
+        Actif
+      </label>
 
-<select
-  id="symbol"
-  [formControl]="orderForm.controls.assetSymbol"
-  (change)="loadSymbol()"
->
+      <div class="symbol-search">
 
-  @for (
-    asset of assets;
-    track asset.id
-  ) {
+        <select
+          id="symbol"
+          [formControl]="orderForm.controls.assetSymbol"
+          (change)="loadSymbol()"
+        >
 
-    <option
-      [value]="asset.symbol"
-    >
-      {{ asset.name }}
-      —
-      {{ asset.symbol }}
-      —
-      {{ asset.type }}
-    </option>
+          @for (
+            asset of assets;
+            track asset.id
+          ) {
 
-  }
+            <option
+              [value]="asset.symbol"
+            >
+              {{ asset.name }}
+              —
+              {{ asset.symbol }}
+              —
+              {{ asset.type }}
+            </option>
 
-</select>
-  </div>
+          }
 
-</div>
+        </select>
+
+      </div>
+
+    </div>
 
   </header>
 
@@ -102,6 +107,8 @@
     </div>
 
 
+    <!-- BEST BID -->
+
     <div class="market-metric">
 
       <span>
@@ -109,13 +116,19 @@
       </span>
 
       <strong class="buy-text">
-        {{ bestBid !== null
-          ? (bestBid | number:'1.2-8')
-          : '—' }}
+
+        {{
+          bestBid !== null
+            ? (bestBid | number:'1.2-8')
+            : '—'
+        }}
+
       </strong>
 
     </div>
 
+
+    <!-- BEST ASK -->
 
     <div class="market-metric">
 
@@ -124,13 +137,19 @@
       </span>
 
       <strong class="sell-text">
-        {{ bestAsk !== null
-          ? (bestAsk | number:'1.2-8')
-          : '—' }}
+
+        {{
+          bestAsk !== null
+            ? (bestAsk | number:'1.2-8')
+            : '—'
+        }}
+
       </strong>
 
     </div>
 
+
+    <!-- SPREAD -->
 
     <div class="market-metric">
 
@@ -139,9 +158,13 @@
       </span>
 
       <strong>
-        {{ spread !== null
-          ? (spread | number:'1.2-8')
-          : '—' }}
+
+        {{
+          spread !== null
+            ? (spread | number:'1.2-8')
+            : '—'
+        }}
+
       </strong>
 
     </div>
@@ -185,7 +208,9 @@
       >
 
 
+        <!-- =================================== -->
         <!-- BUY / SELL -->
+        <!-- =================================== -->
 
         <div class="side-selector">
 
@@ -215,7 +240,9 @@
         </div>
 
 
+        <!-- =================================== -->
         <!-- TYPE -->
+        <!-- =================================== -->
 
         <div class="form-group">
 
@@ -225,23 +252,25 @@
 
           <select
             formControlName="type"
+            (change)="onOrderTypeChange()"
           >
+
             <option value="LIMIT">
               Ordre limite
             </option>
 
-            <option
-              value="MARKET"
-              disabled
-            >
-              Ordre au marché — bientôt
+            <option value="MARKET">
+              Ordre au marché
             </option>
+
           </select>
 
         </div>
 
 
+        <!-- =================================== -->
         <!-- QUANTITY -->
+        <!-- =================================== -->
 
         <div class="form-group">
 
@@ -270,9 +299,14 @@
         </div>
 
 
+        <!-- =================================== -->
         <!-- LIMIT PRICE -->
+        <!-- =================================== -->
 
-        <div class="form-group">
+        <div
+          *ngIf="isLimitOrder"
+          class="form-group"
+        >
 
           <label>
             Prix limite
@@ -288,17 +322,112 @@
             />
 
             <span>
-              USD
+              {{ selectedAsset?.currency || 'USD' }}
             </span>
+
+          </div>
+
+
+          <small
+            *ngIf="
+              orderForm.controls.limitPrice.touched
+              &&
+              orderForm.controls.limitPrice.invalid
+            "
+            class="field-error"
+          >
+            Le prix limite doit être positif.
+          </small>
+
+        </div>
+
+
+        <!-- =================================== -->
+        <!-- MARKET INFORMATION -->
+        <!-- =================================== -->
+
+        <div
+          *ngIf="isMarketOrder"
+          class="order-summary"
+        >
+
+          <div>
+
+            <span>
+              Type
+            </span>
+
+            <strong>
+              MARKET
+            </strong>
+
+          </div>
+
+
+          <div>
+
+            <span>
+              Exécution
+            </span>
+
+            <strong>
+              Meilleur prix disponible
+            </strong>
+
+          </div>
+
+
+          <div>
+
+            <span>
+              Prix indicatif
+            </span>
+
+            <strong>
+
+              <ng-container
+                *ngIf="
+                  orderForm.controls.side.value === 'BUY'
+                "
+              >
+
+                {{
+                  bestAsk !== null
+                    ? (bestAsk | number:'1.2-8')
+                    : 'Aucun ASK'
+                }}
+
+              </ng-container>
+
+
+              <ng-container
+                *ngIf="
+                  orderForm.controls.side.value === 'SELL'
+                "
+              >
+
+                {{
+                  bestBid !== null
+                    ? (bestBid | number:'1.2-8')
+                    : 'Aucun BID'
+                }}
+
+              </ng-container>
+
+            </strong>
 
           </div>
 
         </div>
 
 
+        <!-- =================================== -->
         <!-- ORDER SUMMARY -->
+        <!-- =================================== -->
 
         <div class="order-summary">
+
+          <!-- SIDE -->
 
           <div>
 
@@ -320,6 +449,8 @@
           </div>
 
 
+          <!-- ASSET -->
+
           <div>
 
             <span>
@@ -333,13 +464,37 @@
           </div>
 
 
+          <!-- ORDER TYPE -->
+
+          <div>
+
+            <span>
+              Type
+            </span>
+
+            <strong>
+              {{
+                orderTypeLabel(
+                  orderForm.controls.type.value
+                )
+              }}
+            </strong>
+
+          </div>
+
+
+          <!-- ESTIMATED VALUE LIMIT -->
+
           <div>
 
             <span>
               Valeur estimée
             </span>
 
-            <strong>
+
+            <strong
+              *ngIf="isLimitOrder"
+            >
 
               {{
                 (
@@ -350,8 +505,15 @@
                 | number:'1.2-2'
               }}
 
-              USD
+              {{ selectedAsset?.currency || 'USD' }}
 
+            </strong>
+
+
+            <strong
+              *ngIf="isMarketOrder"
+            >
+              Selon le carnet
             </strong>
 
           </div>
@@ -359,7 +521,9 @@
         </div>
 
 
+        <!-- =================================== -->
         <!-- SUBMIT -->
+        <!-- =================================== -->
 
         <button
           type="submit"
@@ -377,7 +541,9 @@
           "
         >
 
-          <span *ngIf="!submitting">
+          <span
+            *ngIf="!submitting"
+          >
 
             {{
               orderForm.controls.side.value === 'BUY'
@@ -387,7 +553,10 @@
 
           </span>
 
-          <span *ngIf="submitting">
+
+          <span
+            *ngIf="submitting"
+          >
             Envoi...
           </span>
 
@@ -396,6 +565,7 @@
       </form>
 
     </article>
+
 
 
     <!-- ======================================= -->
@@ -433,7 +603,9 @@
       <div class="book-columns">
 
 
+        <!-- =================================== -->
         <!-- BIDS -->
+        <!-- =================================== -->
 
         <div class="book-side">
 
@@ -507,7 +679,9 @@
         </div>
 
 
+        <!-- =================================== -->
         <!-- ASKS -->
+        <!-- =================================== -->
 
         <div class="book-side">
 
@@ -587,6 +761,7 @@
   </section>
 
 
+
   <!-- ========================================= -->
   <!-- MY ORDERS -->
   <!-- ========================================= -->
@@ -606,6 +781,7 @@
         </h2>
 
       </div>
+
 
       <span class="count-badge">
         {{ myOrders.length }}
@@ -632,6 +808,10 @@
 
             <th>
               Sens
+            </th>
+
+            <th>
+              Type
             </th>
 
             <th>
@@ -666,18 +846,30 @@
         <tbody>
 
           <tr
-            *ngFor="let order of myOrders"
+            *ngFor="
+              let order of myOrders
+            "
           >
+
+            <!-- ID -->
 
             <td class="id-cell">
               #{{ order.id }}
             </td>
 
+
+            <!-- ASSET -->
+
             <td>
+
               <strong>
                 {{ order.assetSymbol }}
               </strong>
+
             </td>
+
+
+            <!-- SIDE -->
 
             <td>
 
@@ -695,51 +887,121 @@
 
             </td>
 
-            <td>
-              {{ order.limitPrice | number:'1.2-8' }}
-            </td>
+
+            <!-- TYPE -->
 
             <td>
-              {{ order.quantity | number:'1.0-8' }}
+
+              <strong>
+                {{ orderTypeLabel(order.type) }}
+              </strong>
+
             </td>
 
+
+            <!-- PRICE -->
+
             <td>
-              {{ order.remainingQuantity | number:'1.0-8' }}
+
+              <ng-container
+                *ngIf="
+                  order.type === 'LIMIT'
+                "
+              >
+                {{
+                  order.limitPrice
+                  | number:'1.2-8'
+                }}
+              </ng-container>
+
+
+              <ng-container
+                *ngIf="
+                  order.type === 'MARKET'
+                "
+              >
+                Marché
+              </ng-container>
+
             </td>
+
+
+            <!-- QUANTITY -->
+
+            <td>
+              {{
+                order.quantity
+                | number:'1.0-8'
+              }}
+            </td>
+
+
+            <!-- REMAINING -->
+
+            <td>
+              {{
+                order.remainingQuantity
+                | number:'1.0-8'
+              }}
+            </td>
+
+
+            <!-- STATUS -->
 
             <td>
 
               <span
                 class="status"
                 [ngClass]="
-                  'status-' +
+                  'status-'
+                  +
                   order.status.toLowerCase()
                 "
               >
 
-                {{ statusLabel(order.status) }}
+                {{
+                  statusLabel(
+                    order.status
+                  )
+                }}
 
               </span>
 
             </td>
 
+
+            <!-- DATE -->
+
             <td>
-              {{ order.createdAt | date:'dd/MM/yyyy HH:mm:ss' }}
+              {{
+                order.createdAt
+                | date:'dd/MM/yyyy HH:mm:ss'
+              }}
             </td>
+
+
+            <!-- ACTION -->
 
             <td>
 
               <button
-                *ngIf="canCancel(order)"
+                *ngIf="
+                  canCancel(order)
+                "
                 type="button"
                 class="cancel-button"
-                (click)="cancelOrder(order)"
+                (click)="
+                  cancelOrder(order)
+                "
               >
                 Annuler
               </button>
 
+
               <span
-                *ngIf="!canCancel(order)"
+                *ngIf="
+                  !canCancel(order)
+                "
                 class="no-action"
               >
                 —
@@ -750,10 +1012,16 @@
           </tr>
 
 
-          <tr *ngIf="myOrders.length === 0">
+          <!-- EMPTY -->
+
+          <tr
+            *ngIf="
+              myOrders.length === 0
+            "
+          >
 
             <td
-              colspan="9"
+              colspan="10"
               class="empty-table"
             >
               Aucun ordre pour le moment.
@@ -768,6 +1036,7 @@
     </div>
 
   </section>
+
 
 
   <!-- ========================================= -->
@@ -789,6 +1058,7 @@
         </h2>
 
       </div>
+
 
       <span class="count-badge">
         {{ myTrades.length }}
@@ -841,22 +1111,37 @@
         <tbody>
 
           <tr
-            *ngFor="let trade of myTrades"
+            *ngFor="
+              let trade of myTrades
+            "
           >
+
+            <!-- TRADE ID -->
 
             <td class="id-cell">
               #{{ trade.id }}
             </td>
 
+
+            <!-- ORDER ID -->
+
             <td>
               #{{ trade.orderId }}
             </td>
 
+
+            <!-- ASSET -->
+
             <td>
+
               <strong>
                 {{ trade.assetSymbol }}
               </strong>
+
             </td>
+
+
+            <!-- SIDE -->
 
             <td>
 
@@ -874,24 +1159,50 @@
 
             </td>
 
+
+            <!-- EXECUTION PRICE -->
+
             <td>
+
               <strong>
-                {{ trade.executionPrice | number:'1.2-8' }}
+                {{
+                  trade.executionPrice
+                  | number:'1.2-8'
+                }}
               </strong>
+
             </td>
 
-            <td>
-              {{ trade.quantity | number:'1.0-8' }}
-            </td>
+
+            <!-- QUANTITY -->
 
             <td>
-              {{ trade.createdAt | date:'dd/MM/yyyy HH:mm:ss' }}
+              {{
+                trade.quantity
+                | number:'1.0-8'
+              }}
+            </td>
+
+
+            <!-- DATE -->
+
+            <td>
+              {{
+                trade.createdAt
+                | date:'dd/MM/yyyy HH:mm:ss'
+              }}
             </td>
 
           </tr>
 
 
-          <tr *ngIf="myTrades.length === 0">
+          <!-- EMPTY -->
+
+          <tr
+            *ngIf="
+              myTrades.length === 0
+            "
+          >
 
             <td
               colspan="7"
