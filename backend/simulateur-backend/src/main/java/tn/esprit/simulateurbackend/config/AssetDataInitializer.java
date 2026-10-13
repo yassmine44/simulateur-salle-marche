@@ -97,7 +97,27 @@ public class AssetDataInitializer
                 "Euro / US Dollar",
                 AssetType.FOREX,
                 "USD"
+        );createAsset(
+                "IXIC",
+                "Nasdaq Composite",
+                AssetType.INDEX,
+                "USD"
         );
+
+        createAsset(
+                "SPX",
+                "S&P 500",
+                AssetType.INDEX,
+                "USD"
+        );
+
+        createAsset(
+                "XAUUSD",
+                "Gold / US Dollar",
+                AssetType.FOREX,
+                "USD"
+        );
+
     }
 
 

@@ -152,6 +152,20 @@ export const routes: Routes = [
           adminGuard
         ]
       },
+      {
+  path: 'charts',
+
+  loadComponent: () =>
+
+    import(
+      './pages/charts/charts.component'
+    )
+
+      .then(
+        module =>
+          module.ChartsComponent
+      )
+},
 
 
       // =====================
