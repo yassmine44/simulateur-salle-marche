@@ -27,4 +27,5 @@ public interface AssetRepository
 
     List<Asset>
     findAllByActiveTrueOrderBySymbolAsc();
+    List<Asset> findByActiveTrueOrderBySymbolAsc();
 }

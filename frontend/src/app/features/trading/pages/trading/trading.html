@@ -17,16 +17,12 @@
       </h1>
 
       <p>
-        Passez des ordres et observez leur exécution
-        dans le carnet virtuel.
+        Passez des ordres et analysez la microstructure
+        du carnet virtuel.
       </p>
 
     </div>
 
-
-    <!-- ======================================= -->
-    <!-- ASSET SELECTOR -->
-    <!-- ======================================= -->
 
     <div class="market-selector">
 
@@ -89,7 +85,7 @@
 
 
   <!-- ========================================= -->
-  <!-- MARKET SUMMARY -->
+  <!-- MARKET MICROSTRUCTURE -->
   <!-- ========================================= -->
 
   <section class="market-summary">
@@ -116,13 +112,11 @@
       </span>
 
       <strong class="buy-text">
-
         {{
           bestBid !== null
             ? (bestBid | number:'1.2-8')
             : '—'
         }}
-
       </strong>
 
     </div>
@@ -137,13 +131,30 @@
       </span>
 
       <strong class="sell-text">
-
         {{
           bestAsk !== null
             ? (bestAsk | number:'1.2-8')
             : '—'
         }}
+      </strong>
 
+    </div>
+
+
+    <!-- MID PRICE -->
+
+    <div class="market-metric">
+
+      <span>
+        Mid-Price
+      </span>
+
+      <strong>
+        {{
+          midPrice !== null
+            ? (midPrice | number:'1.2-8')
+            : '—'
+        }}
       </strong>
 
     </div>
@@ -158,13 +169,204 @@
       </span>
 
       <strong>
-
         {{
           spread !== null
             ? (spread | number:'1.2-8')
             : '—'
         }}
+      </strong>
 
+    </div>
+
+
+    <!-- RELATIVE SPREAD -->
+
+    <div class="market-metric">
+
+      <span>
+        Spread relatif
+      </span>
+
+      <strong>
+        {{
+          relativeSpreadPercent !== null
+            ? ((relativeSpreadPercent | number:'1.2-4') + ' %')
+            : '—'
+        }}
+      </strong>
+
+    </div>
+
+
+    <!-- OBI -->
+
+    <div class="market-metric">
+
+      <span>
+        OBI
+      </span>
+
+      <strong
+        [class.buy-text]="
+          orderBookImbalance !== null
+          &&
+          orderBookImbalance > 0
+        "
+        [class.sell-text]="
+          orderBookImbalance !== null
+          &&
+          orderBookImbalance < 0
+        "
+      >
+        {{
+          orderBookImbalance !== null
+            ? (orderBookImbalance | number:'1.3-3')
+            : '—'
+        }}
+      </strong>
+
+    </div>
+
+
+    <!-- BID VOLUME -->
+
+    <div class="market-metric">
+
+      <span>
+        Volume BID
+      </span>
+
+      <strong class="buy-text">
+        {{
+          totalBidVolume
+            | number:'1.0-8'
+        }}
+      </strong>
+
+    </div>
+
+
+    <!-- ASK VOLUME -->
+
+    <div class="market-metric">
+
+      <span>
+        Volume ASK
+      </span>
+
+      <strong class="sell-text">
+        {{
+          totalAskVolume
+            | number:'1.0-8'
+        }}
+      </strong>
+
+    </div>
+
+
+    <!-- WEIGHTED BID DEPTH -->
+
+    <div class="market-metric">
+
+      <span>
+        Profondeur BID pondérée
+      </span>
+
+      <strong class="buy-text">
+        {{
+          weightedBidDepth !== null
+            ? (weightedBidDepth | number:'1.2-8')
+            : '—'
+        }}
+      </strong>
+
+    </div>
+
+
+    <!-- WEIGHTED ASK DEPTH -->
+
+    <div class="market-metric">
+
+      <span>
+        Profondeur ASK pondérée
+      </span>
+
+      <strong class="sell-text">
+        {{
+          weightedAskDepth !== null
+            ? (weightedAskDepth | number:'1.2-8')
+            : '—'
+        }}
+      </strong>
+
+    </div>
+
+
+    <!-- VOLATILITY -->
+
+    <div class="market-metric">
+
+      <span>
+        Volatilité 60 s
+      </span>
+
+      <strong>
+        {{
+          volatility60sPercent !== null
+            ? ((volatility60sPercent | number:'1.4-6') + ' %')
+            : '—'
+        }}
+      </strong>
+
+    </div>
+
+
+    <!-- MOMENTUM -->
+
+    <div class="market-metric">
+
+      <span>
+        Momentum 30 s
+      </span>
+
+      <strong
+        [class.buy-text]="
+          momentum30sPercent !== null
+          &&
+          momentum30sPercent > 0
+        "
+        [class.sell-text]="
+          momentum30sPercent !== null
+          &&
+          momentum30sPercent < 0
+        "
+      >
+        {{
+          momentum30sPercent !== null
+            ? (
+                (momentum30sPercent > 0 ? '+' : '')
+                +
+                (momentum30sPercent | number:'1.4-6')
+                +
+                ' %'
+              )
+            : '—'
+        }}
+      </strong>
+
+    </div>
+
+
+    <!-- OBSERVATIONS -->
+
+    <div class="market-metric">
+
+      <span>
+        Observations 60 s
+      </span>
+
+      <strong>
+        {{ temporalObservationCount }}
       </strong>
 
     </div>
@@ -208,9 +410,7 @@
       >
 
 
-        <!-- =================================== -->
         <!-- BUY / SELL -->
-        <!-- =================================== -->
 
         <div class="side-selector">
 
@@ -240,9 +440,7 @@
         </div>
 
 
-        <!-- =================================== -->
         <!-- TYPE -->
-        <!-- =================================== -->
 
         <div class="form-group">
 
@@ -268,9 +466,7 @@
         </div>
 
 
-        <!-- =================================== -->
         <!-- QUANTITY -->
-        <!-- =================================== -->
 
         <div class="form-group">
 
@@ -283,7 +479,9 @@
             min="0.00000001"
             step="any"
             formControlName="quantity"
+            (input)="refreshSlippageEstimate()"
           />
+
 
           <small
             *ngIf="
@@ -299,9 +497,7 @@
         </div>
 
 
-        <!-- =================================== -->
         <!-- LIMIT PRICE -->
-        <!-- =================================== -->
 
         <div
           *ngIf="isLimitOrder"
@@ -343,7 +539,7 @@
 
 
         <!-- =================================== -->
-        <!-- MARKET INFORMATION -->
+        <!-- MARKET EXECUTION ESTIMATE -->
         <!-- =================================== -->
 
         <div
@@ -367,11 +563,17 @@
           <div>
 
             <span>
-              Exécution
+              Côté consommé
             </span>
 
             <strong>
-              Meilleur prix disponible
+
+              {{
+                orderForm.controls.side.value === 'BUY'
+                  ? 'ASK'
+                  : 'BID'
+              }}
+
             </strong>
 
           </div>
@@ -380,7 +582,7 @@
           <div>
 
             <span>
-              Prix indicatif
+              Meilleur prix
             </span>
 
             <strong>
@@ -390,13 +592,11 @@
                   orderForm.controls.side.value === 'BUY'
                 "
               >
-
                 {{
                   bestAsk !== null
                     ? (bestAsk | number:'1.2-8')
                     : 'Aucun ASK'
                 }}
-
               </ng-container>
 
 
@@ -405,13 +605,11 @@
                   orderForm.controls.side.value === 'SELL'
                 "
               >
-
                 {{
                   bestBid !== null
                     ? (bestBid | number:'1.2-8')
                     : 'Aucun BID'
                 }}
-
               </ng-container>
 
             </strong>
@@ -422,12 +620,209 @@
 
 
         <!-- =================================== -->
+        <!-- SLIPPAGE ESTIMATION -->
+        <!-- =================================== -->
+
+        <div
+          *ngIf="isMarketOrder"
+          class="order-summary"
+        >
+
+          <div>
+
+            <span>
+              Analyse pré-exécution
+            </span>
+
+            <strong>
+              Slippage estimé
+            </strong>
+
+          </div>
+
+
+          <div
+            *ngIf="slippageLoading"
+          >
+
+            <span>
+              Calcul
+            </span>
+
+            <strong>
+              Analyse du carnet...
+            </strong>
+
+          </div>
+
+
+          <div
+            *ngIf="
+              !slippageLoading
+              &&
+              slippageErrorMessage
+            "
+          >
+
+            <span>
+              Estimation
+            </span>
+
+            <strong class="sell-text">
+              {{ slippageErrorMessage }}
+            </strong>
+
+          </div>
+
+
+          <ng-container
+            *ngIf="
+              !slippageLoading
+              &&
+              slippageEstimate
+            "
+          >
+
+            <div>
+
+              <span>
+                Quantité demandée
+              </span>
+
+              <strong>
+                {{
+                  slippageEstimate.requestedQuantity
+                    | number:'1.0-8'
+                }}
+              </strong>
+
+            </div>
+
+
+            <div>
+
+              <span>
+                Quantité exécutable
+              </span>
+
+              <strong>
+                {{
+                  executableQuantity
+                    | number:'1.0-8'
+                }}
+              </strong>
+
+            </div>
+
+
+            <div>
+
+              <span>
+                Quantité restante
+              </span>
+
+              <strong
+                [class.sell-text]="
+                  remainingMarketQuantity > 0
+                "
+              >
+                {{
+                  remainingMarketQuantity
+                    | number:'1.0-8'
+                }}
+              </strong>
+
+            </div>
+
+
+            <div>
+
+              <span>
+                Prix moyen estimé
+              </span>
+
+              <strong>
+                {{
+                  estimatedExecutionPrice !== null
+                    ? (
+                        estimatedExecutionPrice
+                        | number:'1.2-8'
+                      )
+                    : '—'
+                }}
+              </strong>
+
+            </div>
+
+
+            <div>
+
+              <span>
+                Slippage
+              </span>
+
+              <strong>
+                {{
+                  estimatedSlippagePercent !== null
+                    ? (
+                        (
+                          estimatedSlippagePercent
+                          | number:'1.4-6'
+                        )
+                        +
+                        ' %'
+                      )
+                    : '—'
+                }}
+              </strong>
+
+            </div>
+
+
+            <div>
+
+              <span>
+                Niveaux consommés
+              </span>
+
+              <strong>
+                {{ slippageLevelsConsumed }}
+              </strong>
+
+            </div>
+
+
+            <div>
+
+              <span>
+                Liquidité
+              </span>
+
+              <strong
+                [class.buy-text]="marketFullyExecutable"
+                [class.sell-text]="!marketFullyExecutable"
+              >
+
+                {{
+                  marketFullyExecutable
+                    ? 'Suffisante'
+                    : 'Insuffisante'
+                }}
+
+              </strong>
+
+            </div>
+
+          </ng-container>
+
+        </div>
+
+
+        <!-- =================================== -->
         <!-- ORDER SUMMARY -->
         <!-- =================================== -->
 
         <div class="order-summary">
-
-          <!-- SIDE -->
 
           <div>
 
@@ -449,8 +844,6 @@
           </div>
 
 
-          <!-- ASSET -->
-
           <div>
 
             <span>
@@ -463,8 +856,6 @@
 
           </div>
 
-
-          <!-- ORDER TYPE -->
 
           <div>
 
@@ -483,8 +874,6 @@
           </div>
 
 
-          <!-- ESTIMATED VALUE LIMIT -->
-
           <div>
 
             <span>
@@ -495,7 +884,6 @@
             <strong
               *ngIf="isLimitOrder"
             >
-
               {{
                 (
                   orderForm.controls.quantity.value
@@ -506,14 +894,31 @@
               }}
 
               {{ selectedAsset?.currency || 'USD' }}
-
             </strong>
 
 
             <strong
               *ngIf="isMarketOrder"
             >
-              Selon le carnet
+              {{
+                estimatedExecutionPrice !== null
+                  ? (
+                      orderForm.controls.quantity.value
+                      *
+                      estimatedExecutionPrice
+                      | number:'1.2-2'
+                    )
+                  : 'Selon le carnet'
+              }}
+
+              <ng-container
+                *ngIf="
+                  estimatedExecutionPrice !== null
+                "
+              >
+                {{ selectedAsset?.currency || 'USD' }}
+              </ng-container>
+
             </strong>
 
           </div>
@@ -521,9 +926,7 @@
         </div>
 
 
-        <!-- =================================== -->
         <!-- SUBMIT -->
-        <!-- =================================== -->
 
         <button
           type="submit"
@@ -544,13 +947,11 @@
           <span
             *ngIf="!submitting"
           >
-
             {{
               orderForm.controls.side.value === 'BUY'
                 ? 'Placer l’ordre d’achat'
                 : 'Placer l’ordre de vente'
             }}
-
           </span>
 
 
@@ -565,7 +966,6 @@
       </form>
 
     </article>
-
 
 
     <!-- ======================================= -->
@@ -603,9 +1003,7 @@
       <div class="book-columns">
 
 
-        <!-- =================================== -->
         <!-- BIDS -->
-        <!-- =================================== -->
 
         <div class="book-side">
 
@@ -679,9 +1077,7 @@
         </div>
 
 
-        <!-- =================================== -->
         <!-- ASKS -->
-        <!-- =================================== -->
 
         <div class="book-side">
 
@@ -761,7 +1157,6 @@
   </section>
 
 
-
   <!-- ========================================= -->
   <!-- MY ORDERS -->
   <!-- ========================================= -->
@@ -798,45 +1193,25 @@
 
           <tr>
 
-            <th>
-              ID
-            </th>
+            <th>ID</th>
 
-            <th>
-              Actif
-            </th>
+            <th>Actif</th>
 
-            <th>
-              Sens
-            </th>
+            <th>Sens</th>
 
-            <th>
-              Type
-            </th>
+            <th>Type</th>
 
-            <th>
-              Prix
-            </th>
+            <th>Prix</th>
 
-            <th>
-              Quantité
-            </th>
+            <th>Quantité</th>
 
-            <th>
-              Restante
-            </th>
+            <th>Restante</th>
 
-            <th>
-              Statut
-            </th>
+            <th>Statut</th>
 
-            <th>
-              Date
-            </th>
+            <th>Date</th>
 
-            <th>
-              Action
-            </th>
+            <th>Action</th>
 
           </tr>
 
@@ -851,25 +1226,17 @@
             "
           >
 
-            <!-- ID -->
-
             <td class="id-cell">
               #{{ order.id }}
             </td>
 
 
-            <!-- ASSET -->
-
             <td>
-
               <strong>
                 {{ order.assetSymbol }}
               </strong>
-
             </td>
 
-
-            <!-- SIDE -->
 
             <td>
 
@@ -888,18 +1255,12 @@
             </td>
 
 
-            <!-- TYPE -->
-
             <td>
-
               <strong>
                 {{ orderTypeLabel(order.type) }}
               </strong>
-
             </td>
 
-
-            <!-- PRICE -->
 
             <td>
 
@@ -910,7 +1271,7 @@
               >
                 {{
                   order.limitPrice
-                  | number:'1.2-8'
+                    | number:'1.2-8'
                 }}
               </ng-container>
 
@@ -926,27 +1287,21 @@
             </td>
 
 
-            <!-- QUANTITY -->
-
             <td>
               {{
                 order.quantity
-                | number:'1.0-8'
+                  | number:'1.0-8'
               }}
             </td>
 
-
-            <!-- REMAINING -->
 
             <td>
               {{
                 order.remainingQuantity
-                | number:'1.0-8'
+                  | number:'1.0-8'
               }}
             </td>
 
-
-            <!-- STATUS -->
 
             <td>
 
@@ -958,29 +1313,23 @@
                   order.status.toLowerCase()
                 "
               >
-
                 {{
                   statusLabel(
                     order.status
                   )
                 }}
-
               </span>
 
             </td>
 
 
-            <!-- DATE -->
-
             <td>
               {{
                 order.createdAt
-                | date:'dd/MM/yyyy HH:mm:ss'
+                  | date:'dd/MM/yyyy HH:mm:ss'
               }}
             </td>
 
-
-            <!-- ACTION -->
 
             <td>
 
@@ -1012,8 +1361,6 @@
           </tr>
 
 
-          <!-- EMPTY -->
-
           <tr
             *ngIf="
               myOrders.length === 0
@@ -1036,7 +1383,6 @@
     </div>
 
   </section>
-
 
 
   <!-- ========================================= -->
@@ -1116,32 +1462,22 @@
             "
           >
 
-            <!-- TRADE ID -->
-
             <td class="id-cell">
               #{{ trade.id }}
             </td>
 
-
-            <!-- ORDER ID -->
 
             <td>
               #{{ trade.orderId }}
             </td>
 
 
-            <!-- ASSET -->
-
             <td>
-
               <strong>
                 {{ trade.assetSymbol }}
               </strong>
-
             </td>
 
-
-            <!-- SIDE -->
 
             <td>
 
@@ -1160,43 +1496,33 @@
             </td>
 
 
-            <!-- EXECUTION PRICE -->
-
             <td>
-
               <strong>
                 {{
                   trade.executionPrice
-                  | number:'1.2-8'
+                    | number:'1.2-8'
                 }}
               </strong>
-
             </td>
 
-
-            <!-- QUANTITY -->
 
             <td>
               {{
                 trade.quantity
-                | number:'1.0-8'
+                  | number:'1.0-8'
               }}
             </td>
 
 
-            <!-- DATE -->
-
             <td>
               {{
                 trade.createdAt
-                | date:'dd/MM/yyyy HH:mm:ss'
+                  | date:'dd/MM/yyyy HH:mm:ss'
               }}
             </td>
 
           </tr>
 
-
-          <!-- EMPTY -->
 
           <tr
             *ngIf="
