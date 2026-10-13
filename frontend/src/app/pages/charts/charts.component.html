@@ -1,0 +1,135 @@
+<div class="charts-page">
+
+  <header class="charts-header">
+
+    <div>
+
+      <span class="eyebrow">
+        MARCHÉS
+      </span>
+
+      <h1>
+        Graphiques
+      </h1>
+
+      <p>
+        Consultez le graphique TradingView de l’actif,
+        puis passez un ordre dans le simulateur.
+      </p>
+
+    </div>
+
+
+    <div class="charts-actions">
+
+      <div
+        class="asset-switcher"
+        role="group"
+        aria-label="Actifs"
+      >
+
+        @for (asset of assets; track asset.tradeSymbol) {
+
+          <button
+            type="button"
+            class="asset-button"
+            [class.active]="
+              asset.tradeSymbol === selectedAsset.tradeSymbol
+            "
+            [attr.aria-pressed]="
+              asset.tradeSymbol === selectedAsset.tradeSymbol
+            "
+            (click)="selectAsset(asset)"
+          >
+
+            <strong>
+              {{ asset.label }}
+            </strong>
+
+            <small>
+              {{ asset.tradeSymbol }}
+            </small>
+
+          </button>
+
+        }
+
+      </div>
+
+
+      <button
+        type="button"
+        class="trade-button"
+        (click)="openTrading()"
+      >
+        Trader {{ selectedAsset.tradeSymbol }}
+      </button>
+
+    </div>
+
+  </header>
+
+
+  <section class="chart-card">
+
+    <div class="chart-meta">
+
+      <div>
+
+        <span class="symbol">
+          {{ selectedAsset.tvSymbol }}
+        </span>
+
+        <span class="asset-name">
+          {{ selectedAsset.description }}
+        </span>
+
+      </div>
+
+      <span class="market-badge">
+        TRADINGVIEW
+      </span>
+
+    </div>
+
+
+    @if (loadError) {
+
+      <p class="chart-error">
+        Le graphique TradingView n’a pas pu être chargé.
+      </p>
+
+    } @else {
+
+      <div class="chart-frame">
+
+        <div
+          #chartHost
+          id="charts-tradingview"
+          class="chart-widget"
+        >
+        </div>
+
+        <div class="tradingview-widget-copyright">
+
+          <a
+            href="https://www.tradingview.com/"
+            target="_blank"
+            rel="noopener nofollow"
+          >
+            <span class="blue-text">
+              Graphique
+            </span>
+            par TradingView
+          </a>
+
+        </div>
+
+      </div>
+
+    }
+
+
+  </section>
+
+</div>
