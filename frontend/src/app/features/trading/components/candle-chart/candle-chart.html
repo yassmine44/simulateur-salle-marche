@@ -1,0 +1,243 @@
+<div
+  *ngIf="bars.length === 0"
+  class="chart-empty"
+>
+  Aucune transaction sur cette période.
+</div>
+
+
+<div
+  *ngIf="bars.length > 0"
+  class="chart"
+>
+
+  <!-- Légende : la forme double la couleur
+       (hausse = corps creux, baisse = corps plein). -->
+
+  <div class="chart-legend">
+
+    <span>
+      <svg width="12" height="12" aria-hidden="true">
+        <rect
+          class="body rising"
+          x="2"
+          y="1"
+          width="8"
+          height="10"
+          rx="1"
+        />
+      </svg>
+      Hausse
+    </span>
+
+    <span>
+      <svg width="12" height="12" aria-hidden="true">
+        <rect
+          class="body falling"
+          x="2"
+          y="1"
+          width="8"
+          height="10"
+          rx="1"
+        />
+      </svg>
+      Baisse
+    </span>
+
+  </div>
+
+
+  <div class="chart-plot">
+
+    <svg
+      [attr.viewBox]="'0 0 ' + width + ' ' + height"
+      role="img"
+      aria-label="Graphique en chandeliers des prix de l'actif"
+      (mouseleave)="hover(null)"
+    >
+
+      <!-- GRID + PRICE AXIS -->
+
+      <g *ngFor="let line of gridLines">
+
+        <line
+          class="grid-line"
+          [attr.x1]="plotLeft"
+          [attr.x2]="plotRight"
+          [attr.y1]="line.y"
+          [attr.y2]="line.y"
+        />
+
+        <text
+          class="axis-label"
+          [attr.x]="plotRight + 8"
+          [attr.y]="line.y + 4"
+        >
+          {{ line.price | number:'1.2-4' }}
+        </text>
+
+      </g>
+
+
+      <!-- TIME AXIS : premier et dernier chandelier -->
+
+      <text
+        class="axis-label"
+        [attr.x]="bars[0].x"
+        [attr.y]="height - 6"
+        text-anchor="start"
+      >
+        {{ bars[0].candle.time | date:'HH:mm' }}
+      </text>
+
+      <text
+        *ngIf="bars.length > 1 && latest"
+        class="axis-label"
+        [attr.x]="latest.x"
+        [attr.y]="height - 6"
+        text-anchor="end"
+      >
+        {{ latest.candle.time | date:'HH:mm' }}
+      </text>
+
+
+      <!-- CANDLES -->
+
+      <g
+        *ngFor="let bar of bars; trackBy: trackByTime"
+        [class.dimmed]="hovered && hovered !== bar"
+      >
+
+        <line
+          class="wick"
+          [class.rising]="bar.rising"
+          [class.falling]="!bar.rising"
+          [attr.x1]="bar.x"
+          [attr.x2]="bar.x"
+          [attr.y1]="bar.highY"
+          [attr.y2]="bar.lowY"
+        />
+
+        <rect
+          class="body"
+          [class.rising]="bar.rising"
+          [class.falling]="!bar.rising"
+          [attr.x]="bar.x - bodyWidth / 2"
+          [attr.y]="bar.bodyY"
+          [attr.width]="bodyWidth"
+          [attr.height]="bar.bodyHeight"
+          rx="1"
+        />
+
+        <!-- Zone de survol : toute la hauteur de l'emplacement. -->
+
+        <rect
+          class="hit"
+          [attr.x]="bar.x - slotWidth / 2"
+          [attr.y]="plotTop"
+          [attr.width]="slotWidth"
+          [attr.height]="plotBottom - plotTop"
+          (mouseenter)="hover(bar)"
+        />
+
+      </g>
+
+
+      <!-- CROSSHAIR -->
+
+      <line
+        *ngIf="hovered"
+        class="crosshair"
+        [attr.x1]="hovered.x"
+        [attr.x2]="hovered.x"
+        [attr.y1]="plotTop"
+        [attr.y2]="plotBottom"
+      />
+
+    </svg>
+
+
+    <!-- TOOLTIP -->
+
+    <div
+      *ngIf="hovered"
+      class="chart-tooltip"
+      [class.on-left]="tooltipOnLeft"
+      [style.left.%]="tooltipLeft"
+    >
+
+      <strong>
+        {{ hovered.candle.time | date:'dd/MM HH:mm' }}
+        ·
+        {{ hovered.rising ? 'Hausse' : 'Baisse' }}
+      </strong>
+
+      <dl>
+
+        <dt>Ouverture</dt>
+        <dd>{{ hovered.candle.open | number:'1.2-4' }}</dd>
+
+        <dt>Plus haut</dt>
+        <dd>{{ hovered.candle.high | number:'1.2-4' }}</dd>
+
+        <dt>Plus bas</dt>
+        <dd>{{ hovered.candle.low | number:'1.2-4' }}</dd>
+
+        <dt>Clôture</dt>
+        <dd>{{ hovered.candle.close | number:'1.2-4' }}</dd>
+
+        <dt>Volume</dt>
+        <dd>{{ hovered.candle.volume | number:'1.0-4' }}</dd>
+
+      </dl>
+
+    </div>
+
+  </div>
+
+
+  <!-- Vue tableau : mêmes données, lisibles sans le graphique. -->
+
+  <details class="chart-table">
+
+    <summary>
+      Voir les données en tableau
+    </summary>
+
+    <div class="chart-table-scroll">
+
+      <table>
+
+        <thead>
+
+          <tr>
+            <th>Heure</th>
+            <th>Ouverture</th>
+            <th>Plus haut</th>
+            <th>Plus bas</th>
+            <th>Clôture</th>
+            <th>Volume</th>
+          </tr>
+
+        </thead>
+
+        <tbody>
+
+          <tr *ngFor="let bar of bars; trackBy: trackByTime">
+            <td>{{ bar.candle.time | date:'dd/MM HH:mm' }}</td>
+            <td>{{ bar.candle.open | number:'1.2-4' }}</td>
+            <td>{{ bar.candle.high | number:'1.2-4' }}</td>
+            <td>{{ bar.candle.low | number:'1.2-4' }}</td>
+            <td>{{ bar.candle.close | number:'1.2-4' }}</td>
+            <td>{{ bar.candle.volume | number:'1.0-4' }}</td>
+          </tr>
+
+        </tbody>
+
+      </table>
+
+    </div>
+
+  </details>
+
+</div>

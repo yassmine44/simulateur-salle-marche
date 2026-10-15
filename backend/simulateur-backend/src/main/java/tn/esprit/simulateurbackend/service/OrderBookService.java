@@ -1,16 +1,20 @@
 package tn.esprit.simulateurbackend.service;
 
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 
 import tn.esprit.simulateurbackend.dto.OrderBookLevelResponse;
 import tn.esprit.simulateurbackend.dto.OrderBookResponse;
 
 import tn.esprit.simulateurbackend.entity.Order;
-import tn.esprit.simulateurbackend.entity.OrderSide;
 import tn.esprit.simulateurbackend.entity.OrderStatus;
+import tn.esprit.simulateurbackend.entity.User;
 
+import tn.esprit.simulateurbackend.repository.AssetRepository;
 import tn.esprit.simulateurbackend.repository.OrderRepository;
+import tn.esprit.simulateurbackend.repository.UserRepository;
 
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -31,45 +35,68 @@ public class OrderBookService {
             );
 
     private final OrderRepository orderRepository;
+    private final AssetRepository assetRepository;
+    private final UserRepository userRepository;
 
     public OrderBookService(
-            OrderRepository orderRepository
+            OrderRepository orderRepository,
+            AssetRepository assetRepository,
+            UserRepository userRepository
     ) {
         this.orderRepository = orderRepository;
+        this.assetRepository = assetRepository;
+        this.userRepository = userRepository;
     }
 
     public OrderBookResponse getOrderBook(
             String rawSymbol
     ) {
 
-        String symbol = normalizeSymbol(rawSymbol);
+        return getOrderBook(rawSymbol, null);
+    }
+
+    /*
+     * viewerEmail : utilisateur connecté, pour indiquer
+     * la part de chaque niveau qui lui appartient.
+     */
+    public OrderBookResponse getOrderBook(
+            String rawSymbol,
+            String viewerEmail
+    ) {
+
+        String symbol = resolveActiveSymbol(rawSymbol);
+
+        Long viewerId =
+                viewerEmail == null
+                        ? null
+                        : userRepository
+                        .findByEmailIgnoreCase(viewerEmail.trim())
+                        .map(User::getId)
+                        .orElse(null);
 
         List<Order> bids =
-                orderRepository
-                        .findByAssetSymbolIgnoreCaseAndSideAndStatusInOrderByLimitPriceDescCreatedAtAsc(
-                                symbol,
-                                OrderSide.BUY,
-                                OPEN_STATUSES
-                        );
+                orderRepository.findBookBids(
+                        symbol,
+                        OPEN_STATUSES
+                );
 
         List<Order> asks =
-                orderRepository
-                        .findByAssetSymbolIgnoreCaseAndSideAndStatusInOrderByLimitPriceAscCreatedAtAsc(
-                                symbol,
-                                OrderSide.SELL,
-                                OPEN_STATUSES
-                        );
+                orderRepository.findBookAsks(
+                        symbol,
+                        OPEN_STATUSES
+                );
 
         return new OrderBookResponse(
                 symbol,
-                aggregateLevels(bids),
-                aggregateLevels(asks),
+                aggregateLevels(bids, viewerId),
+                aggregateLevels(asks, viewerId),
                 Instant.now()
         );
     }
 
     private List<OrderBookLevelResponse> aggregateLevels(
-            List<Order> orders
+            List<Order> orders,
+            Long viewerId
     ) {
 
         Map<BigDecimal, LevelAccumulator> levels =
@@ -106,6 +133,17 @@ public class OrderBookService {
                     );
 
             accumulator.orderCount++;
+
+            if (
+                    viewerId != null
+                            && viewerId.equals(order.getUser().getId())
+            ) {
+
+                accumulator.myQuantity =
+                        accumulator.myQuantity.add(
+                                order.getRemainingQuantity()
+                        );
+            }
         }
 
         List<OrderBookLevelResponse> response =
@@ -120,7 +158,8 @@ public class OrderBookService {
                     new OrderBookLevelResponse(
                             entry.getKey(),
                             entry.getValue().totalQuantity,
-                            entry.getValue().orderCount
+                            entry.getValue().orderCount,
+                            entry.getValue().myQuantity
                     )
             );
         }
@@ -128,7 +167,14 @@ public class OrderBookService {
         return response;
     }
 
-    private String normalizeSymbol(
+    /*
+     * Normalise le symbole et vérifie que l'actif
+     * existe et est actif.
+     *
+     * Un carnet ne peut pas être consulté
+     * pour un actif inexistant.
+     */
+    public String resolveActiveSymbol(
             String rawSymbol
     ) {
 
@@ -137,19 +183,36 @@ public class OrderBookService {
                         || rawSymbol.isBlank()
         ) {
 
-            throw new IllegalArgumentException(
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
                     "Le symbole de l'actif est obligatoire."
             );
         }
 
-        return rawSymbol
-                .trim()
-                .toUpperCase(Locale.ROOT);
+        String symbol =
+                rawSymbol
+                        .trim()
+                        .toUpperCase(Locale.ROOT);
+
+        assetRepository
+                .findBySymbolIgnoreCaseAndActiveTrue(symbol)
+                .orElseThrow(() ->
+                        new ResponseStatusException(
+                                HttpStatus.NOT_FOUND,
+                                "Actif inconnu ou désactivé : "
+                                        + symbol
+                        )
+                );
+
+        return symbol;
     }
 
     private static class LevelAccumulator {
 
         private BigDecimal totalQuantity =
+                BigDecimal.ZERO;
+
+        private BigDecimal myQuantity =
                 BigDecimal.ZERO;
 
         private int orderCount = 0;

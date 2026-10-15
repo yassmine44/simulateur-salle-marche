@@ -1,0 +1,1438 @@
+<div class="portfolio-page">
+
+  <!-- ========================================= -->
+  <!-- HEADER -->
+  <!-- ========================================= -->
+
+  <header class="portfolio-header">
+
+    <div>
+
+      <span class="eyebrow">
+        PORTEFEUILLE VIRTUEL
+      </span>
+
+      <h1>
+        Mon portefeuille
+      </h1>
+
+      <p>
+        Vos liquidités, vos positions et leur performance,
+        calculées à partir de vos transactions réelles.
+      </p>
+
+    </div>
+
+
+    <div class="header-actions">
+
+      <a
+        class="secondary-button"
+        routerLink="/app/portfolio/statement"
+      >
+        Relevé de compte
+      </a>
+
+      <button
+        type="button"
+        class="secondary-button"
+        [disabled]="!portfolio || rebalanceOpen"
+        (click)="openRebalance()"
+      >
+        Rééquilibrer
+      </button>
+
+      <button
+        type="button"
+        class="secondary-button"
+        [disabled]="!hasPositions"
+        title="Télécharger les positions ouvertes au format CSV"
+        (click)="exportCsv()"
+      >
+        Exporter (CSV)
+      </button>
+
+      <button
+        type="button"
+        class="secondary-button"
+        [disabled]="loading || refreshing"
+        (click)="load(true)"
+      >
+        {{ refreshing ? 'Actualisation...' : 'Actualiser' }}
+      </button>
+
+      <button
+        type="button"
+        class="danger-button"
+        [disabled]="!portfolio || resetting"
+        (click)="askReset()"
+      >
+        Réinitialiser
+      </button>
+
+    </div>
+
+  </header>
+
+
+  <!-- ========================================= -->
+  <!-- MESSAGES -->
+  <!-- ========================================= -->
+
+  <div
+    *ngIf="errorMessage"
+    class="alert alert-error"
+    role="alert"
+  >
+
+    <span>
+      {{ errorMessage }}
+    </span>
+
+    <button
+      type="button"
+      class="alert-action"
+      (click)="load()"
+    >
+      Réessayer
+    </button>
+
+  </div>
+
+
+  <div
+    *ngIf="successMessage"
+    class="alert alert-success"
+    role="status"
+  >
+
+    <span>
+      {{ successMessage }}
+    </span>
+
+    <button
+      type="button"
+      class="alert-close"
+      aria-label="Fermer le message"
+      (click)="successMessage = ''"
+    >
+      ×
+    </button>
+
+  </div>
+
+
+  <!-- RESET CONFIRMATION -->
+
+  <div
+    *ngIf="confirmingReset && portfolio"
+    class="confirm-panel"
+    role="alertdialog"
+    aria-labelledby="reset-title"
+  >
+
+    <div>
+
+      <strong id="reset-title">
+        Réinitialiser le portefeuille ?
+      </strong>
+
+      <p>
+        Vous repartirez de
+        {{ portfolio.initialCapital | number:'1.0-0' }} {{ portfolio.currency }}
+        en liquidités, sans position.
+        Vos ordres en attente seront annulés.
+        Vos ordres et transactions passés restent consultables
+        dans la section Trading, mais ne comptent plus dans le portefeuille.
+      </p>
+
+    </div>
+
+    <div class="confirm-actions">
+
+      <button
+        type="button"
+        class="secondary-button"
+        [disabled]="resetting"
+        (click)="cancelReset()"
+      >
+        Annuler
+      </button>
+
+      <button
+        type="button"
+        class="danger-button solid"
+        [disabled]="resetting"
+        (click)="confirmReset()"
+      >
+        {{ resetting ? 'Réinitialisation...' : 'Confirmer' }}
+      </button>
+
+    </div>
+
+  </div>
+
+
+  <div
+    *ngIf="loading && !portfolio"
+    class="loading-panel loading-state"
+  >
+    Chargement du portefeuille...
+  </div>
+
+
+  <ng-container *ngIf="portfolio as p">
+
+    <!-- ======================================= -->
+    <!-- KPI -->
+    <!-- ======================================= -->
+
+    <section class="kpi-grid">
+
+      <article class="kpi-card">
+
+        <span class="kpi-label">
+          Valeur totale
+        </span>
+
+        <strong class="kpi-value">
+          {{ p.totalValue | number:'1.2-2' }}
+          <small>{{ p.currency }}</small>
+        </strong>
+
+        <!-- Le signe et la flèche doublent la couleur. -->
+
+        <span
+          class="kpi-change"
+          [class.positive]="p.totalPnl > 0"
+          [class.negative]="p.totalPnl < 0"
+        >
+          {{ p.totalPnl > 0 ? '▲ +' : p.totalPnl < 0 ? '▼ ' : '' }}{{ p.totalPnlPercent | number:'1.2-2' }} %
+          depuis le départ
+        </span>
+
+      </article>
+
+
+      <article class="kpi-card">
+
+        <span class="kpi-label">
+          Liquidités disponibles
+        </span>
+
+        <strong class="kpi-value">
+          {{ p.availableCash | number:'1.2-2' }}
+          <small>{{ p.currency }}</small>
+        </strong>
+
+        <span class="kpi-detail">
+          Liquidités {{ p.cash | number:'1.2-2' }}
+          <ng-container *ngIf="p.reservedCash > 0">
+            · dont {{ p.reservedCash | number:'1.2-2' }} réservés par vos ordres d'achat
+          </ng-container>
+        </span>
+
+      </article>
+
+
+      <article class="kpi-card">
+
+        <span class="kpi-label">
+          Résultat total
+        </span>
+
+        <strong
+          class="kpi-value"
+          [class.positive]="p.totalPnl > 0"
+          [class.negative]="p.totalPnl < 0"
+        >
+          {{ p.totalPnl > 0 ? '+' : '' }}{{ p.totalPnl | number:'1.2-2' }}
+          <small>{{ p.currency }}</small>
+        </strong>
+
+        <span class="kpi-detail">
+          Réalisé {{ p.realizedPnl > 0 ? '+' : '' }}{{ p.realizedPnl | number:'1.2-2' }}
+          · Latent {{ p.unrealizedPnl > 0 ? '+' : '' }}{{ p.unrealizedPnl | number:'1.2-2' }}
+        </span>
+
+      </article>
+
+
+      <article class="kpi-card">
+
+        <span class="kpi-label">
+          Positions ouvertes
+        </span>
+
+        <strong class="kpi-value">
+          {{ p.openPositions.length }}
+        </strong>
+
+        <span class="kpi-detail">
+          {{ p.positionsValue | number:'1.2-2' }} {{ p.currency }} investis
+          · {{ p.tradeCount }} transaction(s)
+        </span>
+
+      </article>
+
+    </section>
+
+
+    <!-- ======================================= -->
+    <!-- PERFORMANCE + ALLOCATION -->
+    <!-- ======================================= -->
+
+    <section class="two-columns">
+
+      <article class="panel">
+
+        <div class="panel-header">
+
+          <div>
+
+            <span class="panel-kicker">
+              PERFORMANCE
+            </span>
+
+            <h2>
+              Valeur du portefeuille
+            </h2>
+
+          </div>
+
+          <div
+            class="segmented"
+            role="group"
+            aria-label="Période affichée"
+          >
+
+            <button
+              *ngFor="let days of historyOptions"
+              type="button"
+              [class.active]="days === historyDays"
+              [attr.aria-pressed]="days === historyDays"
+              (click)="selectHistory(days)"
+            >
+              {{ days }} jours
+            </button>
+
+          </div>
+
+        </div>
+
+        <app-equity-chart
+          [points]="p.history"
+          [baseline]="p.initialCapital"
+          [currency]="p.currency"
+          [benchmark]="performance?.benchmark?.history ?? []"
+          [benchmarkLabel]="performance?.benchmark?.name ?? 'Référence'"
+        />
+
+        <p
+          *ngIf="performance?.benchmark as benchmark"
+          class="benchmark-note"
+        >
+
+          <strong>{{ benchmark.name }}</strong> :
+          {{ benchmark.returnPercent > 0 ? '+' : '' }}{{ benchmark.returnPercent | number:'1.2-2' }} %,
+          contre {{ benchmark.portfolioReturnPercent > 0 ? '+' : '' }}{{ benchmark.portfolioReturnPercent | number:'1.2-2' }} %
+          pour vous :
+
+          <span
+            [class.positive]="benchmark.outperformancePercent > 0"
+            [class.negative]="benchmark.outperformancePercent < 0"
+          >
+            {{
+              benchmark.outperformancePercent > 0
+                ? 'vous faites mieux de ' + (benchmark.outperformancePercent | number:'1.2-2') + ' points'
+                : benchmark.outperformancePercent < 0
+                  ? 'la référence fait mieux de ' + (-benchmark.outperformancePercent | number:'1.2-2') + ' points'
+                  : 'à égalité'
+            }}
+          </span>.
+
+          <small>{{ benchmark.description }}</small>
+
+        </p>
+
+      </article>
+
+
+      <article class="panel">
+
+        <div class="panel-header">
+
+          <div>
+
+            <span class="panel-kicker">
+              RÉPARTITION
+            </span>
+
+            <h2>
+              Par classe d'actifs
+            </h2>
+
+          </div>
+
+        </div>
+
+        <!-- Une seule teinte : la longueur de la barre porte la valeur,
+             le libellé et le pourcentage sont écrits à côté. -->
+
+        <ul class="allocation">
+
+          <li *ngFor="let slice of p.allocation; trackBy: trackByKey">
+
+            <div class="allocation-text">
+
+              <span>
+                {{ slice.label }}
+              </span>
+
+              <strong>
+                {{ slice.percent | number:'1.0-2' }} %
+              </strong>
+
+            </div>
+
+            <div
+              class="allocation-track"
+              aria-hidden="true"
+            >
+
+              <span
+                class="allocation-bar"
+                [class.cash]="slice.key === 'CASH'"
+                [style.width.%]="slice.percent / maxAllocation * 100"
+              ></span>
+
+            </div>
+
+            <small>
+              {{ slice.value | number:'1.2-2' }} {{ p.currency }}
+            </small>
+
+          </li>
+
+        </ul>
+
+      </article>
+
+    </section>
+
+
+    <!-- ======================================= -->
+    <!-- OPEN POSITIONS -->
+    <!-- ======================================= -->
+
+    <section class="panel">
+
+      <div class="panel-header">
+
+        <div>
+
+          <span class="panel-kicker">
+            POSITIONS
+          </span>
+
+          <h2>
+            Positions ouvertes
+          </h2>
+
+        </div>
+
+        <span class="count-badge">
+          {{ p.openPositions.length }}
+        </span>
+
+      </div>
+
+
+      <div class="table-wrapper">
+
+        <table>
+
+          <thead>
+
+            <tr>
+
+              <th [attr.aria-sort]="ariaSort('assetSymbol')">
+                <button type="button" class="sort-button" (click)="sortBy('assetSymbol')">
+                  Actif {{ sortIndicator('assetSymbol') }}
+                </button>
+              </th>
+
+              <th>Quantité</th>
+
+              <th>Prix de revient</th>
+
+              <th>Dernier cours</th>
+
+              <th [attr.aria-sort]="ariaSort('marketValue')">
+                <button type="button" class="sort-button" (click)="sortBy('marketValue')">
+                  Valeur {{ sortIndicator('marketValue') }}
+                </button>
+              </th>
+
+              <th [attr.aria-sort]="ariaSort('weightPercent')">
+                <button type="button" class="sort-button" (click)="sortBy('weightPercent')">
+                  Poids {{ sortIndicator('weightPercent') }}
+                </button>
+              </th>
+
+              <th [attr.aria-sort]="ariaSort('unrealizedPnl')">
+                <button type="button" class="sort-button" (click)="sortBy('unrealizedPnl')">
+                  Résultat latent {{ sortIndicator('unrealizedPnl') }}
+                </button>
+              </th>
+
+              <th>Réalisé</th>
+
+              <th>Action</th>
+
+            </tr>
+
+          </thead>
+
+
+          <tbody>
+
+            <tr *ngFor="let position of sortedPositions; trackBy: trackBySymbol">
+
+              <td>
+
+                <strong>
+                  {{ position.assetSymbol }}
+                </strong>
+
+                <small class="cell-detail">
+                  {{ position.assetName }}
+                  <ng-container *ngIf="assetTypeLabel(position.assetType) as type">
+                    · {{ type }}
+                  </ng-container>
+                </small>
+
+              </td>
+
+              <td>
+
+                {{ position.quantity | number:'1.0-8' }}
+
+                <span
+                  *ngIf="position.direction === 'SHORT'"
+                  class="side-badge side-sell"
+                  title="Position vendeuse héritée d'une vente sans détention"
+                >
+                  VENTE
+                </span>
+
+                <small
+                  *ngIf="position.reservedQuantity > 0"
+                  class="cell-detail"
+                >
+                  {{ position.reservedQuantity | number:'1.0-8' }} en vente,
+                  {{ position.availableQuantity | number:'1.0-8' }} disponibles
+                </small>
+
+              </td>
+
+              <td>
+                {{ position.averagePrice | number:'1.2-8' }}
+              </td>
+
+              <td>
+                {{ position.lastPrice | number:'1.2-8' }}
+              </td>
+
+              <td>
+                <strong>
+                  {{ position.marketValue | number:'1.2-2' }}
+                </strong>
+              </td>
+
+              <td>
+                {{ position.weightPercent | number:'1.0-2' }} %
+              </td>
+
+              <td>
+
+                <strong
+                  [class.positive]="position.unrealizedPnl > 0"
+                  [class.negative]="position.unrealizedPnl < 0"
+                >
+                  {{ position.unrealizedPnl > 0 ? '+' : '' }}{{ position.unrealizedPnl | number:'1.2-2' }}
+                </strong>
+
+                <small class="cell-detail">
+                  {{ position.unrealizedPnlPercent > 0 ? '+' : '' }}{{ position.unrealizedPnlPercent | number:'1.2-2' }} %
+                </small>
+
+              </td>
+
+              <td>
+                {{ position.realizedPnl > 0 ? '+' : '' }}{{ position.realizedPnl | number:'1.2-2' }}
+              </td>
+
+              <td>
+
+                <a
+                  class="trade-link"
+                  routerLink="/app/trading"
+                  [queryParams]="{ symbol: position.assetSymbol }"
+                >
+                  Trader
+                </a>
+
+              </td>
+
+            </tr>
+
+
+            <tr *ngIf="sortedPositions.length === 0">
+
+              <td
+                colspan="9"
+                class="empty-table"
+              >
+                Aucune position ouverte.
+                <a routerLink="/app/trading">Passez un ordre</a>
+                pour commencer à investir.
+              </td>
+
+            </tr>
+
+          </tbody>
+
+        </table>
+
+      </div>
+
+    </section>
+
+
+    <!-- ======================================= -->
+    <!-- REBALANCE ASSISTANT -->
+    <!-- ======================================= -->
+
+    <section
+      *ngIf="rebalanceOpen"
+      class="panel rebalance-panel"
+      aria-labelledby="rebalance-title"
+    >
+
+      <div class="panel-header">
+
+        <div>
+
+          <span class="panel-kicker">
+            ASSISTANT
+          </span>
+
+          <h2 id="rebalance-title">
+            Rééquilibrer le portefeuille
+          </h2>
+
+        </div>
+
+        <button
+          type="button"
+          class="secondary-button"
+          (click)="closeRebalance()"
+        >
+          Fermer
+        </button>
+
+      </div>
+
+
+      <p class="rebalance-intro">
+        Indiquez la part de la valeur totale à placer sur chaque actif.
+        Les actifs non listés ne sont pas touchés, et ce qui n'est pas
+        réparti reste en liquidités. Rien n'est envoyé avant votre confirmation.
+      </p>
+
+
+      <div class="table-wrapper">
+
+        <table>
+
+          <thead>
+
+            <tr>
+              <th>Actif</th>
+              <th>Part actuelle</th>
+              <th>Part cible</th>
+              <th></th>
+            </tr>
+
+          </thead>
+
+          <tbody>
+
+            <tr *ngFor="let row of targetRows">
+
+              <td>
+
+                <strong>{{ row.assetSymbol }}</strong>
+
+                <small class="cell-detail">{{ row.assetName }}</small>
+
+              </td>
+
+              <td>
+                {{ row.currentPercent | number:'1.0-2' }} %
+              </td>
+
+              <td>
+
+                <div class="target-input">
+
+                  <input
+                    type="number"
+                    min="0"
+                    max="100"
+                    step="0.5"
+                    [attr.aria-label]="'Part cible pour ' + row.assetSymbol"
+                    [(ngModel)]="row.targetPercent"
+                    (ngModelChange)="targetChanged()"
+                  />
+
+                  <span>%</span>
+
+                </div>
+
+              </td>
+
+              <td>
+
+                <button
+                  type="button"
+                  class="link-button"
+                  (click)="removeTarget(row)"
+                >
+                  Retirer
+                </button>
+
+              </td>
+
+            </tr>
+
+
+            <tr *ngIf="targetRows.length === 0">
+
+              <td
+                colspan="4"
+                class="empty-table"
+              >
+                Ajoutez au moins un actif à la cible.
+              </td>
+
+            </tr>
+
+          </tbody>
+
+        </table>
+
+      </div>
+
+
+      <div class="rebalance-toolbar">
+
+        <div class="add-asset">
+
+          <select
+            aria-label="Actif à ajouter"
+            [(ngModel)]="assetToAdd"
+          >
+
+            <option value="">
+              Ajouter un actif…
+            </option>
+
+            <option
+              *ngFor="let asset of addableAssets"
+              [value]="asset.symbol"
+            >
+              {{ asset.symbol }} — {{ asset.name }}
+            </option>
+
+          </select>
+
+          <button
+            type="button"
+            class="secondary-button"
+            [disabled]="!assetToAdd"
+            (click)="addTarget()"
+          >
+            Ajouter
+          </button>
+
+        </div>
+
+        <span
+          class="target-total"
+          [class.negative]="targetTotal > 100"
+        >
+          Total : {{ targetTotal | number:'1.0-2' }} %
+          · liquidités : {{ (100 - targetTotal) | number:'1.0-2' }} %
+        </span>
+
+        <button
+          type="button"
+          class="primary-button"
+          [disabled]="!targetsValid || planning"
+          (click)="computePlan()"
+        >
+          {{ planning ? 'Calcul...' : 'Calculer le plan' }}
+        </button>
+
+      </div>
+
+
+      <div
+        *ngIf="rebalanceError"
+        class="alert alert-error rebalance-alert"
+        role="alert"
+      >
+        <span>{{ rebalanceError }}</span>
+      </div>
+
+
+      <!-- PLAN -->
+
+      <ng-container *ngIf="plan as pl">
+
+        <div class="table-wrapper">
+
+          <table>
+
+            <thead>
+
+              <tr>
+                <th>Actif</th>
+                <th>Valeur actuelle</th>
+                <th>Valeur cible</th>
+                <th>Ordre</th>
+                <th>Montant estimé</th>
+              </tr>
+
+            </thead>
+
+            <tbody>
+
+              <tr *ngFor="let line of pl.lines">
+
+                <td>
+                  <strong>{{ line.assetSymbol }}</strong>
+                  <small class="cell-detail">
+                    {{ line.currentPercent | number:'1.0-2' }} % → {{ line.targetPercent | number:'1.0-2' }} %
+                  </small>
+                </td>
+
+                <td>{{ line.currentValue | number:'1.2-2' }}</td>
+
+                <td>{{ line.targetValue | number:'1.2-2' }}</td>
+
+                <td>
+
+                  <ng-container *ngIf="line.side; else noOrder">
+
+                    <strong
+                      [class.positive]="line.side === 'BUY'"
+                      [class.negative]="line.side === 'SELL'"
+                    >
+                      {{ line.side === 'BUY' ? 'Acheter' : 'Vendre' }}
+                      {{ line.quantity | number:'1.0-8' }}
+                    </strong>
+
+                    <small class="cell-detail">
+                      vers {{ line.estimatedPrice | number:'1.2-8' }}
+                    </small>
+
+                  </ng-container>
+
+                  <ng-template #noOrder>
+                    <span class="muted">Aucun</span>
+                  </ng-template>
+
+                  <small
+                    *ngIf="line.note"
+                    class="cell-detail"
+                  >
+                    {{ line.note }}
+                  </small>
+
+                </td>
+
+                <td>
+                  {{ line.side ? (line.estimatedAmount | number:'1.2-2') : '—' }}
+                </td>
+
+              </tr>
+
+            </tbody>
+
+          </table>
+
+        </div>
+
+
+        <ul class="plan-warnings">
+          <li *ngFor="let warning of pl.warnings">{{ warning }}</li>
+        </ul>
+
+
+        <div class="plan-footer">
+
+          <span>
+            Liquidités estimées après : <strong>{{ pl.estimatedCashAfter | number:'1.2-2' }} {{ pl.currency }}</strong>
+          </span>
+
+          <ng-container *ngIf="planOrderCount > 0">
+
+            <button
+              *ngIf="!confirmingRebalance"
+              type="button"
+              class="primary-button"
+              (click)="askExecuteRebalance()"
+            >
+              Exécuter les {{ planOrderCount }} ordre(s)
+            </button>
+
+            <div
+              *ngIf="confirmingRebalance"
+              class="confirm-inline"
+              role="alertdialog"
+              aria-label="Confirmer le rééquilibrage"
+            >
+
+              <span>
+                {{ planOrderCount }} ordre(s) au marché seront envoyés, ventes d'abord. Confirmer ?
+              </span>
+
+              <button
+                type="button"
+                class="secondary-button"
+                [disabled]="executing"
+                (click)="confirmingRebalance = false"
+              >
+                Annuler
+              </button>
+
+              <button
+                type="button"
+                class="primary-button"
+                [disabled]="executing"
+                (click)="executeRebalance()"
+              >
+                {{ executing ? 'Envoi...' : 'Confirmer' }}
+              </button>
+
+            </div>
+
+          </ng-container>
+
+        </div>
+
+      </ng-container>
+
+
+      <!-- RESULT -->
+
+      <div
+        *ngIf="execution as ex"
+        class="execution-result"
+        role="status"
+      >
+
+        <strong>
+          {{ ex.ordersFilled }} ordre(s) exécuté(s) sur {{ ex.ordersSent }}.
+        </strong>
+
+        <ul>
+
+          <li *ngFor="let result of ex.results">
+
+            {{ result.side === 'BUY' ? 'Achat' : 'Vente' }}
+            {{ result.requestedQuantity | number:'1.0-8' }} {{ result.assetSymbol }} :
+
+            <ng-container *ngIf="result.orderId; else refused">
+              {{ result.executedQuantity | number:'1.0-8' }} exécuté(s)
+              (ordre #{{ result.orderId }})
+            </ng-container>
+
+            <ng-template #refused>
+              <span class="negative">refusé</span>
+            </ng-template>
+
+            <small
+              *ngIf="result.message"
+              class="cell-detail"
+            >
+              {{ result.message }}
+            </small>
+
+          </li>
+
+        </ul>
+
+      </div>
+
+    </section>
+
+
+    <!-- ======================================= -->
+    <!-- PERFORMANCE ANALYSIS -->
+    <!-- ======================================= -->
+
+    <section
+      *ngIf="performance as perf"
+      class="two-columns"
+    >
+
+      <!-- TRADER STATISTICS -->
+
+      <article class="panel">
+
+        <div class="panel-header">
+
+          <div>
+
+            <span class="panel-kicker">
+              ANALYSE
+            </span>
+
+            <h2>
+              Vos statistiques de trader
+            </h2>
+
+          </div>
+
+          <span class="count-badge">
+            {{ perf.stats.closedTrades }} position(s) fermée(s)
+          </span>
+
+        </div>
+
+
+        <div
+          *ngIf="perf.stats.closedTrades === 0"
+          class="empty-table"
+        >
+          Les statistiques apparaissent dès votre première position fermée
+          (achat puis revente complète).
+        </div>
+
+
+        <div
+          *ngIf="perf.stats.closedTrades > 0"
+          class="stats-grid"
+        >
+
+          <div class="stat">
+            <span>Taux de réussite</span>
+            <strong>{{ perf.stats.winRatePercent | number:'1.0-1' }} %</strong>
+            <small>{{ perf.stats.wins }} gagnante(s), {{ perf.stats.losses }} perdante(s)</small>
+          </div>
+
+          <div class="stat">
+            <span>Gain moyen</span>
+            <strong class="positive">
+              {{ perf.stats.averageWin !== null ? '+' + (perf.stats.averageWin | number:'1.2-2') : '—' }}
+            </strong>
+            <small>par position gagnante</small>
+          </div>
+
+          <div class="stat">
+            <span>Perte moyenne</span>
+            <strong class="negative">
+              {{ perf.stats.averageLoss !== null ? (perf.stats.averageLoss | number:'1.2-2') : '—' }}
+            </strong>
+            <small>par position perdante</small>
+          </div>
+
+          <div class="stat">
+            <span>Facteur de profit</span>
+            <strong>
+              {{ perf.stats.profitFactor !== null ? (perf.stats.profitFactor | number:'1.0-2') : 'Aucune perte' }}
+            </strong>
+            <small>gains ÷ pertes (au-dessus de 1 : rentable)</small>
+          </div>
+
+          <div class="stat">
+            <span>Résultat moyen</span>
+            <strong
+              [class.positive]="(perf.stats.expectancy ?? 0) > 0"
+              [class.negative]="(perf.stats.expectancy ?? 0) < 0"
+            >
+              {{ (perf.stats.expectancy ?? 0) > 0 ? '+' : '' }}{{ perf.stats.expectancy | number:'1.2-2' }}
+            </strong>
+            <small>par position fermée</small>
+          </div>
+
+          <div class="stat">
+            <span>Durée moyenne</span>
+            <strong>{{ holdingDuration(perf.stats.averageHoldingMinutes) }}</strong>
+            <small>entre l'ouverture et la clôture</small>
+          </div>
+
+        </div>
+
+
+        <div
+          *ngIf="perf.stats.bestTrade && perf.stats.worstTrade"
+          class="highlights"
+        >
+
+          <span>
+            Meilleure : <strong>{{ perf.stats.bestTrade.assetSymbol }}</strong>
+            <span class="positive">
+              {{ perf.stats.bestTrade.realizedPnl > 0 ? '+' : '' }}{{ perf.stats.bestTrade.realizedPnl | number:'1.2-2' }}
+              ({{ perf.stats.bestTrade.returnPercent | number:'1.0-2' }} %)
+            </span>
+          </span>
+
+          <span>
+            Moins bonne : <strong>{{ perf.stats.worstTrade.assetSymbol }}</strong>
+            <span [class.negative]="perf.stats.worstTrade.realizedPnl < 0">
+              {{ perf.stats.worstTrade.realizedPnl > 0 ? '+' : '' }}{{ perf.stats.worstTrade.realizedPnl | number:'1.2-2' }}
+              ({{ perf.stats.worstTrade.returnPercent | number:'1.0-2' }} %)
+            </span>
+          </span>
+
+        </div>
+
+
+        <!-- Coût d'exécution -->
+
+        <div
+          *ngIf="perf.execution.takerFills + perf.execution.makerFills > 0"
+          class="execution-summary"
+        >
+
+          <strong>Qualité d'exécution</strong>
+
+          <span>
+            {{ perf.execution.takerFills }} exécution(s) en preneur,
+            {{ perf.execution.makerFills }} en apporteur de liquidité.
+          </span>
+
+          <span *ngIf="perf.execution.averageTakerSlippageBps !== null">
+            Écart moyen au prix milieu en preneur :
+            <strong>{{ perf.execution.averageTakerSlippageBps | number:'1.0-1' }} pb</strong>
+            ({{ (perf.execution.averageTakerSlippageBps / 100) | number:'1.2-2' }} %).
+          </span>
+
+          <span>
+            {{ perf.execution.totalSlippageCost >= 0 ? 'Coût total' : 'Gain total' }} par rapport au prix milieu :
+            <strong
+              [class.negative]="perf.execution.totalSlippageCost > 0"
+              [class.positive]="perf.execution.totalSlippageCost < 0"
+            >
+              {{ (perf.execution.totalSlippageCost < 0 ? -perf.execution.totalSlippageCost : perf.execution.totalSlippageCost) | number:'1.2-2' }}
+              {{ perf.currency }}
+            </strong>.
+            Les ordres limite qui attendent dans le carnet réduisent ce coût.
+          </span>
+
+        </div>
+
+      </article>
+
+
+      <!-- CONTRIBUTIONS -->
+
+      <article class="panel">
+
+        <div class="panel-header">
+
+          <div>
+
+            <span class="panel-kicker">
+              CONTRIBUTION
+            </span>
+
+            <h2>
+              D'où vient votre résultat
+            </h2>
+
+          </div>
+
+        </div>
+
+
+        <div
+          *ngIf="perf.contributions.length === 0"
+          class="empty-table"
+        >
+          Aucune transaction pour le moment.
+        </div>
+
+
+        <!-- Barres divergentes : gains à droite, pertes à gauche ;
+             le signe est toujours écrit à côté de la valeur. -->
+
+        <ul
+          *ngIf="perf.contributions.length > 0"
+          class="contributions"
+        >
+
+          <li *ngFor="let contribution of perf.contributions; trackBy: trackBySymbol">
+
+            <div class="contribution-label">
+
+              <strong>{{ contribution.assetSymbol }}</strong>
+
+              <small>
+                {{ contribution.open ? 'ouverte' : 'fermée' }}
+                · réalisé {{ contribution.realizedPnl | number:'1.2-2' }}
+                · latent {{ contribution.unrealizedPnl | number:'1.2-2' }}
+              </small>
+
+            </div>
+
+            <div
+              class="contribution-track"
+              aria-hidden="true"
+            >
+
+              <span class="contribution-half negative-half">
+                <span
+                  *ngIf="contribution.totalPnl < 0"
+                  class="contribution-bar loss"
+                  [style.width.%]="contributionWidth(contribution)"
+                ></span>
+              </span>
+
+              <span class="contribution-half positive-half">
+                <span
+                  *ngIf="contribution.totalPnl > 0"
+                  class="contribution-bar gain"
+                  [style.width.%]="contributionWidth(contribution)"
+                ></span>
+              </span>
+
+            </div>
+
+            <span
+              class="contribution-value"
+              [class.positive]="contribution.totalPnl > 0"
+              [class.negative]="contribution.totalPnl < 0"
+            >
+              {{ contribution.totalPnl > 0 ? '+' : '' }}{{ contribution.totalPnl | number:'1.2-2' }}
+              <small>{{ contribution.contributionPercent > 0 ? '+' : '' }}{{ contribution.contributionPercent | number:'1.2-2' }} pt</small>
+            </span>
+
+          </li>
+
+        </ul>
+
+      </article>
+
+    </section>
+
+
+    <!-- ======================================= -->
+    <!-- RISK -->
+    <!-- ======================================= -->
+
+    <section class="panel">
+
+      <div class="panel-header">
+
+        <div>
+
+          <span class="panel-kicker">
+            RISQUE
+          </span>
+
+          <h2>
+            Indicateurs de risque
+          </h2>
+
+        </div>
+
+        <!-- Niveau écrit en toutes lettres : jamais la couleur seule. -->
+
+        <span
+          class="risk-badge"
+          [ngClass]="'risk-' + p.risk.overallLevel.toLowerCase()"
+        >
+          Risque global : {{ riskLabel(p.risk.overallLevel) }}
+        </span>
+
+      </div>
+
+
+      <div class="risk-grid">
+
+        <article
+          *ngFor="let card of riskCards"
+          class="risk-card"
+        >
+
+          <div class="risk-card-head">
+
+            <span>
+              {{ card.label }}
+            </span>
+
+            <span
+              class="risk-badge small"
+              [ngClass]="'risk-' + card.level.toLowerCase()"
+            >
+              {{ riskLabel(card.level) }}
+            </span>
+
+          </div>
+
+          <strong>
+            {{ card.value }}
+          </strong>
+
+          <p>
+            {{ card.explanation }}
+          </p>
+
+        </article>
+
+      </div>
+
+    </section>
+
+
+    <!-- ======================================= -->
+    <!-- CLOSED POSITIONS -->
+    <!-- ======================================= -->
+
+    <section
+      *ngIf="p.closedPositions.length > 0"
+      class="panel"
+    >
+
+      <div class="panel-header">
+
+        <div>
+
+          <span class="panel-kicker">
+            HISTORIQUE
+          </span>
+
+          <h2>
+            Positions fermées
+          </h2>
+
+        </div>
+
+        <span class="count-badge">
+          {{ p.closedPositions.length }}
+        </span>
+
+      </div>
+
+
+      <div class="table-wrapper">
+
+        <table>
+
+          <thead>
+
+            <tr>
+              <th>Actif</th>
+              <th>Quantité achetée</th>
+              <th>Quantité vendue</th>
+              <th>Résultat réalisé</th>
+            </tr>
+
+          </thead>
+
+          <tbody>
+
+            <tr *ngFor="let position of p.closedPositions; trackBy: trackBySymbol">
+
+              <td>
+
+                <strong>
+                  {{ position.assetSymbol }}
+                </strong>
+
+                <small class="cell-detail">
+                  {{ position.assetName }}
+                </small>
+
+              </td>
+
+              <td>
+                {{ position.boughtQuantity | number:'1.0-8' }}
+              </td>
+
+              <td>
+                {{ position.soldQuantity | number:'1.0-8' }}
+              </td>
+
+              <td>
+
+                <strong
+                  [class.positive]="position.realizedPnl > 0"
+                  [class.negative]="position.realizedPnl < 0"
+                >
+                  {{ position.realizedPnl > 0 ? '+' : '' }}{{ position.realizedPnl | number:'1.2-2' }}
+                  {{ p.currency }}
+                </strong>
+
+              </td>
+
+            </tr>
+
+          </tbody>
+
+        </table>
+
+      </div>
+
+    </section>
+
+
+    <!-- ======================================= -->
+    <!-- RULES -->
+    <!-- ======================================= -->
+
+    <footer class="rules-note">
+
+      <strong>
+        Règles du portefeuille
+      </strong>
+
+      <ul>
+
+        <li>
+          Capital de départ :
+          {{ p.initialCapital | number:'1.0-0' }} {{ p.currency }}
+          <ng-container *ngIf="p.startedAt">
+            · réinitialisé le {{ p.startedAt | date:'dd/MM/yyyy à HH:mm' }}
+          </ng-container>
+        </li>
+
+        <li *ngIf="p.limitsEnforced">
+          Un achat ne peut pas dépasser vos liquidités disponibles, et vous ne pouvez
+          vendre que les titres que vous détenez (pas de vente à découvert).
+        </li>
+
+        <li>
+          Les ordres en attente réservent les fonds ou les titres qu'ils engagent,
+          jusqu'à leur exécution ou leur annulation.
+        </li>
+
+        <li>
+          Prix de revient moyen pondéré ; positions valorisées au dernier cours.
+          Données actualisées toutes les 10 secondes
+          (dernière mise à jour : {{ p.generatedAt | date:'HH:mm:ss' }}).
+        </li>
+
+      </ul>
+
+    </footer>
+
+  </ng-container>
+
+</div>

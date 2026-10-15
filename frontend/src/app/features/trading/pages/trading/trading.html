@@ -70,16 +70,64 @@
   <div
     *ngIf="successMessage"
     class="alert alert-success"
+    role="status"
   >
-    {{ successMessage }}
+
+    <span>
+      {{ successMessage }}
+    </span>
+
+    <button
+      type="button"
+      class="alert-close"
+      aria-label="Fermer le message"
+      (click)="dismissSuccess()"
+    >
+      ×
+    </button>
+
   </div>
 
 
   <div
     *ngIf="errorMessage"
     class="alert alert-error"
+    role="alert"
   >
-    {{ errorMessage }}
+
+    <span>
+      {{ errorMessage }}
+    </span>
+
+    <button
+      *ngIf="assets.length === 0 && !loading"
+      type="button"
+      class="alert-action"
+      (click)="loadAssets()"
+    >
+      Réessayer
+    </button>
+
+    <button
+      type="button"
+      class="alert-close"
+      aria-label="Fermer le message"
+      (click)="dismissError()"
+    >
+      ×
+    </button>
+
+  </div>
+
+
+  <div
+    *ngIf="connectionLost"
+    class="alert alert-warning"
+    role="status"
+  >
+    Connexion au serveur interrompue.
+    Les données affichées peuvent être obsolètes,
+    nouvelle tentative automatique en cours…
   </div>
 
 
@@ -98,6 +146,44 @@
       <span class="market-badge">
         VIRTUAL MARKET
       </span>
+
+      <span
+        class="market-badge live-badge"
+        [class.live-on]="liveConnected"
+        [attr.title]="
+          liveConnected
+            ? 'Carnet mis à jour en temps réel'
+            : 'Carnet actualisé toutes les 3 secondes'
+        "
+      >
+        {{ liveConnected ? '● TEMPS RÉEL' : '○ ACTUALISATION AUTO' }}
+      </span>
+
+    </div>
+
+
+    <div class="market-metric">
+
+      <span>
+        Dernier cours
+      </span>
+
+      <strong>
+        {{ lastPrice !== null
+          ? (lastPrice | number:'1.2-8')
+          : '—' }}
+      </strong>
+
+      <!-- Le signe et la flèche doublent la couleur. -->
+
+      <small
+        *ngIf="market?.summary?.changePercent as change"
+        class="metric-change"
+        [class.buy-text]="change > 0"
+        [class.sell-text]="change < 0"
+      >
+        {{ change > 0 ? '▲ +' : '▼ ' }}{{ change | number:'1.2-2' }} %
+      </small>
 
     </div>
 
@@ -145,6 +231,198 @@
       </strong>
 
     </div>
+
+
+    <div class="market-metric">
+
+      <span>
+        Volume 24 h
+      </span>
+
+      <strong>
+        {{ market
+          ? (market.summary.volume24h | number:'1.0-4')
+          : '—' }}
+      </strong>
+
+      <small
+        *ngIf="market && market.summary.high24h !== null"
+        class="metric-change"
+      >
+        {{ market.summary.low24h | number:'1.2-4' }}
+        –
+        {{ market.summary.high24h | number:'1.2-4' }}
+      </small>
+
+    </div>
+
+  </section>
+
+
+  <!-- ========================================= -->
+  <!-- CHART + MARKET TRADES -->
+  <!-- ========================================= -->
+
+  <section class="market-grid">
+
+    <!-- ======================================= -->
+    <!-- CANDLESTICK CHART -->
+    <!-- ======================================= -->
+
+    <article class="panel">
+
+      <div class="panel-header">
+
+        <div>
+
+          <span class="panel-kicker">
+            COURS
+          </span>
+
+          <h2>
+            Évolution du prix
+          </h2>
+
+        </div>
+
+
+        <div
+          class="interval-selector"
+          role="group"
+          aria-label="Durée d'un chandelier"
+        >
+
+          <button
+            *ngFor="let interval of candleIntervals"
+            type="button"
+            [class.active]="interval === candleInterval"
+            [attr.aria-pressed]="interval === candleInterval"
+            (click)="selectCandleInterval(interval)"
+          >
+            {{ interval }}
+          </button>
+
+        </div>
+
+      </div>
+
+
+      <div
+        *ngIf="loading && !market"
+        class="empty-book loading-state"
+      >
+        Chargement du graphique...
+      </div>
+
+      <app-candle-chart
+        *ngIf="market"
+        [candles]="market.candles"
+      />
+
+    </article>
+
+
+    <!-- ======================================= -->
+    <!-- MARKET TRADES -->
+    <!-- ======================================= -->
+
+    <article class="panel tape-panel">
+
+      <div class="panel-header">
+
+        <div>
+
+          <span class="panel-kicker">
+            TIME &amp; SALES
+          </span>
+
+          <h2>
+            Transactions du marché
+          </h2>
+
+        </div>
+
+      </div>
+
+
+      <div class="tape">
+
+        <div class="tape-row tape-head">
+
+          <span>
+            Prix
+          </span>
+
+          <span>
+            Quantité
+          </span>
+
+          <span>
+            Heure
+          </span>
+
+        </div>
+
+
+        <div
+          *ngFor="
+            let trade of market?.recentTrades;
+            trackBy: trackById
+          "
+          class="tape-row"
+          [attr.title]="
+            trade.aggressorSide === 'BUY'
+              ? 'Déclenchée par un acheteur'
+              : trade.aggressorSide === 'SELL'
+                ? 'Déclenchée par un vendeur'
+                : null
+          "
+        >
+
+          <!-- La flèche double la couleur. -->
+
+          <strong
+            [class.buy-text]="trade.aggressorSide === 'BUY'"
+            [class.sell-text]="trade.aggressorSide === 'SELL'"
+          >
+            {{
+              trade.aggressorSide === 'BUY'
+                ? '▲'
+                : trade.aggressorSide === 'SELL'
+                  ? '▼'
+                  : ''
+            }}
+            {{ trade.price | number:'1.2-8' }}
+          </strong>
+
+          <span>
+            {{ trade.quantity | number:'1.0-8' }}
+          </span>
+
+          <span>
+            {{ trade.createdAt | date:'HH:mm:ss' }}
+          </span>
+
+        </div>
+
+
+        <div
+          *ngIf="loading && !market"
+          class="empty-book loading-state"
+        >
+          Chargement...
+        </div>
+
+        <div
+          *ngIf="market && market.recentTrades.length === 0"
+          class="empty-book"
+        >
+          Aucune transaction pour le moment.
+        </div>
+
+      </div>
+
+    </article>
 
   </section>
 
@@ -219,24 +497,54 @@
 
         <div class="form-group">
 
-          <label>
+          <label for="order-type">
             Type d'ordre
           </label>
 
           <select
+            id="order-type"
             formControlName="type"
           >
             <option value="LIMIT">
               Ordre limite
             </option>
 
-            <option
-              value="MARKET"
-              disabled
-            >
-              Ordre au marché — bientôt
+            <option value="MARKET">
+              Ordre au marché
+            </option>
+
+            <option value="STOP_LOSS">
+              Stop-loss
+            </option>
+
+            <option value="TAKE_PROFIT">
+              Take-profit
+            </option>
+
+            <option value="TRAILING_STOP">
+              Stop suiveur
+            </option>
+
+            <option value="OCO">
+              OCO : protéger des titres détenus
             </option>
           </select>
+
+          <small
+            *ngIf="entryType === 'MARKET'"
+            class="field-hint"
+          >
+            Exécution immédiate aux meilleurs prix du carnet.
+            La partie sans contrepartie est annulée.
+          </small>
+
+          <small
+            *ngIf="isOcoEntry"
+            class="field-hint"
+          >
+            Deux ventes liées sur des titres que vous détenez : la première
+            exécutée annule l'autre.
+          </small>
 
         </div>
 
@@ -245,16 +553,60 @@
 
         <div class="form-group">
 
-          <label>
+          <label for="order-quantity">
             Quantité
           </label>
 
           <input
+            id="order-quantity"
             type="number"
-            min="0.00000001"
+            [min]="selectedAsset?.minQuantity ?? 0.00000001"
             step="any"
             formControlName="quantity"
           />
+
+          <small
+            *ngIf="selectedAsset?.minQuantity as minQuantity"
+            class="field-hint"
+          >
+            Minimum : {{ minQuantity | number:'1.0-8' }}
+          </small>
+
+
+          <!-- Ce que le portefeuille permet d'engager. -->
+
+          <div
+            *ngIf="buyingPower as power"
+            class="buying-power"
+          >
+
+            <span *ngIf="orderForm.controls.side.value === 'BUY'">
+              Liquidités disponibles :
+              <strong>{{ power.availableCash | number:'1.2-2' }} {{ power.currency }}</strong>
+              <ng-container *ngIf="power.reservedCash > 0">
+                ({{ power.reservedCash | number:'1.2-2' }} réservés)
+              </ng-container>
+            </span>
+
+            <span *ngIf="orderForm.controls.side.value === 'SELL'">
+              Titres disponibles :
+              <strong>{{ power.availableQuantity | number:'1.0-8' }} {{ normalizedSymbol }}</strong>
+              <ng-container *ngIf="power.reservedQuantity > 0">
+                ({{ power.reservedQuantity | number:'1.0-8' }} déjà en vente)
+              </ng-container>
+            </span>
+
+            <button
+              *ngIf="power.limitsEnforced && maxQuantity"
+              type="button"
+              class="max-button"
+              [attr.title]="'Quantité maximale : ' + maxQuantity"
+              (click)="useMaxQuantity()"
+            >
+              Max
+            </button>
+
+          </div>
 
           <small
             *ngIf="
@@ -272,26 +624,255 @@
 
         <!-- LIMIT PRICE -->
 
-        <div class="form-group">
+        <div
+          *ngIf="entryType === 'LIMIT'"
+          class="form-group"
+        >
 
-          <label>
+          <label for="order-limit-price">
             Prix limite
           </label>
 
           <div class="input-with-unit">
 
             <input
+              id="order-limit-price"
               type="number"
               min="0.00000001"
-              step="any"
+              [step]="selectedAsset?.tickSize ?? 'any'"
               formControlName="limitPrice"
             />
 
             <span>
-              USD
+              {{ currency }}
             </span>
 
           </div>
+
+          <small
+            *ngIf="selectedAsset?.tickSize as tickSize"
+            class="field-hint"
+          >
+            Pas de cotation : {{ tickSize | number:'1.0-8' }}.
+            Cliquez un prix du carnet pour le reprendre.
+          </small>
+
+          <small
+            *ngIf="
+              orderForm.controls.limitPrice.touched
+              &&
+              orderForm.controls.limitPrice.invalid
+            "
+            class="field-error"
+          >
+            Le prix limite doit être positif.
+          </small>
+
+        </div>
+
+
+        <!-- TRIGGER PRICE -->
+
+        <div
+          *ngIf="isConditionalEntry"
+          class="form-group"
+        >
+
+          <label for="order-trigger-price">
+            Prix de déclenchement
+          </label>
+
+          <div class="input-with-unit">
+
+            <input
+              id="order-trigger-price"
+              type="number"
+              min="0.00000001"
+              [step]="selectedAsset?.tickSize ?? 'any'"
+              formControlName="triggerPrice"
+            />
+
+            <span>
+              {{ currency }}
+            </span>
+
+          </div>
+
+          <small class="field-hint">
+            {{ triggerHint }}
+          </small>
+
+          <small
+            *ngIf="
+              orderForm.controls.triggerPrice.touched
+              &&
+              orderForm.controls.triggerPrice.invalid
+            "
+            class="field-error"
+          >
+            Le prix de déclenchement doit être positif.
+          </small>
+
+        </div>
+
+
+        <!-- TRAILING STOP -->
+
+        <div
+          *ngIf="isTrailingEntry"
+          class="form-group"
+        >
+
+          <label for="order-trail">
+            Écart de suivi
+          </label>
+
+          <div class="input-with-unit">
+
+            <input
+              id="order-trail"
+              type="number"
+              min="0.1"
+              max="50"
+              step="0.1"
+              formControlName="trailPercent"
+            />
+
+            <span>
+              %
+            </span>
+
+          </div>
+
+          <small class="field-hint">
+            {{ triggerHint }}
+          </small>
+
+          <small
+            *ngIf="
+              orderForm.controls.trailPercent.touched
+              &&
+              orderForm.controls.trailPercent.invalid
+            "
+            class="field-error"
+          >
+            Indiquez un écart entre 0,1 % et 50 %.
+          </small>
+
+        </div>
+
+
+        <!-- OCO / BRACKET PROTECTIONS -->
+
+        <label
+          *ngIf="canProtect"
+          class="protect-toggle"
+        >
+
+          <input
+            type="checkbox"
+            formControlName="protect"
+          />
+
+          <span>
+            Protéger cet achat
+            <small>
+              stop-loss et take-profit créés automatiquement une fois l'achat exécuté
+            </small>
+          </span>
+
+        </label>
+
+
+        <div
+          *ngIf="isOcoEntry || (canProtect && orderForm.controls.protect.value)"
+          class="protection-grid"
+        >
+
+          <div class="form-group">
+
+            <label for="order-take-profit">
+              Take-profit
+            </label>
+
+            <div class="input-with-unit">
+
+              <input
+                id="order-take-profit"
+                type="number"
+                min="0.00000001"
+                [step]="selectedAsset?.tickSize ?? 'any'"
+                formControlName="takeProfitPrice"
+              />
+
+              <span>
+                {{ currency }}
+              </span>
+
+            </div>
+
+            <small class="field-hint">
+              Vente si le cours monte jusqu'à ce prix.
+            </small>
+
+          </div>
+
+
+          <div class="form-group">
+
+            <label for="order-stop-loss">
+              Stop-loss
+            </label>
+
+            <div class="input-with-unit">
+
+              <input
+                id="order-stop-loss"
+                type="number"
+                min="0.00000001"
+                [step]="selectedAsset?.tickSize ?? 'any'"
+                formControlName="stopLossPrice"
+              />
+
+              <span>
+                {{ currency }}
+              </span>
+
+            </div>
+
+            <small class="field-hint">
+              Vente au marché si le cours baisse jusqu'à ce prix.
+            </small>
+
+          </div>
+
+        </div>
+
+
+        <!-- TIME IN FORCE -->
+
+        <div
+          *ngIf="allowedTimeInForce.length > 1"
+          class="form-group"
+        >
+
+          <label for="order-validity">
+            Validité
+          </label>
+
+          <select
+            id="order-validity"
+            formControlName="timeInForce"
+          >
+
+            <option
+              *ngFor="let validity of allowedTimeInForce"
+              [value]="validity"
+            >
+              {{ timeInForceLabels[validity] }}
+            </option>
+
+          </select>
 
         </div>
 
@@ -342,21 +923,143 @@
             <strong>
 
               {{
-                (
-                  orderForm.controls.quantity.value
-                  *
-                  orderForm.controls.limitPrice.value
-                )
-                | number:'1.2-2'
+                estimatedValue !== null
+                  ? (estimatedValue | number:'1.2-2')
+                  : '—'
               }}
 
-              USD
+              {{ currency }}
 
             </strong>
 
           </div>
 
         </div>
+
+
+        <!-- PREVIEW -->
+
+        <section
+          *ngIf="preview as pv"
+          class="preview"
+          [class.preview-refused]="!pv.accepted"
+          [class.preview-stale]="previewLoading"
+          aria-live="polite"
+          aria-label="Aperçu de l'ordre"
+        >
+
+          <header>
+
+            <strong>
+              Aperçu
+            </strong>
+
+            <span
+              class="preview-status"
+              [class.ok]="pv.accepted"
+            >
+              {{ pv.accepted ? '✓ Ordre recevable' : '✕ Ordre refusé' }}
+            </span>
+
+          </header>
+
+          <p
+            *ngIf="pv.refusalReason"
+            class="preview-reason"
+          >
+            {{ pv.refusalReason }}
+          </p>
+
+          <dl *ngIf="pv.immediateQuantity !== null">
+
+            <ng-container *ngIf="pv.immediateQuantity > 0">
+
+              <dt>Exécuté tout de suite</dt>
+              <dd>
+                {{ pv.immediateQuantity | number:'1.0-8' }}
+                à {{ pv.averagePrice | number:'1.2-8' }} en moyenne
+              </dd>
+
+              <dt>Montant</dt>
+              <dd>{{ pv.immediateAmount | number:'1.2-2' }} {{ pv.currency }}</dd>
+
+              <ng-container *ngIf="pv.slippageBps !== null">
+                <dt>Écart au prix milieu</dt>
+                <dd>
+                  {{ pv.slippageBps > 0 ? '+' : '' }}{{ pv.slippageBps | number:'1.0-1' }} pb
+                  <span *ngIf="pv.levelsConsumed > 1">
+                    · {{ pv.levelsConsumed }} niveaux
+                  </span>
+                </dd>
+              </ng-container>
+
+            </ng-container>
+
+            <ng-container *ngIf="pv.restingQuantity && pv.restingQuantity > 0">
+              <dt>En attente dans le carnet</dt>
+              <dd>{{ pv.restingQuantity | number:'1.0-8' }}</dd>
+            </ng-container>
+
+            <ng-container *ngIf="pv.cancelledQuantity && pv.cancelledQuantity > 0">
+              <dt>Non exécuté (annulé)</dt>
+              <dd>{{ pv.cancelledQuantity | number:'1.0-8' }}</dd>
+            </ng-container>
+
+            <ng-container *ngIf="pv.triggerPrice !== null">
+              <dt>Déclenchement</dt>
+              <dd>
+                à {{ pv.triggerPrice | number:'1.2-8' }}
+                <span *ngIf="pv.triggerDistancePercent !== null">
+                  ({{ pv.triggerDistancePercent > 0 ? '+' : '' }}{{ pv.triggerDistancePercent | number:'1.2-2' }} % du cours)
+                </span>
+              </dd>
+            </ng-container>
+
+            <dt>Liquidités disponibles</dt>
+            <dd>
+              {{ pv.availableCashBefore | number:'1.2-2' }}
+              → <strong>{{ pv.availableCashAfter | number:'1.2-2' }}</strong>
+            </dd>
+
+            <ng-container *ngIf="pv.heldQuantityAfter !== pv.heldQuantityBefore">
+              <dt>Position {{ normalizedSymbol }}</dt>
+              <dd>
+                {{ pv.heldQuantityBefore | number:'1.0-8' }}
+                → <strong>{{ pv.heldQuantityAfter | number:'1.0-8' }}</strong>
+                <span *ngIf="pv.positionWeightAfterPercent !== null">
+                  ({{ pv.positionWeightAfterPercent | number:'1.0-1' }} % du portefeuille)
+                </span>
+              </dd>
+            </ng-container>
+
+            <ng-container *ngIf="pv.potentialGain !== null || pv.potentialLoss !== null">
+              <dt>Gain / perte possibles</dt>
+              <dd>
+                <span *ngIf="pv.potentialGain !== null" class="buy-text">
+                  +{{ pv.potentialGain | number:'1.2-2' }}
+                </span>
+                <span *ngIf="pv.potentialGain !== null && pv.potentialLoss !== null"> / </span>
+                <span *ngIf="pv.potentialLoss !== null" class="sell-text">
+                  −{{ pv.potentialLoss | number:'1.2-2' }}
+                </span>
+                <span *ngIf="pv.rewardRiskRatio !== null">
+                  · ratio {{ pv.rewardRiskRatio | number:'1.0-2' }}
+                </span>
+              </dd>
+            </ng-container>
+
+          </dl>
+
+          <ul
+            *ngIf="pv.warnings.length > 0"
+            class="preview-warnings"
+          >
+            <li *ngFor="let warning of pv.warnings">
+              {{ warning }}
+            </li>
+          </ul>
+
+        </section>
 
 
         <!-- SUBMIT -->
@@ -374,6 +1077,8 @@
             submitting
             ||
             orderForm.invalid
+            ||
+            assets.length === 0
           "
         >
 
@@ -392,6 +1097,50 @@
           </span>
 
         </button>
+
+
+        <!-- RESULT OF THE LAST ORDER -->
+
+        <!-- Juste sous le bouton : le résultat se lit
+             sans quitter le formulaire. -->
+
+        <div
+          class="feedback-region"
+          aria-live="polite"
+        >
+
+          <div
+            *ngIf="orderFeedback as feedback"
+            class="feedback"
+            [class.feedback-success]="feedback.kind === 'success'"
+            [class.feedback-error]="feedback.kind === 'error'"
+          >
+
+            <div>
+
+              <strong>
+                {{ feedback.kind === 'success' ? '✓' : '✕' }}
+                {{ feedback.title }}
+              </strong>
+
+              <p>
+                {{ feedback.message }}
+              </p>
+
+            </div>
+
+            <button
+              type="button"
+              class="alert-close"
+              aria-label="Fermer le message"
+              (click)="orderFeedback = null"
+            >
+              ×
+            </button>
+
+          </div>
+
+        </div>
 
       </form>
 
@@ -419,12 +1168,28 @@
         </div>
 
 
+        <div class="book-mid">
+
+          <span>
+            Prix milieu
+          </span>
+
+          <strong>
+            {{ midPrice !== null
+              ? (midPrice | number:'1.2-8')
+              : '—' }}
+          </strong>
+
+        </div>
+
+
         <button
           type="button"
           class="refresh-button"
+          [disabled]="loading || refreshing"
           (click)="refreshOrderBook()"
         >
-          Actualiser
+          {{ refreshing ? 'Actualisation...' : 'Actualiser' }}
         </button>
 
       </div>
@@ -463,17 +1228,28 @@
               </span>
 
               <span>
-                Ordres
+                Cumul
               </span>
 
             </div>
 
 
-            <div
-              *ngFor="
-                let bid of orderBook?.bids
+            <!-- La barre de fond représente la quantité cumulée. -->
+
+            <button
+              *ngFor="let bid of bidLevels"
+              type="button"
+              class="book-row book-level bid-row"
+              [class.own-level]="bid.myQuantity > 0"
+              [style.--depth]="bid.depthPercent + '%'"
+              [attr.title]="
+                'Vendre à ' + bid.price
+                + ' · ' + bid.orderCount + ' ordre(s)'
+                + (bid.myQuantity > 0
+                    ? ' · dont ' + bid.myQuantity + ' à vous'
+                    : '')
               "
-              class="book-row bid-row"
+              (click)="pickBookPrice('BID', bid.price)"
             >
 
               <strong>
@@ -485,17 +1261,31 @@
               </span>
 
               <span>
-                {{ bid.orderCount }}
+                {{ bid.cumulativeQuantity | number:'1.0-8' }}
               </span>
 
-            </div>
+              <span
+                *ngIf="bid.myQuantity > 0"
+                class="own-marker"
+              >
+                Vous
+              </span>
+
+            </button>
 
 
             <div
+              *ngIf="loading && !orderBook"
+              class="empty-book loading-state"
+            >
+              Chargement du carnet...
+            </div>
+
+            <div
               *ngIf="
-                !orderBook
-                ||
-                orderBook.bids.length === 0
+                !loading
+                &&
+                bidLevels.length === 0
               "
               class="empty-book"
             >
@@ -537,17 +1327,26 @@
               </span>
 
               <span>
-                Ordres
+                Cumul
               </span>
 
             </div>
 
 
-            <div
-              *ngFor="
-                let ask of orderBook?.asks
+            <button
+              *ngFor="let ask of askLevels"
+              type="button"
+              class="book-row book-level ask-row"
+              [class.own-level]="ask.myQuantity > 0"
+              [style.--depth]="ask.depthPercent + '%'"
+              [attr.title]="
+                'Acheter à ' + ask.price
+                + ' · ' + ask.orderCount + ' ordre(s)'
+                + (ask.myQuantity > 0
+                    ? ' · dont ' + ask.myQuantity + ' à vous'
+                    : '')
               "
-              class="book-row ask-row"
+              (click)="pickBookPrice('ASK', ask.price)"
             >
 
               <strong>
@@ -559,17 +1358,31 @@
               </span>
 
               <span>
-                {{ ask.orderCount }}
+                {{ ask.cumulativeQuantity | number:'1.0-8' }}
               </span>
 
-            </div>
+              <span
+                *ngIf="ask.myQuantity > 0"
+                class="own-marker"
+              >
+                Vous
+              </span>
+
+            </button>
 
 
             <div
+              *ngIf="loading && !orderBook"
+              class="empty-book loading-state"
+            >
+              Chargement du carnet...
+            </div>
+
+            <div
               *ngIf="
-                !orderBook
-                ||
-                orderBook.asks.length === 0
+                !loading
+                &&
+                askLevels.length === 0
               "
               class="empty-book"
             >
@@ -614,6 +1427,47 @@
     </div>
 
 
+    <!-- RESULT OF A MODIFICATION / CANCELLATION -->
+
+    <div
+      class="feedback-region"
+      aria-live="polite"
+    >
+
+      <div
+        *ngIf="ordersFeedback as feedback"
+        class="feedback feedback-inline"
+        [class.feedback-success]="feedback.kind === 'success'"
+        [class.feedback-error]="feedback.kind === 'error'"
+      >
+
+        <div>
+
+          <strong>
+            {{ feedback.kind === 'success' ? '✓' : '✕' }}
+            {{ feedback.title }}
+          </strong>
+
+          <p>
+            {{ feedback.message }}
+          </p>
+
+        </div>
+
+        <button
+          type="button"
+          class="alert-close"
+          aria-label="Fermer le message"
+          (click)="ordersFeedback = null"
+        >
+          ×
+        </button>
+
+      </div>
+
+    </div>
+
+
     <div class="table-wrapper">
 
       <table>
@@ -632,6 +1486,10 @@
 
             <th>
               Sens
+            </th>
+
+            <th>
+              Type
             </th>
 
             <th>
@@ -666,7 +1524,11 @@
         <tbody>
 
           <tr
-            *ngFor="let order of myOrders"
+            *ngFor="
+              let order of myOrders;
+              trackBy: trackById
+            "
+            [class.editing-row]="editingOrderId === order.id"
           >
 
             <td class="id-cell">
@@ -696,15 +1558,84 @@
             </td>
 
             <td>
-              {{ order.limitPrice | number:'1.2-8' }}
+
+              {{ orderTypeLabel(order) }}
+
+              <small class="cell-detail">
+                {{ timeInForceShort[order.timeInForce] }}
+                <ng-container *ngIf="linkLabel(order) as link">
+                  · {{ link }}
+                </ng-container>
+              </small>
+
+            </td>
+
+
+            <!-- PRICE -->
+
+            <td>
+
+              <input
+                *ngIf="editingOrderId === order.id"
+                type="number"
+                class="edit-input"
+                aria-label="Nouveau prix limite"
+                min="0.00000001"
+                step="any"
+                [formControl]="editForm.controls.limitPrice"
+              />
+
+              <ng-container
+                *ngIf="editingOrderId !== order.id"
+              >
+
+                <ng-container *ngIf="order.limitPrice !== null">
+                  {{ order.limitPrice | number:'1.2-8' }}
+                </ng-container>
+
+                <ng-container *ngIf="order.triggerPrice !== null">
+                  Seuil {{ order.triggerPrice | number:'1.2-8' }}
+                </ng-container>
+
+                <ng-container
+                  *ngIf="
+                    order.limitPrice === null
+                    &&
+                    order.triggerPrice === null
+                  "
+                >
+                  Au marché
+                </ng-container>
+
+              </ng-container>
+
             </td>
 
             <td>
               {{ order.quantity | number:'1.0-8' }}
             </td>
 
+
+            <!-- REMAINING QUANTITY -->
+
             <td>
-              {{ order.remainingQuantity | number:'1.0-8' }}
+
+              <input
+                *ngIf="editingOrderId === order.id"
+                type="number"
+                class="edit-input"
+                aria-label="Nouvelle quantité"
+                min="0.00000001"
+                step="any"
+                [formControl]="editForm.controls.quantity"
+              />
+
+              <ng-container
+                *ngIf="editingOrderId !== order.id"
+              >
+                {{ order.remainingQuantity | number:'1.0-8' }}
+              </ng-container>
+
             </td>
 
             <td>
@@ -712,14 +1643,22 @@
               <span
                 class="status"
                 [ngClass]="
-                  'status-' +
-                  order.status.toLowerCase()
+                  isWaitingTrigger(order)
+                    ? 'status-waiting'
+                    : 'status-' + order.status.toLowerCase()
                 "
               >
 
-                {{ statusLabel(order.status) }}
+                {{ statusLabel(order) }}
 
               </span>
+
+              <small
+                *ngIf="cancelReasonLabel(order) as reason"
+                class="cell-detail"
+              >
+                {{ reason }}
+              </small>
 
             </td>
 
@@ -727,23 +1666,68 @@
               {{ order.createdAt | date:'dd/MM/yyyy HH:mm:ss' }}
             </td>
 
-            <td>
 
-              <button
-                *ngIf="canCancel(order)"
-                type="button"
-                class="cancel-button"
-                (click)="cancelOrder(order)"
-              >
-                Annuler
-              </button>
+            <!-- ACTIONS -->
 
-              <span
-                *ngIf="!canCancel(order)"
-                class="no-action"
+            <td class="actions-cell">
+
+              <ng-container
+                *ngIf="editingOrderId === order.id"
               >
-                —
-              </span>
+
+                <button
+                  type="button"
+                  class="edit-button"
+                  [disabled]="savingEdit || editForm.invalid"
+                  (click)="saveEdit(order)"
+                >
+                  {{ savingEdit ? 'Envoi...' : 'Enregistrer' }}
+                </button>
+
+                <button
+                  type="button"
+                  class="cancel-button"
+                  [disabled]="savingEdit"
+                  (click)="cancelEdit()"
+                >
+                  Abandonner
+                </button>
+
+              </ng-container>
+
+
+              <ng-container
+                *ngIf="editingOrderId !== order.id"
+              >
+
+                <button
+                  *ngIf="canModify(order)"
+                  type="button"
+                  class="edit-button"
+                  title="Annule l'ordre et le remplace : il perd sa priorité"
+                  (click)="startEdit(order)"
+                >
+                  Modifier
+                </button>
+
+                <button
+                  *ngIf="canCancel(order)"
+                  type="button"
+                  class="cancel-button"
+                  [disabled]="isCancelling(order)"
+                  (click)="cancelOrder(order)"
+                >
+                  {{ isCancelling(order) ? 'Annulation...' : 'Annuler' }}
+                </button>
+
+                <span
+                  *ngIf="!canCancel(order)"
+                  class="no-action"
+                >
+                  —
+                </span>
+
+              </ng-container>
 
             </td>
 
@@ -753,10 +1737,11 @@
           <tr *ngIf="myOrders.length === 0">
 
             <td
-              colspan="9"
+              colspan="10"
               class="empty-table"
+              [class.loading-state]="loading"
             >
-              Aucun ordre pour le moment.
+              {{ loading ? 'Chargement des ordres...' : 'Aucun ordre pour le moment.' }}
             </td>
 
           </tr>
@@ -830,6 +1815,14 @@
             </th>
 
             <th>
+              Rôle
+            </th>
+
+            <th title="Écart entre votre prix et le prix milieu du carnet à l'arrivée de l'ordre, en points de base (1 pb = 0,01 %). Positif : coût ; négatif : gain.">
+              Écart au milieu
+            </th>
+
+            <th>
               Date
             </th>
 
@@ -841,7 +1834,10 @@
         <tbody>
 
           <tr
-            *ngFor="let trade of myTrades"
+            *ngFor="
+              let trade of myTrades;
+              trackBy: trackById
+            "
           >
 
             <td class="id-cell">
@@ -885,6 +1881,41 @@
             </td>
 
             <td>
+              <span
+                *ngIf="trade.liquidity"
+                [attr.title]="
+                  trade.liquidity === 'TAKER'
+                    ? 'Votre ordre a pris un prix déjà présent dans le carnet'
+                    : 'Votre ordre attendait dans le carnet'
+                "
+              >
+                {{ trade.liquidity === 'TAKER' ? 'Preneur' : 'Apporteur' }}
+              </span>
+            </td>
+
+            <td>
+
+              <ng-container *ngIf="trade.slippageBps !== null; else noMid">
+
+                <span
+                  [class.sell-text]="trade.slippageBps > 0"
+                  [class.buy-text]="trade.slippageBps < 0"
+                >
+                  {{ trade.slippageBps > 0 ? '+' : '' }}{{ trade.slippageBps | number:'1.0-1' }} pb
+                </span>
+
+                <small class="cell-detail">
+                  {{ trade.slippageAmount! > 0 ? 'coût' : 'gain' }}
+                  {{ (trade.slippageAmount! < 0 ? -trade.slippageAmount! : trade.slippageAmount) | number:'1.2-2' }}
+                </small>
+
+              </ng-container>
+
+              <ng-template #noMid>—</ng-template>
+
+            </td>
+
+            <td>
               {{ trade.createdAt | date:'dd/MM/yyyy HH:mm:ss' }}
             </td>
 
@@ -894,10 +1925,11 @@
           <tr *ngIf="myTrades.length === 0">
 
             <td
-              colspan="7"
+              colspan="9"
               class="empty-table"
+              [class.loading-state]="loading"
             >
-              Aucune transaction exécutée.
+              {{ loading ? 'Chargement des transactions...' : 'Aucune transaction exécutée.' }}
             </td>
 
           </tr>

@@ -1,5 +1,6 @@
 package tn.esprit.simulateurbackend;
 
+import jakarta.servlet.Filter;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -13,6 +14,8 @@ import org.springframework.web.context.WebApplicationContext;
 import tn.esprit.simulateurbackend.entity.Role;
 import tn.esprit.simulateurbackend.repository.UserRepository;
 
+import java.util.concurrent.atomic.AtomicInteger;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -24,6 +27,8 @@ class RegistrationTests {
     @Autowired PasswordEncoder passwords;
     MockMvc mvc;
 
+    private static final AtomicInteger CLIENTS = new AtomicInteger();
+
     private static final String VALID = """
     {
       "firstName":"  Test  ",
@@ -31,13 +36,22 @@ class RegistrationTests {
       "countryCode":"TN",
       "phoneNumber":"22 123 456",
       "email":" TEST@example.com ",
-      "password":"StrongPassword123!"
+      "password":"StrongPassword123!",
+      "recaptchaToken":"test-token"
     }
     """;
     @BeforeEach
     void setup() {
         users.deleteAll();
-        mvc = MockMvcBuilders.webAppContextSetup(context).build();
+        // Une adresse IP par test : le rate limiting (3 inscriptions / 10 min / IP)
+        // ne doit pas faire échouer les tests suivants.
+        String clientIp = "10.0.1." + CLIENTS.incrementAndGet();
+        mvc = MockMvcBuilders.webAppContextSetup(context)
+                .defaultRequest(get("/").with(request -> {
+                    request.setRemoteAddr(clientIp);
+                    return request;
+                }))
+                .build();
     }
 
     @Test
@@ -202,7 +216,11 @@ class RegistrationTests {
 
     @Test
     void angularCorsPreflightIsAllowed() throws Exception {
-        mvc.perform(options("/api/auth/register").header("Origin", "http://localhost:4200")
+        // CORS est appliqué par la chaîne de filtres Spring Security.
+        var securedMvc = MockMvcBuilders.webAppContextSetup(context)
+                .addFilters(context.getBean("springSecurityFilterChain", Filter.class))
+                .build();
+        securedMvc.perform(options("/api/auth/register").header("Origin", "http://localhost:4200")
                 .header("Access-Control-Request-Method", "POST")
                 .header("Access-Control-Request-Headers", "content-type"))
             .andExpect(status().isOk())

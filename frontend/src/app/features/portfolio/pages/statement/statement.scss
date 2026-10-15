@@ -1,0 +1,357 @@
+:host {
+  display: block;
+}
+
+.statement-page {
+  padding: 24px;
+  min-height: 100%;
+
+  background: #f5f7fb;
+
+  color: #111827;
+}
+
+
+/* =========================================
+   TOOLBAR
+========================================= */
+
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+
+  max-width: 900px;
+
+  margin: 0 auto 16px;
+}
+
+.back-link {
+  margin-right: auto;
+
+  color: #1d4ed8;
+
+  font-weight: 700;
+
+  text-decoration: none;
+}
+
+.toolbar label {
+  color: #64748b;
+
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.toolbar input {
+  padding: 8px 10px;
+
+  border: 1px solid #dbe1ea;
+  border-radius: 10px;
+
+  font: inherit;
+}
+
+.primary-button {
+  border: 1px solid #1d4ed8;
+  border-radius: 10px;
+
+  background: #1d4ed8;
+
+  padding: 10px 14px;
+
+  color: #fff;
+
+  cursor: pointer;
+
+  font-weight: 700;
+}
+
+.primary-button:disabled {
+  opacity: 0.55;
+
+  cursor: not-allowed;
+}
+
+.alert,
+.loading {
+  max-width: 900px;
+
+  margin: 0 auto 16px;
+  padding: 13px 16px;
+
+  border-radius: 10px;
+
+  font-size: 14px;
+}
+
+.alert {
+  border: 1px solid #fecaca;
+
+  background: #fef2f2;
+
+  color: #b91c1c;
+}
+
+.loading {
+  color: #94a3b8;
+
+  text-align: center;
+}
+
+
+/* =========================================
+   DOCUMENT
+========================================= */
+
+.document {
+  max-width: 900px;
+
+  margin: 0 auto;
+  padding: 40px 44px;
+
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+
+  background: #fff;
+
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.06);
+
+  font-size: 13px;
+
+  transition: opacity 0.2s ease;
+}
+
+.document.stale {
+  opacity: 0.6;
+}
+
+.document-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 24px;
+
+  padding-bottom: 20px;
+
+  border-bottom: 2px solid #111827;
+}
+
+.brand {
+  color: #64748b;
+
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.document h1 {
+  margin: 6px 0 4px;
+
+  font-size: 26px;
+}
+
+.document-header p {
+  margin: 0;
+
+  color: #475569;
+}
+
+.identity {
+  display: grid;
+
+  grid-template-columns: auto auto;
+
+  gap: 3px 14px;
+
+  margin: 0;
+
+  font-size: 12px;
+}
+
+.identity dt {
+  color: #64748b;
+}
+
+.identity dd {
+  margin: 0;
+
+  font-weight: 700;
+}
+
+.notice {
+  margin: 16px 0 0;
+  padding: 10px 12px;
+
+  border-radius: 6px;
+
+  background: #fffbeb;
+
+  color: #92400e;
+
+  font-size: 12px;
+}
+
+.summary {
+  display: grid;
+
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+
+  gap: 12px;
+
+  margin: 22px 0;
+}
+
+.summary div {
+  padding: 12px;
+
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+}
+
+.summary span {
+  display: block;
+
+  color: #64748b;
+
+  font-size: 11px;
+}
+
+.summary strong {
+  display: block;
+
+  margin-top: 6px;
+
+  font-size: 15px;
+  font-variant-numeric: tabular-nums;
+}
+
+.document h2 {
+  margin: 26px 0 10px;
+
+  font-size: 15px;
+}
+
+.document h2 small {
+  margin-left: 8px;
+
+  color: #64748b;
+
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.document table {
+  width: 100%;
+
+  border-collapse: collapse;
+}
+
+.document th,
+.document td {
+  padding: 8px 10px;
+
+  border-bottom: 1px solid #e5e7eb;
+
+  text-align: left;
+
+  font-variant-numeric: tabular-nums;
+}
+
+.document th {
+  color: #64748b;
+
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.document td small {
+  display: block;
+
+  color: #94a3b8;
+
+  font-size: 11px;
+}
+
+.numeric {
+  text-align: right !important;
+}
+
+.empty {
+  padding: 18px !important;
+
+  color: #94a3b8;
+
+  text-align: center !important;
+}
+
+.positive {
+  color: #047857;
+}
+
+.negative {
+  color: #b91c1c;
+}
+
+.document-footer {
+  margin-top: 30px;
+  padding-top: 14px;
+
+  border-top: 1px solid #e5e7eb;
+
+  color: #94a3b8;
+
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+
+/* =========================================
+   RESPONSIVE / PRINT
+========================================= */
+
+@media (max-width: 760px) {
+
+  .statement-page {
+    padding: 12px;
+  }
+
+  .document {
+    padding: 20px;
+  }
+
+  .document-header {
+    flex-direction: column;
+  }
+
+  .summary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+}
+
+@media print {
+
+  .statement-page {
+    padding: 0;
+
+    background: #fff;
+  }
+
+  .document {
+    max-width: none;
+
+    padding: 0;
+
+    border: 0;
+
+    box-shadow: none;
+  }
+
+  .document table tr {
+    break-inside: avoid;
+  }
+
+}

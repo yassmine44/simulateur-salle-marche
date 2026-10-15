@@ -1,232 +1,398 @@
 import { CommonModule } from '@angular/common';
-import { Component } from '@angular/core';
+import { HttpErrorResponse } from '@angular/common/http';
+import {
+  Component,
+  inject,
+  OnDestroy,
+  OnInit
+} from '@angular/core';
+import { RouterLink } from '@angular/router';
 
-interface DashboardMetric {
-  label: string;
-  value: string;
-  variation?: string;
-  positive?: boolean;
+import {
+  finalize,
+  forkJoin,
+  interval,
+  Subscription
+} from 'rxjs';
+
+import {
+  ActivityEvent,
+  DashboardResponse,
+  InsightSeverity,
+  Protection,
+  ProtectionStatus
+} from './dashboard.models';
+
+import { DashboardService } from './dashboard.service';
+
+import { Sparkline } from './sparkline';
+
+import { EquityChart }
+  from '../../features/portfolio/components/equity-chart/equity-chart';
+
+import {
+  PortfolioPosition,
+  RiskLevel
+} from '../../features/portfolio/models/portfolio.models';
+
+import { TradeResponse }
+  from '../../features/trading/models/trading.models';
+
+import { TradingService }
+  from '../../features/trading/services/trading.service';
+
+
+// Une ligne du tableau des positions : la position et sa protection.
+
+interface PositionRow {
+
+  position: PortfolioPosition;
+
+  protection: Protection | null;
 }
 
-interface Position {
-  asset: string;
-  type: 'BUY' | 'SELL';
-  quantity: number;
-  price: number;
-  pnl: number;
-}
-
-interface Transaction {
-  asset: string;
-  type: 'BUY' | 'SELL';
-  quantity: number;
-  price: number;
-  date: string;
-}
 
 interface RiskIndicator {
+
   label: string;
+
   value: string;
-  level: 'LOW' | 'MEDIUM' | 'HIGH';
+
+  level: RiskLevel;
+
+  explanation: string;
 }
 
+
+/*
+ * Tableau de bord : vue d'ensemble du trading et du portefeuille
+ * de l'utilisateur connecté, actualisée automatiquement.
+ */
 @Component({
   selector: 'app-dashboard',
   standalone: true,
   imports: [
-    CommonModule
+    CommonModule,
+    RouterLink,
+    EquityChart,
+    Sparkline
   ],
   templateUrl: './dashboard.component.html',
   styleUrl: './dashboard.component.scss'
 })
-export class DashboardComponent {
+export class DashboardComponent
+  implements OnInit, OnDestroy {
 
-  // =========================================
-  // TEMPORARY DEMO DATA
-  // =========================================
+  private readonly dashboardService =
+    inject(DashboardService);
 
-  readonly metrics: DashboardMetric[] = [
-
-    {
-      label: 'Capital disponible',
-      value: '100 000 DT'
-    },
-
-    {
-      label: 'Valeur du portefeuille',
-      value: '103 450 DT',
-      variation: '+3,45%',
-      positive: true
-    },
-
-    {
-      label: 'Performance globale',
-      value: '+3 450 DT',
-      variation: '+3,45%',
-      positive: true
-    },
-
-    {
-      label: 'Positions ouvertes',
-      value: '4'
-    }
-  ];
+  private readonly tradingService =
+    inject(TradingService);
 
 
-  readonly portfolioHistory = [
-    100000,
-    100800,
-    100300,
-    101500,
-    102200,
-    101900,
-    103450
-  ];
+  // ==========================================
+  // CONFIGURATION
+  // ==========================================
+
+  readonly refreshIntervalMs = 15000;
+
+  private readonly recentTransactionCount = 8;
 
 
-  readonly positions: Position[] = [
+  // ==========================================
+  // STATE
+  // ==========================================
 
-    {
-      asset: 'AAPL',
-      type: 'BUY',
-      quantity: 10,
-      price: 215.40,
-      pnl: 420
-    },
+  dashboard:
+    DashboardResponse | null = null;
 
-    {
-      asset: 'EUR/USD',
-      type: 'BUY',
-      quantity: 2000,
-      price: 1.1712,
-      pnl: 180
-    },
+  transactions:
+    TradeResponse[] = [];
 
-    {
-      asset: 'TSLA',
-      type: 'SELL',
-      quantity: 4,
-      price: 438.25,
-      pnl: -95
-    },
+  positionRows:
+    PositionRow[] = [];
 
-    {
-      asset: 'BTC/USD',
-      type: 'BUY',
-      quantity: 0.02,
-      price: 68420,
-      pnl: 260
-    }
-  ];
+  riskIndicators:
+    RiskIndicator[] = [];
+
+  loading = false;
+
+  refreshing = false;
+
+  errorMessage = '';
+
+  private refreshSubscription?:
+    Subscription;
+
+  private loadSubscription?:
+    Subscription;
 
 
-  readonly transactions: Transaction[] = [
+  // ==========================================
+  // LIFECYCLE
+  // ==========================================
 
-    {
-      asset: 'AAPL',
-      type: 'BUY',
-      quantity: 10,
-      price: 215.40,
-      date: '02/10/2026 10:22'
-    },
+  ngOnInit(): void {
 
-    {
-      asset: 'EUR/USD',
-      type: 'BUY',
-      quantity: 2000,
-      price: 1.1712,
-      date: '01/10/2026 15:40'
-    },
+    this.load();
 
-    {
-      asset: 'TSLA',
-      type: 'SELL',
-      quantity: 4,
-      price: 438.25,
-      date: '30/09/2026 11:15'
-    }
-  ];
+    this.refreshSubscription =
+      interval(this.refreshIntervalMs)
+        .subscribe(() => {
 
-
-  readonly riskIndicators: RiskIndicator[] = [
-
-    {
-      label: 'Exposition globale',
-      value: '38%',
-      level: 'LOW'
-    },
-
-    {
-      label: 'Diversification',
-      value: '72%',
-      level: 'LOW'
-    },
-
-    {
-      label: 'Volatilité',
-      value: '16%',
-      level: 'MEDIUM'
-    },
-
-    {
-      label: 'Risque portefeuille',
-      value: 'Modéré',
-      level: 'MEDIUM'
-    }
-  ];
-
-
-  // =========================================
-  // CHART HELPERS
-  // =========================================
-
-  get chartMin(): number {
-
-    return Math.min(
-      ...this.portfolioHistory
-    );
+          if (!this.loading && !this.refreshing) {
+            this.load(true);
+          }
+        });
   }
 
 
-  get chartMax(): number {
+  ngOnDestroy(): void {
 
-    return Math.max(
-      ...this.portfolioHistory
-    );
+    this.refreshSubscription?.unsubscribe();
+
+    this.loadSubscription?.unsubscribe();
   }
 
 
-  pointHeight(
-    value: number
-  ): number {
+  // ==========================================
+  // LOAD
+  // ==========================================
 
-    const range =
-      this.chartMax -
-      this.chartMin;
+  load(
+    silent = false
+  ): void {
 
-
-    if (
-      range === 0
-    ) {
-
-      return 50;
+    if (silent) {
+      this.refreshing = true;
+    } else {
+      this.loading = true;
+      this.errorMessage = '';
     }
 
+    this.loadSubscription?.unsubscribe();
 
-    return (
-      (
-        value -
-        this.chartMin
-      ) /
-      range
-    ) * 100;
+    this.loadSubscription =
+      forkJoin({
+        dashboard: this.dashboardService.getDashboard(),
+        trades: this.tradingService.getMyTrades()
+      })
+        .pipe(
+          finalize(() => {
+            this.loading = false;
+            this.refreshing = false;
+          })
+        )
+        .subscribe({
+
+          next: ({ dashboard, trades }) => {
+
+            this.apply(dashboard);
+
+            // Le serveur renvoie les plus récentes en premier.
+            this.transactions = trades.slice(0, this.recentTransactionCount);
+
+            this.errorMessage = '';
+          },
+
+          error: (error) => {
+
+            console.error('Erreur chargement tableau de bord', error);
+
+            // Une actualisation ratée ne masque pas les données affichées.
+
+            if (!silent || !this.dashboard) {
+
+              this.errorMessage =
+                error instanceof HttpErrorResponse && error.status === 0
+                  ? 'Serveur injoignable ou session expirée. Vérifiez votre connexion puis réessayez.'
+                  : 'Impossible de charger le tableau de bord.';
+            }
+          }
+        });
   }
 
 
-  riskClass(
-    level: RiskIndicator['level']
+  private apply(
+    dashboard: DashboardResponse
+  ): void {
+
+    this.dashboard = dashboard;
+
+    const protections =
+      new Map(dashboard.protections.map(protection => [protection.assetSymbol, protection]));
+
+    this.positionRows =
+      dashboard.portfolio.openPositions.map(position => ({
+        position,
+        protection: protections.get(position.assetSymbol) ?? null
+      }));
+
+    this.riskIndicators = this.buildRiskIndicators(dashboard);
+  }
+
+
+  private buildRiskIndicators(
+    dashboard: DashboardResponse
+  ): RiskIndicator[] {
+
+    const risk = dashboard.portfolio.risk;
+
+    return [
+
+      {
+        label: 'Exposition globale',
+        value: this.percent(risk.exposurePercent),
+        level: risk.exposureLevel,
+        explanation: 'Part de la valeur investie sur le marché.'
+      },
+
+      {
+        label: 'Concentration',
+        value:
+          risk.largestPositionSymbol
+            ? `${this.percent(risk.largestPositionPercent)} sur ${risk.largestPositionSymbol}`
+            : '—',
+        level: risk.concentrationLevel,
+        explanation: 'Poids de la plus grosse position.'
+      },
+
+      {
+        label: 'Diversification',
+        value: this.percent(risk.diversificationPercent),
+        level: risk.diversificationLevel,
+        explanation: '0 % si tout est sur un seul actif.'
+      },
+
+      {
+        label: 'Volatilité (5 min)',
+        value: this.percent(risk.volatilityPercent, 3),
+        level: risk.volatilityLevel,
+        explanation: 'Variation typique des actifs détenus.'
+      },
+
+      {
+        label: 'Risque portefeuille',
+        value: this.riskLabel(risk.overallLevel),
+        level: risk.overallLevel,
+        explanation: 'Le plus défavorable des indicateurs.'
+      }
+    ];
+  }
+
+
+  // ==========================================
+  // DISPLAY HELPERS
+  // ==========================================
+
+  get currency(): string {
+
+    return this.dashboard?.currency ?? 'USD';
+  }
+
+
+  severityLabel(
+    severity: InsightSeverity
   ): string {
 
-    return level.toLowerCase();
+    switch (severity) {
+      case 'CRITICAL':
+        return 'Urgent';
+      case 'WARNING':
+        return 'À surveiller';
+      default:
+        return 'Info';
+    }
+  }
+
+
+  severityIcon(
+    severity: InsightSeverity
+  ): string {
+
+    switch (severity) {
+      case 'CRITICAL':
+        return '!';
+      case 'WARNING':
+        return '▲';
+      default:
+        return 'i';
+    }
+  }
+
+
+  protectionLabel(
+    status: ProtectionStatus
+  ): string {
+
+    switch (status) {
+      case 'PROTECTED':
+        return 'Protégée';
+      case 'PARTIAL':
+        return 'Partielle';
+      default:
+        return 'Non protégée';
+    }
+  }
+
+
+  riskLabel(
+    level: RiskLevel
+  ): string {
+
+    switch (level) {
+      case 'LOW':
+        return 'Faible';
+      case 'MEDIUM':
+        return 'Modéré';
+      default:
+        return 'Élevé';
+    }
+  }
+
+
+  activityIcon(
+    event: ActivityEvent
+  ): string {
+
+    switch (event.type) {
+      case 'FILLED':
+        return '✓';
+      case 'TRIGGERED':
+        return '⚡';
+      case 'CANCELLED':
+        return '×';
+      case 'REJECTED':
+        return '!';
+      default:
+        return '+';
+    }
+  }
+
+
+  trackBySymbol(
+    _: number,
+    item: { assetSymbol: string }
+  ): string {
+
+    return item.assetSymbol;
+  }
+
+
+  trackByRow(
+    _: number,
+    row: PositionRow
+  ): string {
+
+    return row.position.assetSymbol;
+  }
+
+
+  private percent(
+    value: number,
+    digits = 2
+  ): string {
+
+    return value.toLocaleString('fr-FR', { maximumFractionDigits: digits }) + ' %';
   }
 }

@@ -24,6 +24,10 @@ import java.time.Instant;
                 @Index(
                         name = "idx_trades_created",
                         columnList = "created_at"
+                ),
+                @Index(
+                        name = "idx_trades_symbol_created",
+                        columnList = "asset_symbol, created_at"
                 )
         }
 )
@@ -94,6 +98,18 @@ public class Trade {
     private BigDecimal quantity;
 
 
+    /*
+     * Sens de l'ordre entrant qui a déclenché l'exécution.
+     * Nullable : absent des transactions antérieures.
+     */
+    @Enumerated(EnumType.STRING)
+    @Column(
+            name = "aggressor_side",
+            length = 10
+    )
+    private OrderSide aggressorSide;
+
+
     @Column(
             name = "created_at",
             nullable = false,
@@ -157,6 +173,15 @@ public class Trade {
 
     public void setQuantity(BigDecimal quantity) {
         this.quantity = quantity;
+    }
+
+
+    public OrderSide getAggressorSide() {
+        return aggressorSide;
+    }
+
+    public void setAggressorSide(OrderSide aggressorSide) {
+        this.aggressorSide = aggressorSide;
     }
 
 

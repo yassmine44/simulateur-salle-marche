@@ -87,3 +87,18 @@ button,
 a {
   -webkit-tap-highlight-color: transparent;
 }
+
+/* Impression (relevé de compte) : seul le document est imprimé. */
+
+@media print {
+
+  .topbar,
+  .no-print {
+    display: none !important;
+  }
+
+  body {
+    background: #ffffff !important;
+  }
+
+}

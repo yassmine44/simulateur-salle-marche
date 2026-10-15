@@ -1,0 +1,223 @@
+:host {
+  display: block;
+
+  // Hausse / baisse : mêmes teintes que BID / ASK du carnet.
+  --rising: #059669;
+  --falling: #dc2626;
+  --surface: #ffffff;
+}
+
+.chart-empty {
+  padding: 60px 20px;
+
+  text-align: center;
+
+  color: #94a3b8;
+
+  font-size: 13px;
+}
+
+.chart {
+  padding: 12px 18px 16px;
+}
+
+
+/* =========================================
+   LEGEND
+========================================= */
+
+.chart-legend {
+  display: flex;
+  gap: 16px;
+
+  margin-bottom: 6px;
+
+  color: #64748b;
+
+  font-size: 12px;
+}
+
+.chart-legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+
+/* =========================================
+   PLOT
+========================================= */
+
+.chart-plot {
+  position: relative;
+}
+
+svg {
+  display: block;
+
+  width: 100%;
+  height: auto;
+}
+
+.grid-line {
+  stroke: #eef1f5;
+  stroke-width: 1;
+}
+
+.axis-label {
+  fill: #94a3b8;
+
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+
+.wick {
+  stroke-width: 1.5;
+}
+
+.wick.rising {
+  stroke: var(--rising);
+}
+
+.wick.falling {
+  stroke: var(--falling);
+}
+
+.body {
+  stroke-width: 1.5;
+}
+
+// Corps creux : la hausse se lit aussi sans la couleur.
+.body.rising {
+  fill: var(--surface);
+  stroke: var(--rising);
+}
+
+.body.falling {
+  fill: var(--falling);
+  stroke: var(--falling);
+}
+
+.hit {
+  fill: transparent;
+}
+
+.dimmed {
+  opacity: 0.45;
+}
+
+.crosshair {
+  stroke: #94a3b8;
+  stroke-width: 1;
+  stroke-dasharray: 3 3;
+
+  pointer-events: none;
+}
+
+
+/* =========================================
+   TOOLTIP
+========================================= */
+
+.chart-tooltip {
+  position: absolute;
+  top: 6px;
+
+  margin-left: 12px;
+
+  padding: 9px 11px;
+
+  background: #111827;
+  color: #f8fafc;
+
+  border-radius: 8px;
+
+  font-size: 12px;
+
+  white-space: nowrap;
+
+  pointer-events: none;
+
+  z-index: 2;
+}
+
+.chart-tooltip.on-left {
+  margin-left: -12px;
+
+  transform: translateX(-100%);
+}
+
+.chart-tooltip strong {
+  display: block;
+
+  margin-bottom: 6px;
+}
+
+.chart-tooltip dl {
+  display: grid;
+
+  grid-template-columns: auto auto;
+
+  gap: 3px 14px;
+
+  margin: 0;
+}
+
+.chart-tooltip dt {
+  color: #94a3b8;
+}
+
+.chart-tooltip dd {
+  margin: 0;
+
+  text-align: right;
+
+  font-variant-numeric: tabular-nums;
+}
+
+
+/* =========================================
+   TABLE VIEW
+========================================= */
+
+.chart-table {
+  margin-top: 8px;
+
+  color: #64748b;
+
+  font-size: 12px;
+}
+
+.chart-table summary {
+  cursor: pointer;
+}
+
+.chart-table-scroll {
+  max-height: 200px;
+
+  margin-top: 8px;
+
+  overflow: auto;
+}
+
+.chart-table table {
+  width: 100%;
+
+  border-collapse: collapse;
+}
+
+.chart-table th,
+.chart-table td {
+  padding: 5px 8px;
+
+  text-align: right;
+
+  border-bottom: 1px solid #f1f5f9;
+
+  font-variant-numeric: tabular-nums;
+}
+
+.chart-table th:first-child,
+.chart-table td:first-child {
+  text-align: left;
+}
