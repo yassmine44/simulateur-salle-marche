@@ -1,0 +1,257 @@
+<div
+  *ngIf="chartPoints.length === 0"
+  class="chart-empty"
+>
+  Pas encore d'historique.
+</div>
+
+
+<div
+  *ngIf="chartPoints.length > 0"
+  class="chart"
+>
+
+  <!-- Deux séries : légende, et la référence se distingue aussi
+       par son tracé en pointillés (pas seulement la couleur). -->
+
+  <div
+    *ngIf="benchmarkPath"
+    class="chart-legend"
+  >
+
+    <span>
+      <svg width="22" height="8" aria-hidden="true">
+        <line class="line" x1="1" x2="21" y1="4" y2="4" />
+      </svg>
+      Mon portefeuille
+    </span>
+
+    <span>
+      <svg width="22" height="8" aria-hidden="true">
+        <line class="benchmark" x1="1" x2="21" y1="4" y2="4" />
+      </svg>
+      {{ benchmarkLabel }}
+    </span>
+
+  </div>
+
+
+  <div class="chart-plot">
+
+    <svg
+      [attr.viewBox]="'0 0 ' + width + ' ' + height"
+      role="img"
+      aria-label="Évolution de la valeur totale du portefeuille"
+      (mouseleave)="hover(null)"
+    >
+
+      <!-- GRID + VALUE AXIS -->
+
+      <g *ngFor="let line of gridLines">
+
+        <line
+          class="grid-line"
+          [attr.x1]="plotLeft"
+          [attr.x2]="plotRight"
+          [attr.y1]="line.y"
+          [attr.y2]="line.y"
+        />
+
+        <text
+          class="axis-label"
+          [attr.x]="plotRight + 8"
+          [attr.y]="line.y + 4"
+        >
+          {{ line.value | number:'1.0-0' }}
+        </text>
+
+      </g>
+
+
+      <!-- BASELINE : capital de départ -->
+
+      <line
+        class="baseline"
+        [attr.x1]="plotLeft"
+        [attr.x2]="plotRight"
+        [attr.y1]="baselineY"
+        [attr.y2]="baselineY"
+      />
+
+      <text
+        class="baseline-label"
+        [attr.x]="plotLeft + 4"
+        [attr.y]="baselineY - 6"
+      >
+        Capital de départ
+      </text>
+
+
+      <!-- AREA + LINE -->
+
+      <path
+        class="area"
+        [attr.d]="areaPath"
+      />
+
+      <path
+        *ngIf="benchmarkPath"
+        class="benchmark"
+        [attr.d]="benchmarkPath"
+      />
+
+      <path
+        class="line"
+        [attr.d]="linePath"
+      />
+
+
+      <!-- TIME AXIS : premier et dernier point -->
+
+      <text
+        class="axis-label"
+        [attr.x]="chartPoints[0].x"
+        [attr.y]="height - 4"
+        text-anchor="start"
+      >
+        {{ chartPoints[0].point.time | date:'dd/MM' }}
+      </text>
+
+      <text
+        class="axis-label"
+        [attr.x]="chartPoints[chartPoints.length - 1].x"
+        [attr.y]="height - 4"
+        text-anchor="end"
+      >
+        Maintenant
+      </text>
+
+
+      <!-- HOVER -->
+
+      <line
+        *ngIf="hovered"
+        class="crosshair"
+        [attr.x1]="hovered.x"
+        [attr.x2]="hovered.x"
+        [attr.y1]="plotTop"
+        [attr.y2]="plotBottom"
+      />
+
+      <circle
+        *ngIf="hovered"
+        class="marker"
+        [attr.cx]="hovered.x"
+        [attr.cy]="hovered.y"
+        r="4.5"
+      />
+
+      <!-- Zones de survol : une par point, sur toute la hauteur. -->
+
+      <rect
+        *ngFor="let point of chartPoints; trackBy: trackByTime"
+        class="hit"
+        [attr.x]="point.x - slotWidth / 2"
+        [attr.y]="plotTop"
+        [attr.width]="slotWidth"
+        [attr.height]="plotBottom - plotTop"
+        (mouseenter)="hover(point)"
+      />
+
+    </svg>
+
+
+    <div
+      *ngIf="hovered"
+      class="chart-tooltip"
+      [class.on-left]="tooltipOnLeft"
+      [style.left.%]="tooltipLeft"
+    >
+
+      <strong>
+        <ng-container *ngIf="isText(pointLabel(hovered)); else dayLabel">
+          Maintenant
+        </ng-container>
+
+        <ng-template #dayLabel>
+          Fin du {{ pointLabel(hovered) | date:'dd/MM/yyyy' }}
+        </ng-template>
+      </strong>
+
+      <dl>
+
+        <dt>Valeur</dt>
+        <dd>{{ hovered.point.value | number:'1.2-2' }} {{ currency }}</dd>
+
+        <ng-container *ngIf="hovered.benchmarkValue !== null">
+          <dt>{{ benchmarkLabel }}</dt>
+          <dd>{{ hovered.benchmarkValue | number:'1.2-2' }} {{ currency }}</dd>
+        </ng-container>
+
+        <dt>Depuis le départ</dt>
+        <dd>
+          {{ hovered.change > 0 ? '+' : '' }}{{ hovered.change | number:'1.2-2' }}
+          ({{ hovered.changePercent > 0 ? '+' : '' }}{{ hovered.changePercent | number:'1.2-2' }} %)
+        </dd>
+
+      </dl>
+
+    </div>
+
+  </div>
+
+
+  <!-- Vue tableau : mêmes données, lisibles sans le graphique. -->
+
+  <details class="chart-table">
+
+    <summary>
+      Voir les données en tableau
+    </summary>
+
+    <table>
+
+      <thead>
+
+        <tr>
+          <th>Date</th>
+          <th>Valeur</th>
+          <th>Depuis le départ</th>
+          <th *ngIf="benchmarkPath">{{ benchmarkLabel }}</th>
+        </tr>
+
+      </thead>
+
+      <tbody>
+
+        <tr *ngFor="let point of chartPoints; trackBy: trackByTime">
+
+          <td>
+            <ng-container *ngIf="isText(pointLabel(point)); else rowDay">
+              Maintenant
+            </ng-container>
+
+            <ng-template #rowDay>
+              {{ pointLabel(point) | date:'dd/MM/yyyy' }}
+            </ng-template>
+          </td>
+
+          <td>{{ point.point.value | number:'1.2-2' }}</td>
+
+          <td>
+            {{ point.change > 0 ? '+' : '' }}{{ point.change | number:'1.2-2' }}
+          </td>
+
+          <td *ngIf="benchmarkPath">
+            {{ point.benchmarkValue | number:'1.2-2' }}
+          </td>
+
+        </tr>
+
+      </tbody>
+
+    </table>
+
+  </details>
+
+</div>

@@ -5,13 +5,15 @@ import { Observable } from 'rxjs';
 
 import {
   AssetResponse,
+  CandleInterval,
+  CreateOcoRequest,
   CreateOrderRequest,
-  OrderBookMetricsResponse,
+  MarketOverviewResponse,
+  ModifyOrderRequest,
   OrderBookResponse,
-  OrderBookTemporalMetricsResponse,
+  OrderBookStreamEvent,
+  OrderPreviewResponse,
   OrderResponse,
-  OrderSide,
-  SlippageEstimateResponse,
   TradeResponse
 } from '../models/trading.models';
 
@@ -43,24 +45,6 @@ export class TradingService {
       }
     );
   }
-  // ==========================================
-// ORDER BOOK METRICS
-// ==========================================
-
-getOrderBookMetrics(
-  symbol: string
-): Observable<OrderBookMetricsResponse> {
-
-  const normalizedSymbol =
-    symbol.trim().toUpperCase();
-
-  return this.http.get<OrderBookMetricsResponse>(
-    `${this.apiUrl}/order-book/${encodeURIComponent(normalizedSymbol)}/metrics`,
-    {
-      withCredentials: true
-    }
-  );
-}
 
 
   // ==========================================
@@ -102,6 +86,82 @@ getOrderBookMetrics(
 
 
   // ==========================================
+  // MARKET DATA
+  // ==========================================
+
+  // Dernier cours, statistiques 24 h,
+  // flux des transactions et chandeliers.
+
+  getMarketOverview(
+    symbol: string,
+    interval: CandleInterval
+  ): Observable<MarketOverviewResponse> {
+
+    const normalizedSymbol =
+      symbol.trim().toUpperCase();
+
+    return this.http.get<MarketOverviewResponse>(
+      `${this.apiUrl}/market/${encodeURIComponent(normalizedSymbol)}`,
+      {
+        params: {
+          interval
+        },
+        withCredentials: true
+      }
+    );
+  }
+
+
+  // ==========================================
+  // ORDER BOOK STREAM (SSE)
+  // ==========================================
+
+  /*
+   * Émet 'connected' à l'ouverture du flux,
+   * 'changed' à chaque modification du carnet
+   * et 'disconnected' en cas de coupure.
+   *
+   * EventSource se reconnecte automatiquement.
+   */
+
+  watchOrderBook(
+    symbol: string
+  ): Observable<OrderBookStreamEvent> {
+
+    const normalizedSymbol =
+      symbol.trim().toUpperCase();
+
+    return new Observable<OrderBookStreamEvent>(
+      (subscriber) => {
+
+        const source =
+          new EventSource(
+            `${this.apiUrl}/order-book/${encodeURIComponent(normalizedSymbol)}/stream`,
+            {
+              withCredentials: true
+            }
+          );
+
+        source.addEventListener(
+          'connected',
+          () => subscriber.next('connected')
+        );
+
+        source.addEventListener(
+          'order-book-changed',
+          () => subscriber.next('changed')
+        );
+
+        source.onerror =
+          () => subscriber.next('disconnected');
+
+        return () => source.close();
+      }
+    );
+  }
+
+
+  // ==========================================
   // MY ORDERS
   // ==========================================
 
@@ -132,6 +192,68 @@ getOrderBookMetrics(
 
 
   // ==========================================
+  // PREVIEW
+  // ==========================================
+
+  // Simule l'ordre sans l'envoyer.
+
+  previewOrder(
+    request: CreateOrderRequest
+  ): Observable<OrderPreviewResponse> {
+
+    return this.http.post<OrderPreviewResponse>(
+      `${this.apiUrl}/orders/preview`,
+      request,
+      {
+        withCredentials: true
+      }
+    );
+  }
+
+
+  // ==========================================
+  // OCO
+  // ==========================================
+
+  // Protège des titres détenus : take-profit + stop-loss liés.
+
+  createOco(
+    request: CreateOcoRequest
+  ): Observable<OrderResponse[]> {
+
+    return this.http.post<OrderResponse[]>(
+      `${this.apiUrl}/orders/oco`,
+      request,
+      {
+        withCredentials: true
+      }
+    );
+  }
+
+
+  // ==========================================
+  // MODIFY ORDER
+  // ==========================================
+
+  // L'ordre est annulé et remplacé :
+  // la réponse est le nouvel ordre.
+
+  modifyOrder(
+    orderId: number,
+    request: ModifyOrderRequest
+  ): Observable<OrderResponse> {
+
+    return this.http.put<OrderResponse>(
+      `${this.apiUrl}/orders/${orderId}`,
+      request,
+      {
+        withCredentials: true
+      }
+    );
+  }
+
+
+  // ==========================================
   // CANCEL ORDER
   // ==========================================
 
@@ -147,49 +269,4 @@ getOrderBookMetrics(
       }
     );
   }
-  // ==========================================
-// TEMPORAL METRICS
-// ==========================================
-
-getTemporalMetrics(
-  symbol: string
-): Observable<OrderBookTemporalMetricsResponse> {
-
-  const normalizedSymbol =
-    symbol
-      .trim()
-      .toUpperCase();
-
-  return this.http.get<OrderBookTemporalMetricsResponse>(
-    `${this.apiUrl}/order-book/${encodeURIComponent(normalizedSymbol)}/temporal-metrics`,
-    {
-      withCredentials: true
-    }
-  );
-}// ==========================================
-// SLIPPAGE ESTIMATE
-// ==========================================
-
-estimateSlippage(
-  symbol: string,
-  side: OrderSide,
-  quantity: number
-): Observable<SlippageEstimateResponse> {
-
-  const normalizedSymbol =
-    symbol
-      .trim()
-      .toUpperCase();
-
-  return this.http.get<SlippageEstimateResponse>(
-    `${this.apiUrl}/order-book/${encodeURIComponent(normalizedSymbol)}/slippage`,
-    {
-      params: {
-        side,
-        quantity: quantity.toString()
-      },
-      withCredentials: true
-    }
-  );
-}
 }

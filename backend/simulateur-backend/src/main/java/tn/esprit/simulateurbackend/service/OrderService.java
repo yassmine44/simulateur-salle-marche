@@ -1,58 +1,80 @@
 package tn.esprit.simulateurbackend.service;
 
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
+import tn.esprit.simulateurbackend.dto.CreateOcoRequest;
 import tn.esprit.simulateurbackend.dto.CreateOrderRequest;
+import tn.esprit.simulateurbackend.dto.ModifyOrderRequest;
 import tn.esprit.simulateurbackend.dto.OrderResponse;
 
+import tn.esprit.simulateurbackend.entity.Asset;
+import tn.esprit.simulateurbackend.entity.CancelReason;
 import tn.esprit.simulateurbackend.entity.Order;
+import tn.esprit.simulateurbackend.entity.OrderSide;
 import tn.esprit.simulateurbackend.entity.OrderStatus;
 import tn.esprit.simulateurbackend.entity.OrderType;
+import tn.esprit.simulateurbackend.entity.TimeInForce;
 import tn.esprit.simulateurbackend.entity.User;
 
 import tn.esprit.simulateurbackend.repository.AssetRepository;
 import tn.esprit.simulateurbackend.repository.OrderRepository;
 import tn.esprit.simulateurbackend.repository.UserRepository;
+import tn.esprit.simulateurbackend.service.OrderValidator.ValidatedOrder;
 
 import java.math.BigDecimal;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.ZoneId;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Set;
 
-
+/*
+ * Cycle de vie d'un ordre : création, modification, annulation.
+ *
+ * Création : validation (OrderValidator) -> contrôle du portefeuille
+ * (PreTradeCheckService) -> enregistrement -> appariement
+ * (MatchingEngineService) -> déclenchements -> notification temps réel.
+ */
 @Service
 @Transactional
 public class OrderService {
 
     private final OrderRepository orderRepository;
-
     private final UserRepository userRepository;
-
-    private final MatchingEngineService matchingEngineService;
-
     private final AssetRepository assetRepository;
-
+    private final MatchingEngineService matchingEngineService;
+    private final MarketDataService marketDataService;
+    private final OrderValidator orderValidator;
+    private final PreTradeCheckService preTradeCheckService;
+    private final LinkedOrderService linkedOrderService;
+    private final ApplicationEventPublisher eventPublisher;
 
     public OrderService(
             OrderRepository orderRepository,
             UserRepository userRepository,
+            AssetRepository assetRepository,
             MatchingEngineService matchingEngineService,
-            AssetRepository assetRepository
+            MarketDataService marketDataService,
+            OrderValidator orderValidator,
+            PreTradeCheckService preTradeCheckService,
+            LinkedOrderService linkedOrderService,
+            ApplicationEventPublisher eventPublisher
     ) {
-
-        this.orderRepository =
-                orderRepository;
-
-        this.userRepository =
-                userRepository;
-
-        this.matchingEngineService =
-                matchingEngineService;
-
-        this.assetRepository =
-                assetRepository;
+        this.orderRepository = orderRepository;
+        this.userRepository = userRepository;
+        this.assetRepository = assetRepository;
+        this.matchingEngineService = matchingEngineService;
+        this.marketDataService = marketDataService;
+        this.orderValidator = orderValidator;
+        this.preTradeCheckService = preTradeCheckService;
+        this.linkedOrderService = linkedOrderService;
+        this.eventPublisher = eventPublisher;
     }
 
 
@@ -65,266 +87,168 @@ public class OrderService {
             CreateOrderRequest request
     ) {
 
-        // =========================================
-        // USER
-        // =========================================
+        User user = findAuthenticatedUser(authenticatedEmail);
 
-        User user =
-                findAuthenticatedUser(
-                        authenticatedEmail
-                );
+        ValidatedOrder validated = orderValidator.validate(user, request);
+
+        // Fonds suffisants pour acheter, titres suffisants pour vendre.
+        preTradeCheckService.check(
+                user,
+                validated.asset(),
+                validated.side(),
+                validated.type(),
+                validated.triggerType(),
+                validated.quantity(),
+                validated.limitPrice(),
+                validated.triggerPrice(),
+                validated.lastPrice()
+        );
+
+        Order order = new Order();
+
+        order.setUser(user);
+        order.setAssetSymbol(validated.symbol());
+        order.setSide(validated.side());
+        order.setType(validated.type());
+        order.setLimitPrice(validated.limitPrice());
+        order.setTriggerType(validated.triggerType());
+        order.setTriggerPrice(validated.triggerPrice());
+        order.setTrailPercent(validated.trailPercent());
+        order.setTimeInForce(validated.timeInForce());
+        order.setExpiresAt(expiryOf(validated.timeInForce()));
+        order.setBracketStopPrice(validated.stopLossPrice());
+        order.setBracketTakeProfitPrice(validated.takeProfitPrice());
+        order.setQuantity(validated.quantity());
+        order.setRemainingQuantity(validated.quantity());
+        order.setStatus(OrderStatus.PENDING);
+
+        // Référence de la qualité d'exécution.
+        order.setArrivalMidPrice(
+                marketDataService.midPrice(validated.asset()).orElse(null)
+        );
+
+        Order saved = orderRepository.saveAndFlush(order);
+
+        // Un ordre conditionnel attend son seuil hors du carnet :
+        // matchOrder ne l'apparie pas.
+        matchingEngineService.matchOrder(saved.getId());
+
+        // Les transactions ont pu faire bouger le cours
+        // jusqu'au seuil d'ordres conditionnels.
+        matchingEngineService.triggerConditionalOrders(validated.symbol());
+
+        eventPublisher.publishEvent(new OrderBookChangedEvent(validated.symbol()));
+
+        return OrderResponse.from(reload(saved.getId()));
+    }
 
 
-        // =========================================
-        // ASSET SYMBOL
-        // =========================================
+    /*
+     * Fin de la journée en cours (minuit, fuseau du serveur)
+     * pour un ordre DAY.
+     */
+    private Instant expiryOf(
+            TimeInForce timeInForce
+    ) {
 
-        if (
-                request.assetSymbol() == null
-                        ||
-                        request.assetSymbol().isBlank()
-        ) {
-
-            throw new ResponseStatusException(
-                    HttpStatus.BAD_REQUEST,
-                    "Le symbole de l'actif est obligatoire."
-            );
+        if (timeInForce != TimeInForce.DAY) {
+            return null;
         }
 
+        ZoneId zone = ZoneId.systemDefault();
+
+        return LocalDate.now(zone)
+                .plusDays(1)
+                .atStartOfDay(zone)
+                .toInstant();
+    }
+
+
+    // =========================================
+    // OCO (protéger une position)
+    // =========================================
+
+    /*
+     * Deux ventes liées sur des titres détenus : take-profit au-dessus
+     * du cours, stop-loss en dessous. La première exécutée annule l'autre.
+     */
+    public List<OrderResponse> createOco(
+            String authenticatedEmail,
+            CreateOcoRequest request
+    ) {
+
+        User user = findAuthenticatedUser(authenticatedEmail);
 
         String symbol =
-                request
-                        .assetSymbol()
+                request.assetSymbol()
                         .trim()
                         .toUpperCase(Locale.ROOT);
 
-
-        // =========================================
-        // ASSET VALIDATION
-        // =========================================
-
-        assetRepository
-                .findBySymbolIgnoreCaseAndActiveTrue(
-                        symbol
-                )
-                .orElseThrow(
-                        () ->
+        Asset asset =
+                assetRepository
+                        .findBySymbolIgnoreCaseAndActiveTrue(symbol)
+                        .orElseThrow(() ->
                                 new ResponseStatusException(
                                         HttpStatus.BAD_REQUEST,
-                                        "Actif inconnu ou désactivé : "
-                                                + symbol
+                                        "Actif inconnu ou désactivé : " + symbol
                                 )
-                );
-
-
-        // =========================================
-        // SIDE
-        // =========================================
-
-        if (request.side() == null) {
-
-            throw new ResponseStatusException(
-                    HttpStatus.BAD_REQUEST,
-                    "Le sens de l'ordre est obligatoire."
-            );
-        }
-
-
-        // =========================================
-        // QUANTITY
-        // =========================================
-
-        if (
-                request.quantity() == null
-                        ||
-                        request.quantity()
-                                .compareTo(BigDecimal.ZERO) <= 0
-        ) {
-
-            throw new ResponseStatusException(
-                    HttpStatus.BAD_REQUEST,
-                    "La quantité doit être strictement positive."
-            );
-        }
-
-
-        // =========================================
-        // ORDER TYPE
-        // =========================================
-
-        if (request.type() == null) {
-
-            throw new ResponseStatusException(
-                    HttpStatus.BAD_REQUEST,
-                    "Le type d'ordre est obligatoire."
-            );
-        }
-
-
-        // =========================================
-        // LIMIT PRICE
-        // =========================================
-
-        /*
-         * LIMIT :
-         * le prix limite est obligatoire.
-         *
-         * MARKET :
-         * aucun prix limite n'est fourni.
-         */
-
-        if (
-                request.type() == OrderType.LIMIT
-                        &&
-                        (
-                                request.limitPrice() == null
-                                        ||
-                                        request.limitPrice()
-                                                .compareTo(BigDecimal.ZERO) <= 0
-                        )
-        ) {
-
-            throw new ResponseStatusException(
-                    HttpStatus.BAD_REQUEST,
-                    "Le prix limite doit être strictement positif pour un ordre LIMIT."
-            );
-        }
-
-
-        // =========================================
-        // MARKET PRICE VALIDATION
-        // =========================================
-
-        /*
-         * Pour éviter une requête incohérente du type :
-         *
-         * MARKET + limitPrice = 200
-         *
-         * on ignore complètement le prix côté MARKET.
-         *
-         * Il sera déterminé par les ordres opposés
-         * présents dans le carnet.
-         */
-
-
-        // =========================================
-        // CREATE ORDER
-        // =========================================
-
-        Order order =
-                new Order();
-
-
-        order.setUser(
-                user
-        );
-
-
-        order.setAssetSymbol(
-                symbol
-        );
-
-
-        order.setSide(
-                request.side()
-        );
-
-
-        order.setType(
-                request.type()
-        );
-
-
-        /*
-         * LIMIT  -> conserve le prix demandé.
-         * MARKET -> aucun prix limite.
-         */
-
-        if (
-                request.type()
-                        == OrderType.LIMIT
-        ) {
-
-            order.setLimitPrice(
-                    request.limitPrice()
-            );
-
-        } else {
-
-            order.setLimitPrice(
-                    null
-            );
-        }
-
-
-        order.setQuantity(
-                request.quantity()
-        );
-
-
-        order.setRemainingQuantity(
-                request.quantity()
-        );
-
-
-        order.setStatus(
-                OrderStatus.PENDING
-        );
-
-
-        // =========================================
-        // DATABASE
-        // =========================================
-
-        Order savedOrder =
-                orderRepository
-                        .saveAndFlush(
-                                order
                         );
 
+        BigDecimal lastPrice = marketDataService.lastPrice(asset).orElse(null);
 
-        // =========================================
-        // MATCHING ENGINE
-        // =========================================
-
-        /*
-         * Le moteur décidera ensuite :
-         *
-         * LIMIT :
-         * vérifier la compatibilité des prix.
-         *
-         * MARKET :
-         * consommer directement les meilleurs
-         * ordres disponibles du côté opposé.
-         */
-
-        matchingEngineService
-                .matchOrder(
-                        savedOrder.getId()
+        BigDecimal stopLossPrice =
+                request.trailPercent() == null
+                        ? request.stopLossPrice()
+                        : orderValidator.trailingTrigger(
+                        asset,
+                        OrderSide.SELL,
+                        lastPrice == null ? request.stopLossPrice() : lastPrice,
+                        request.trailPercent()
                 );
 
+        orderValidator.validateOco(asset, request.takeProfitPrice(), stopLossPrice, lastPrice);
 
-        // =========================================
-        // FINAL ORDER STATE
-        // =========================================
-
-        Order finalOrder =
-                orderRepository
-                        .findById(
-                                savedOrder.getId()
-                        )
-                        .orElseThrow(
-                                () ->
-                                        new ResponseStatusException(
-                                                HttpStatus.INTERNAL_SERVER_ERROR,
-                                                "Impossible de récupérer l'ordre créé."
-                                        )
-                        );
-
-
-        return OrderResponse.from(
-                finalOrder
+        // Les deux branches protègent les mêmes titres : contrôlés une seule fois.
+        preTradeCheckService.check(
+                user,
+                asset,
+                OrderSide.SELL,
+                OrderType.LIMIT,
+                null,
+                request.quantity(),
+                request.takeProfitPrice(),
+                null,
+                lastPrice
         );
+
+        List<Order> legs =
+                linkedOrderService.createOco(
+                        user,
+                        asset,
+                        request.quantity(),
+                        request.takeProfitPrice(),
+                        stopLossPrice,
+                        request.trailPercent()
+                );
+
+        BigDecimal mid = marketDataService.midPrice(asset).orElse(null);
+
+        legs.forEach(leg -> leg.setArrivalMidPrice(mid));
+
+        orderRepository.saveAllAndFlush(legs);
+
+        // Le take-profit peut déjà croiser un acheteur.
+        legs.stream()
+                .filter(leg -> leg.getType() == OrderType.LIMIT)
+                .forEach(leg -> matchingEngineService.matchOrder(leg.getId()));
+
+        matchingEngineService.triggerConditionalOrders(symbol);
+
+        eventPublisher.publishEvent(new OrderBookChangedEvent(symbol));
+
+        return legs.stream()
+                .map(leg -> OrderResponse.from(reload(leg.getId())))
+                .toList();
     }
 
 
@@ -337,21 +261,87 @@ public class OrderService {
             String authenticatedEmail
     ) {
 
-        User user =
-                findAuthenticatedUser(
-                        authenticatedEmail
-                );
-
+        User user = findAuthenticatedUser(authenticatedEmail);
 
         return orderRepository
-                .findByUserIdOrderByCreatedAtDesc(
-                        user.getId()
-                )
+                .findByUserIdOrderByCreatedAtDesc(user.getId())
                 .stream()
-                .map(
-                        OrderResponse::from
-                )
+                .map(OrderResponse::from)
                 .toList();
+    }
+
+
+    @Transactional(readOnly = true)
+    public String findOrderSymbol(
+            Long orderId
+    ) {
+
+        return orderRepository
+                .findById(orderId)
+                .map(Order::getAssetSymbol)
+                .orElseThrow(this::orderNotFound);
+    }
+
+
+    // =========================================
+    // MODIFY ORDER
+    // =========================================
+
+    /*
+     * Modification = annulation + remplacement.
+     *
+     * L'ordre d'origine est annulé et un nouvel ordre est créé avec
+     * le nouveau prix et la nouvelle quantité : il perd sa priorité
+     * temporelle, comme sur un marché réel. Il garde sa durée de
+     * validité. Si le nouvel ordre est refusé, la transaction est
+     * annulée et l'ordre d'origine reste intact.
+     */
+    public OrderResponse modifyOrder(
+            Long orderId,
+            String authenticatedEmail,
+            ModifyOrderRequest request
+    ) {
+
+        User user = findAuthenticatedUser(authenticatedEmail);
+
+        Order order =
+                findOwnOrderForUpdate(
+                        orderId,
+                        user,
+                        "Vous ne pouvez pas modifier l'ordre d'un autre utilisateur."
+                );
+
+        if (order.getType() != OrderType.LIMIT || !order.isOpen()) {
+
+            throw new ResponseStatusException(
+                    HttpStatus.CONFLICT,
+                    "Seul un ordre limite encore ouvert peut être modifié."
+            );
+        }
+
+        if (order.getOcoGroup() != null) {
+
+            throw new ResponseStatusException(
+                    HttpStatus.CONFLICT,
+                    "Cet ordre fait partie d'une protection (bracket ou OCO) : "
+                            + "annulez la protection et recréez-la avec les nouveaux prix."
+            );
+        }
+
+        order.cancel(CancelReason.REPLACED);
+
+        orderRepository.saveAndFlush(order);
+
+        return createOrder(
+                authenticatedEmail,
+                new CreateOrderRequest(
+                        order.getAssetSymbol(),
+                        order.getSide(),
+                        OrderType.LIMIT,
+                        request.quantity(),
+                        request.limitPrice()
+                ).withTimeInForce(order.effectiveTimeInForce())
+        );
     }
 
 
@@ -364,142 +354,82 @@ public class OrderService {
             String authenticatedEmail
     ) {
 
-        User user =
-                findAuthenticatedUser(
-                        authenticatedEmail
-                );
-
-
-        // =========================================
-        // LOCK ORDER
-        // =========================================
+        User user = findAuthenticatedUser(authenticatedEmail);
 
         Order order =
-                orderRepository
-                        .findByIdForUpdate(
-                                orderId
-                        )
-                        .orElseThrow(
-                                () ->
-                                        new ResponseStatusException(
-                                                HttpStatus.NOT_FOUND,
-                                                "Ordre introuvable."
-                                        )
-                        );
+                findOwnOrderForUpdate(
+                        orderId,
+                        user,
+                        "Vous ne pouvez pas annuler l'ordre d'un autre utilisateur."
+                );
 
+        switch (order.getStatus()) {
 
-        // =========================================
-        // OWNERSHIP
-        // =========================================
+            case EXECUTED -> throw conflict("Un ordre déjà exécuté ne peut pas être annulé.");
 
-        if (
-                !order
-                        .getUser()
-                        .getId()
-                        .equals(
-                                user.getId()
-                        )
-        ) {
+            case CANCELLED -> throw conflict("Cet ordre est déjà annulé.");
 
-            throw new ResponseStatusException(
-                    HttpStatus.FORBIDDEN,
-                    "Vous ne pouvez pas annuler l'ordre d'un autre utilisateur."
-            );
+            case REJECTED -> throw conflict("Un ordre rejeté ne peut pas être annulé.");
+
+            default -> {
+                // PENDING ou PARTIALLY_FILLED : annulable.
+            }
         }
 
+        order.cancel(CancelReason.USER);
 
-        // =========================================
-        // STATUS CHECK
-        // =========================================
+        Order saved = orderRepository.saveAndFlush(order);
 
-        if (
-                order.getStatus()
-                        == OrderStatus.EXECUTED
-        ) {
+        // Annuler une branche annule toute la protection.
+        linkedOrderService.cancelSiblings(saved, CancelReason.USER);
 
-            throw new ResponseStatusException(
-                    HttpStatus.CONFLICT,
-                    "Un ordre déjà exécuté ne peut pas être annulé."
-            );
-        }
+        eventPublisher.publishEvent(new OrderBookChangedEvent(saved.getAssetSymbol()));
 
-
-        if (
-                order.getStatus()
-                        == OrderStatus.CANCELLED
-        ) {
-
-            throw new ResponseStatusException(
-                    HttpStatus.CONFLICT,
-                    "Cet ordre est déjà annulé."
-            );
-        }
-
-
-        if (
-                order.getStatus()
-                        == OrderStatus.REJECTED
-        ) {
-
-            throw new ResponseStatusException(
-                    HttpStatus.CONFLICT,
-                    "Un ordre rejeté ne peut pas être annulé."
-            );
-        }
-
-
-        if (
-                order.getStatus()
-                        != OrderStatus.PENDING
-
-                        &&
-
-                        order.getStatus()
-                                != OrderStatus.PARTIALLY_FILLED
-        ) {
-
-            throw new ResponseStatusException(
-                    HttpStatus.CONFLICT,
-                    "Cet ordre ne peut pas être annulé."
-            );
-        }
-
-
-        // =========================================
-        // CANCEL
-        // =========================================
-
-        order.setStatus(
-                OrderStatus.CANCELLED
-        );
-
-
-        Order savedOrder =
-                orderRepository
-                        .saveAndFlush(
-                                order
-                        );
-
-
-        return OrderResponse.from(
-                savedOrder
-        );
+        return OrderResponse.from(saved);
     }
 
 
     // =========================================
-    // AUTHENTICATED USER
+    // HELPERS
     // =========================================
+
+    private Order reload(Long orderId) {
+
+        return orderRepository
+                .findById(orderId)
+                .orElseThrow(() ->
+                        new ResponseStatusException(
+                                HttpStatus.INTERNAL_SERVER_ERROR,
+                                "Impossible de récupérer l'ordre créé."
+                        )
+                );
+    }
+
+
+    private Order findOwnOrderForUpdate(
+            Long orderId,
+            User user,
+            String forbiddenMessage
+    ) {
+
+        Order order =
+                orderRepository
+                        .findByIdForUpdate(orderId)
+                        .orElseThrow(this::orderNotFound);
+
+        if (!order.getUser().getId().equals(user.getId())) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, forbiddenMessage);
+        }
+
+        return order;
+    }
+
 
     private User findAuthenticatedUser(
             String authenticatedEmail
     ) {
 
-        if (
-                authenticatedEmail == null
-                        ||
-                        authenticatedEmail.isBlank()
-        ) {
+        if (authenticatedEmail == null || authenticatedEmail.isBlank()) {
 
             throw new ResponseStatusException(
                     HttpStatus.UNAUTHORIZED,
@@ -507,25 +437,25 @@ public class OrderService {
             );
         }
 
-
-        String email =
-                authenticatedEmail
-                        .trim()
-                        .toLowerCase(
-                                Locale.ROOT
-                        );
-
-
         return userRepository
                 .findByEmailIgnoreCase(
-                        email
+                        authenticatedEmail.trim().toLowerCase(Locale.ROOT)
                 )
-                .orElseThrow(
-                        () ->
-                                new ResponseStatusException(
-                                        HttpStatus.NOT_FOUND,
-                                        "Utilisateur introuvable."
-                                )
+                .orElseThrow(() ->
+                        new ResponseStatusException(
+                                HttpStatus.NOT_FOUND,
+                                "Utilisateur introuvable."
+                        )
                 );
+    }
+
+
+    private ResponseStatusException orderNotFound() {
+        return new ResponseStatusException(HttpStatus.NOT_FOUND, "Ordre introuvable.");
+    }
+
+
+    private static ResponseStatusException conflict(String message) {
+        return new ResponseStatusException(HttpStatus.CONFLICT, message);
     }
 }

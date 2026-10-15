@@ -2,6 +2,7 @@ package tn.esprit.simulateurbackend.entity;
 
 import jakarta.persistence.*;
 
+import java.math.BigDecimal;
 import java.time.Instant;
 
 @Entity
@@ -71,6 +72,42 @@ public class Asset {
             nullable = false
     )
     private boolean active = true;
+
+
+    // =========================================
+    // TRADING RULES
+    // =========================================
+
+    /*
+     * Colonnes nullables : les actifs créés avant
+     * l'ajout de ces règles restent valides.
+     */
+
+    // Prix autour duquel le teneur de marché cote
+    // tant qu'aucune transaction n'a eu lieu.
+    @Column(
+            name = "reference_price",
+            precision = 19,
+            scale = 8
+    )
+    private BigDecimal referencePrice;
+
+
+    // Pas de cotation : plus petit écart de prix autorisé.
+    @Column(
+            name = "tick_size",
+            precision = 19,
+            scale = 8
+    )
+    private BigDecimal tickSize;
+
+
+    @Column(
+            name = "min_quantity",
+            precision = 19,
+            scale = 8
+    )
+    private BigDecimal minQuantity;
 
 
     @Column(
@@ -159,6 +196,40 @@ public class Asset {
 
     public void setActive(boolean active) {
         this.active = active;
+    }
+
+
+    public BigDecimal getReferencePrice() {
+        return referencePrice;
+    }
+
+
+    public void setReferencePrice(
+            BigDecimal referencePrice
+    ) {
+        this.referencePrice = referencePrice;
+    }
+
+
+    public BigDecimal getTickSize() {
+        return tickSize;
+    }
+
+
+    public void setTickSize(BigDecimal tickSize) {
+        this.tickSize = tickSize;
+    }
+
+
+    public BigDecimal getMinQuantity() {
+        return minQuantity;
+    }
+
+
+    public void setMinQuantity(
+            BigDecimal minQuantity
+    ) {
+        this.minQuantity = minQuantity;
     }
 
 

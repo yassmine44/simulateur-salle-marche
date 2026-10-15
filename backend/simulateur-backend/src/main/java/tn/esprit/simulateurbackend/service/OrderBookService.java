@@ -12,9 +12,11 @@ import tn.esprit.simulateurbackend.dto.OrderBookResponse;
 import tn.esprit.simulateurbackend.entity.Order;
 import tn.esprit.simulateurbackend.entity.OrderSide;
 import tn.esprit.simulateurbackend.entity.OrderStatus;
+import tn.esprit.simulateurbackend.entity.User;
 
 import tn.esprit.simulateurbackend.repository.AssetRepository;
 import tn.esprit.simulateurbackend.repository.OrderRepository;
+import tn.esprit.simulateurbackend.repository.UserRepository;
 
 import java.math.BigDecimal;
 import java.math.MathContext;
@@ -58,11 +60,13 @@ public class OrderBookService {
     private final OrderRepository orderRepository;
 
     private final AssetRepository assetRepository;
+    private final UserRepository userRepository;
 
 
     public OrderBookService(
             OrderRepository orderRepository,
-            AssetRepository assetRepository
+            AssetRepository assetRepository,
+            UserRepository userRepository
     ) {
 
         this.orderRepository =
@@ -70,6 +74,7 @@ public class OrderBookService {
 
         this.assetRepository =
                 assetRepository;
+        this.userRepository = userRepository;
     }
 
 
@@ -79,6 +84,14 @@ public class OrderBookService {
 
     public OrderBookResponse getOrderBook(
             String rawSymbol
+    ) {
+
+        return getOrderBook(rawSymbol, null);
+    }
+
+    public OrderBookResponse getOrderBook(
+            String rawSymbol,
+            String viewerEmail
     ) {
 
         String symbol =
@@ -98,17 +111,22 @@ public class OrderBookService {
                         symbol
                 );
 
+        Long viewerId = viewerEmail == null ? null : userRepository
+                .findByEmailIgnoreCase(viewerEmail.trim())
+                .map(User::getId)
+                .orElse(null);
+
 
         return new OrderBookResponse(
 
                 symbol,
 
                 aggregateLevels(
-                        bids
+                        bids, viewerId
                 ),
 
                 aggregateLevels(
-                        asks
+                        asks, viewerId
                 ),
 
                 Instant.now()
@@ -702,14 +720,7 @@ public class OrderBookService {
     ) {
 
         return orderRepository
-                .findByAssetSymbolIgnoreCaseAndSideAndStatusInOrderByLimitPriceDescCreatedAtAsc(
-
-                        symbol,
-
-                        OrderSide.BUY,
-
-                        OPEN_STATUSES
-                );
+                .findBookBids(symbol, OPEN_STATUSES);
     }
 
 
@@ -722,14 +733,7 @@ public class OrderBookService {
     ) {
 
         return orderRepository
-                .findByAssetSymbolIgnoreCaseAndSideAndStatusInOrderByLimitPriceAscCreatedAtAsc(
-
-                        symbol,
-
-                        OrderSide.SELL,
-
-                        OPEN_STATUSES
-                );
+                .findBookAsks(symbol, OPEN_STATUSES);
     }
 
 
@@ -1074,6 +1078,14 @@ public class OrderBookService {
             List<Order> orders
     ) {
 
+        return aggregateLevels(orders, null);
+    }
+
+    private List<OrderBookLevelResponse> aggregateLevels(
+            List<Order> orders,
+            Long viewerId
+    ) {
+
         Map<BigDecimal, LevelAccumulator> levels =
                 new LinkedHashMap<>();
 
@@ -1136,6 +1148,10 @@ public class OrderBookService {
 
 
             accumulator.orderCount++;
+
+            if (viewerId != null && viewerId.equals(order.getUser().getId())) {
+                accumulator.myQuantity = accumulator.myQuantity.add(order.getRemainingQuantity());
+            }
         }
 
 
@@ -1163,7 +1179,8 @@ public class OrderBookService {
 
                             entry
                                     .getValue()
-                                    .orderCount
+                                    .orderCount,
+                            entry.getValue().myQuantity
                     )
             );
         }
@@ -1176,6 +1193,10 @@ public class OrderBookService {
     // =========================================
     // SYMBOL VALIDATION
     // =========================================
+
+    public String resolveActiveSymbol(String rawSymbol) {
+        return validateAndNormalizeSymbol(rawSymbol);
+    }
 
     private String validateAndNormalizeSymbol(
             String rawSymbol
@@ -1232,6 +1253,8 @@ public class OrderBookService {
 
         private BigDecimal totalQuantity =
                 BigDecimal.ZERO;
+
+        private BigDecimal myQuantity = BigDecimal.ZERO;
 
         private int orderCount =
                 0;

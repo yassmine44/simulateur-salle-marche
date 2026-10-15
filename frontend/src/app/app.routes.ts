@@ -139,6 +139,41 @@ export const routes: Routes = [
 
 
       // =====================
+      // PORTFOLIO
+      // =====================
+
+      {
+        path: 'portfolio',
+
+        loadComponent: () =>
+
+          import(
+            './features/portfolio/pages/portfolio/portfolio'
+          )
+
+            .then(
+              module =>
+                module.Portfolio
+            )
+      },
+
+      {
+        path: 'portfolio/statement',
+
+        loadComponent: () =>
+
+          import(
+            './features/portfolio/pages/statement/statement'
+          )
+
+            .then(
+              module =>
+                module.Statement
+            )
+      },
+
+
+      // =====================
       // ADMIN USERS
       // =====================
 

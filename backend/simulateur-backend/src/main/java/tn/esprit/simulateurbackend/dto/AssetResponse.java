@@ -3,6 +3,8 @@ package tn.esprit.simulateurbackend.dto;
 import tn.esprit.simulateurbackend.entity.Asset;
 import tn.esprit.simulateurbackend.entity.AssetType;
 
+import java.math.BigDecimal;
+
 public record AssetResponse(
 
         Long id,
@@ -15,7 +17,13 @@ public record AssetResponse(
 
         String currency,
 
-        boolean active
+        boolean active,
+
+        BigDecimal referencePrice,
+
+        BigDecimal tickSize,
+
+        BigDecimal minQuantity
 
 ) {
 
@@ -35,7 +43,13 @@ public record AssetResponse(
 
                 asset.getCurrency(),
 
-                asset.isActive()
+                asset.isActive(),
+
+                asset.getReferencePrice(),
+
+                asset.getTickSize(),
+
+                asset.getMinQuantity()
         );
     }
 }

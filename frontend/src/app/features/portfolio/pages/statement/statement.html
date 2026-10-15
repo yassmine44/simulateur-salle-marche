@@ -1,0 +1,276 @@
+<div class="statement-page">
+
+  <!-- ========================================= -->
+  <!-- TOOLBAR (non imprimée) -->
+  <!-- ========================================= -->
+
+  <div class="toolbar no-print">
+
+    <a
+      class="back-link"
+      routerLink="/app/portfolio"
+    >
+      ← Portefeuille
+    </a>
+
+    <label for="statement-month">
+      Mois
+    </label>
+
+    <input
+      id="statement-month"
+      type="month"
+      [max]="currentMonth"
+      [(ngModel)]="month"
+      (change)="load()"
+    />
+
+    <button
+      type="button"
+      class="primary-button"
+      [disabled]="!statement || loading"
+      title="Dans la fenêtre d'impression, choisissez « Enregistrer au format PDF »"
+      (click)="print()"
+    >
+      Télécharger en PDF
+    </button>
+
+  </div>
+
+
+  <div
+    *ngIf="errorMessage"
+    class="alert no-print"
+    role="alert"
+  >
+    {{ errorMessage }}
+  </div>
+
+
+  <div
+    *ngIf="loading && !statement"
+    class="loading no-print"
+  >
+    Génération du relevé...
+  </div>
+
+
+  <!-- ========================================= -->
+  <!-- DOCUMENT -->
+  <!-- ========================================= -->
+
+  <article
+    *ngIf="statement as st"
+    class="document"
+    [class.stale]="loading"
+  >
+
+    <header class="document-header">
+
+      <div>
+
+        <span class="brand">
+          Trading Room · Simulateur de marché
+        </span>
+
+        <h1>
+          Relevé de compte
+        </h1>
+
+        <p>
+          Du {{ st.periodStart | date:'dd/MM/yyyy' }}
+          au {{ st.periodEnd | date:'dd/MM/yyyy' }}
+        </p>
+
+      </div>
+
+      <dl class="identity">
+
+        <dt>Titulaire</dt>
+        <dd>{{ st.holderName }}</dd>
+
+        <dt>E-mail</dt>
+        <dd>{{ st.holderEmail }}</dd>
+
+        <dt>Compte</dt>
+        <dd>{{ st.accountNumber }}</dd>
+
+        <dt>Relevé n°</dt>
+        <dd>{{ st.statementNumber }}</dd>
+
+        <dt>Édité le</dt>
+        <dd>{{ st.generatedAt | date:'dd/MM/yyyy à HH:mm' }}</dd>
+
+      </dl>
+
+    </header>
+
+
+    <p
+      *ngIf="st.portfolioStartedAt"
+      class="notice"
+    >
+      Portefeuille réinitialisé le {{ st.portfolioStartedAt | date:'dd/MM/yyyy à HH:mm' }} :
+      les opérations antérieures ne figurent pas sur ce relevé.
+    </p>
+
+
+    <!-- SUMMARY -->
+
+    <section class="summary">
+
+      <div>
+        <span>Valeur en début de période</span>
+        <strong>{{ st.openingValue | number:'1.2-2' }} {{ st.currency }}</strong>
+      </div>
+
+      <div>
+        <span>Valeur en fin de période</span>
+        <strong>{{ st.closingValue | number:'1.2-2' }} {{ st.currency }}</strong>
+      </div>
+
+      <div>
+        <span>Variation</span>
+        <strong
+          [class.positive]="st.netChange > 0"
+          [class.negative]="st.netChange < 0"
+        >
+          {{ st.netChange > 0 ? '+' : '' }}{{ st.netChange | number:'1.2-2' }}
+          ({{ st.netChangePercent > 0 ? '+' : '' }}{{ st.netChangePercent | number:'1.2-2' }} %)
+        </strong>
+      </div>
+
+      <div>
+        <span>Résultat réalisé</span>
+        <strong
+          [class.positive]="st.realizedPnl > 0"
+          [class.negative]="st.realizedPnl < 0"
+        >
+          {{ st.realizedPnl > 0 ? '+' : '' }}{{ st.realizedPnl | number:'1.2-2' }}
+        </strong>
+      </div>
+
+      <div>
+        <span>Liquidités en fin de période</span>
+        <strong>{{ st.closingCash | number:'1.2-2' }} {{ st.currency }}</strong>
+      </div>
+
+    </section>
+
+
+    <!-- TRADES -->
+
+    <section>
+
+      <h2>
+        Opérations de la période
+        <small>
+          {{ st.tradeCount }} opération(s) · achats {{ st.totalBought | number:'1.2-2' }}
+          · ventes {{ st.totalSold | number:'1.2-2' }}
+        </small>
+      </h2>
+
+      <table>
+
+        <thead>
+
+          <tr>
+            <th>Date</th>
+            <th>Actif</th>
+            <th>Sens</th>
+            <th class="numeric">Quantité</th>
+            <th class="numeric">Prix</th>
+            <th class="numeric">Montant</th>
+          </tr>
+
+        </thead>
+
+        <tbody>
+
+          <tr *ngFor="let trade of st.trades">
+            <td>{{ trade.executedAt | date:'dd/MM/yyyy HH:mm' }}</td>
+            <td>{{ trade.assetSymbol }}</td>
+            <td>{{ trade.side === 'BUY' ? 'Achat' : 'Vente' }}</td>
+            <td class="numeric">{{ trade.quantity | number:'1.0-8' }}</td>
+            <td class="numeric">{{ trade.price | number:'1.2-8' }}</td>
+            <td class="numeric">
+              {{ trade.side === 'BUY' ? '−' : '+' }}{{ trade.amount | number:'1.2-2' }}
+            </td>
+          </tr>
+
+          <tr *ngIf="st.trades.length === 0">
+            <td
+              colspan="6"
+              class="empty"
+            >
+              Aucune opération sur cette période.
+            </td>
+          </tr>
+
+        </tbody>
+
+      </table>
+
+    </section>
+
+
+    <!-- POSITIONS -->
+
+    <section>
+
+      <h2>
+        Positions en fin de période
+      </h2>
+
+      <table>
+
+        <thead>
+
+          <tr>
+            <th>Actif</th>
+            <th class="numeric">Quantité</th>
+            <th class="numeric">Prix de revient</th>
+            <th class="numeric">Cours</th>
+            <th class="numeric">Valeur</th>
+          </tr>
+
+        </thead>
+
+        <tbody>
+
+          <tr *ngFor="let position of st.positions">
+            <td>
+              {{ position.assetSymbol }}
+              <small>{{ position.assetName }}</small>
+            </td>
+            <td class="numeric">{{ position.quantity | number:'1.0-8' }}</td>
+            <td class="numeric">{{ position.averagePrice | number:'1.2-8' }}</td>
+            <td class="numeric">{{ position.closingPrice | number:'1.2-8' }}</td>
+            <td class="numeric">{{ position.value | number:'1.2-2' }}</td>
+          </tr>
+
+          <tr *ngIf="st.positions.length === 0">
+            <td
+              colspan="5"
+              class="empty"
+            >
+              Aucune position en fin de période.
+            </td>
+          </tr>
+
+        </tbody>
+
+      </table>
+
+    </section>
+
+
+    <footer class="document-footer">
+      Document généré par le simulateur de salle de marché. Les montants sont
+      fictifs et calculés à partir des transactions du simulateur ; ils ne
+      constituent ni un relevé bancaire ni un conseil en investissement.
+    </footer>
+
+  </article>
+
+</div>

@@ -16,63 +16,107 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
-
+/*
+ * Seuls les ordres LIMIT ouverts reposent dans le carnet.
+ *
+ * Les ordres MARKET s'exécutent immédiatement et les ordres
+ * conditionnels (stop-loss / take-profit) attendent hors carnet :
+ * toutes les requêtes du carnet filtrent donc sur le type LIMIT.
+ */
 public interface OrderRepository
         extends JpaRepository<Order, Long> {
 
-
     /*
-     * =========================================
-     * CARNET BID
-     * =========================================
+     * Carnet côté ACHAT / BID
      *
      * Priorité :
      * 1. Prix le plus élevé
      * 2. À prix égal : ordre le plus ancien
      */
-
-    List<Order>
-    findByAssetSymbolIgnoreCaseAndSideAndStatusInOrderByLimitPriceDescCreatedAtAsc(
-            String assetSymbol,
-            OrderSide side,
-            Collection<OrderStatus> statuses
+    @Query("""
+        SELECT o
+        FROM Order o
+        WHERE UPPER(o.assetSymbol) = UPPER(:symbol)
+          AND o.side = tn.esprit.simulateurbackend.entity.OrderSide.BUY
+          AND o.type = tn.esprit.simulateurbackend.entity.OrderType.LIMIT
+          AND o.status IN :statuses
+        ORDER BY
+          o.limitPrice DESC,
+          o.createdAt ASC,
+          o.id ASC
+        """)
+    List<Order> findBookBids(
+            @Param("symbol") String symbol,
+            @Param("statuses") Collection<OrderStatus> statuses
     );
 
 
     /*
-     * =========================================
-     * CARNET ASK
-     * =========================================
+     * Carnet côté VENTE / ASK
      *
      * Priorité :
      * 1. Prix le plus faible
      * 2. À prix égal : ordre le plus ancien
      */
-
-    List<Order>
-    findByAssetSymbolIgnoreCaseAndSideAndStatusInOrderByLimitPriceAscCreatedAtAsc(
-            String assetSymbol,
-            OrderSide side,
-            Collection<OrderStatus> statuses
+    @Query("""
+        SELECT o
+        FROM Order o
+        WHERE UPPER(o.assetSymbol) = UPPER(:symbol)
+          AND o.side = tn.esprit.simulateurbackend.entity.OrderSide.SELL
+          AND o.type = tn.esprit.simulateurbackend.entity.OrderType.LIMIT
+          AND o.status IN :statuses
+        ORDER BY
+          o.limitPrice ASC,
+          o.createdAt ASC,
+          o.id ASC
+        """)
+    List<Order> findBookAsks(
+            @Param("symbol") String symbol,
+            @Param("statuses") Collection<OrderStatus> statuses
     );
 
 
     /*
-     * =========================================
-     * ORDRES D'UN UTILISATEUR
-     * =========================================
+     * Ordres d'un utilisateur.
      */
-
-    List<Order> findByUserIdOrderByCreatedAtDesc(
+    List<Order>
+    findByUserIdOrderByCreatedAtDesc(
             Long userId
     );
 
 
     /*
-     * =========================================
-     * LOCK D'UN ORDRE
-     * =========================================
+     * Branches d'un même OCO (ou d'un même bracket).
      */
+    List<Order> findByOcoGroupOrderByIdAsc(String ocoGroup);
+
+
+    /*
+     * Ordres DAY arrivés à échéance.
+     */
+    @Query("""
+        SELECT o
+        FROM Order o
+        WHERE o.expiresAt IS NOT NULL
+          AND o.expiresAt <= :now
+          AND o.status IN :statuses
+        """)
+    List<Order> findExpired(
+            @Param("now") java.time.Instant now,
+            @Param("statuses") Collection<OrderStatus> statuses
+    );
+
+
+    /*
+     * Ordres encore ouverts d'un utilisateur, tous actifs
+     * confondus (réservations du portefeuille).
+     */
+    List<Order>
+    findByUserIdAndStatusIn(
+            Long userId,
+            Collection<OrderStatus> statuses
+    );
+
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("""
@@ -85,25 +129,14 @@ public interface OrderRepository
     );
 
 
-    /*
-     * =========================================
-     * MATCHING LIMIT BUY
-     * =========================================
-     *
-     * Un BUY LIMIT peut rencontrer uniquement
-     * des ASK <= son prix limite.
-     *
-     * Meilleur ASK d'abord.
-     */
-
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("""
         SELECT o
         FROM Order o
         WHERE UPPER(o.assetSymbol) = UPPER(:symbol)
           AND o.side = :side
+          AND o.type = tn.esprit.simulateurbackend.entity.OrderType.LIMIT
           AND o.status IN :statuses
-          AND o.limitPrice IS NOT NULL
           AND o.limitPrice <= :maxPrice
           AND o.user.id <> :userId
         ORDER BY
@@ -120,25 +153,14 @@ public interface OrderRepository
     );
 
 
-    /*
-     * =========================================
-     * MATCHING LIMIT SELL
-     * =========================================
-     *
-     * Un SELL LIMIT peut rencontrer uniquement
-     * des BID >= son prix limite.
-     *
-     * Meilleur BID d'abord.
-     */
-
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("""
         SELECT o
         FROM Order o
         WHERE UPPER(o.assetSymbol) = UPPER(:symbol)
           AND o.side = :side
+          AND o.type = tn.esprit.simulateurbackend.entity.OrderType.LIMIT
           AND o.status IN :statuses
-          AND o.limitPrice IS NOT NULL
           AND o.limitPrice >= :minPrice
           AND o.user.id <> :userId
         ORDER BY
@@ -156,71 +178,48 @@ public interface OrderRepository
 
 
     /*
-     * =========================================
-     * MARKET BUY
-     * =========================================
+     * Ordres LIMIT ouverts d'un utilisateur sur un actif et un sens.
      *
-     * Aucun prix maximum.
-     *
-     * On consomme les ASK :
-     *
-     * prix le plus faible
-     * puis ordre le plus ancien.
+     * Sert à la prévention de l'auto-négociation
+     * et au teneur de marché.
      */
-
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("""
         SELECT o
         FROM Order o
-        WHERE UPPER(o.assetSymbol) = UPPER(:symbol)
+        WHERE o.user.id = :userId
+          AND UPPER(o.assetSymbol) = UPPER(:symbol)
           AND o.side = :side
+          AND o.type = tn.esprit.simulateurbackend.entity.OrderType.LIMIT
           AND o.status IN :statuses
-          AND o.limitPrice IS NOT NULL
-          AND o.user.id <> :userId
         ORDER BY
-          o.limitPrice ASC,
-          o.createdAt ASC,
           o.id ASC
         """)
-    List<Order> findMarketAsks(
+    List<Order> findOpenLimitOrdersOfUser(
+            @Param("userId") Long userId,
             @Param("symbol") String symbol,
             @Param("side") OrderSide side,
-            @Param("statuses") Collection<OrderStatus> statuses,
-            @Param("userId") Long userId
+            @Param("statuses") Collection<OrderStatus> statuses
     );
 
 
     /*
-     * =========================================
-     * MARKET SELL
-     * =========================================
-     *
-     * Aucun prix minimum.
-     *
-     * On consomme les BID :
-     *
-     * prix le plus élevé
-     * puis ordre le plus ancien.
+     * Ordres conditionnels (stop-loss / take-profit)
+     * en attente de déclenchement sur un actif.
      */
-
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("""
         SELECT o
         FROM Order o
         WHERE UPPER(o.assetSymbol) = UPPER(:symbol)
-          AND o.side = :side
-          AND o.status IN :statuses
-          AND o.limitPrice IS NOT NULL
-          AND o.user.id <> :userId
+          AND o.triggerType IS NOT NULL
+          AND o.triggeredAt IS NULL
+          AND o.status = tn.esprit.simulateurbackend.entity.OrderStatus.PENDING
         ORDER BY
-          o.limitPrice DESC,
           o.createdAt ASC,
           o.id ASC
         """)
-    List<Order> findMarketBids(
-            @Param("symbol") String symbol,
-            @Param("side") OrderSide side,
-            @Param("statuses") Collection<OrderStatus> statuses,
-            @Param("userId") Long userId
+    List<Order> findWaitingConditionalOrders(
+            @Param("symbol") String symbol
     );
 }

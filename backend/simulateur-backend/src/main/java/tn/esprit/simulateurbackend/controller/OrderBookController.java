@@ -1,7 +1,10 @@
 package tn.esprit.simulateurbackend.controller;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.MediaType;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 import tn.esprit.simulateurbackend.dto.OrderBookTemporalMetricsResponse;
 import tn.esprit.simulateurbackend.service.OrderBookTemporalMetricsService;
 import tn.esprit.simulateurbackend.dto.OrderBookMetricsResponse;
@@ -10,6 +13,7 @@ import tn.esprit.simulateurbackend.dto.SlippageEstimateResponse;
 
 import tn.esprit.simulateurbackend.entity.OrderSide;
 import tn.esprit.simulateurbackend.service.OrderBookService;
+import tn.esprit.simulateurbackend.service.OrderBookStreamService;
 
 import java.math.BigDecimal;
 
@@ -20,12 +24,14 @@ public class OrderBookController {
 
     private final OrderBookService orderBookService;
     private final OrderBookTemporalMetricsService temporalMetricsService;
+    private final OrderBookStreamService orderBookStreamService;
 
     public OrderBookController(
 
             OrderBookService orderBookService,
 
-            OrderBookTemporalMetricsService temporalMetricsService
+            OrderBookTemporalMetricsService temporalMetricsService,
+            OrderBookStreamService orderBookStreamService
     ) {
 
         this.orderBookService =
@@ -33,6 +39,7 @@ public class OrderBookController {
 
         this.temporalMetricsService =
                 temporalMetricsService;
+        this.orderBookStreamService = orderBookStreamService;
     }
 
     // =========================================
@@ -41,11 +48,15 @@ public class OrderBookController {
 
     @GetMapping("/{symbol}")
     public ResponseEntity<OrderBookResponse> getOrderBook(
-            @PathVariable String symbol
+            @PathVariable String symbol,
+            Authentication authentication
     ) {
 
         return ResponseEntity.ok(
-                orderBookService.getOrderBook(symbol)
+                orderBookService.getOrderBook(
+                        symbol,
+                        authentication == null ? null : authentication.getName()
+                )
         );
     }
 
@@ -103,5 +114,10 @@ public class OrderBookController {
                         quantity
                 )
         );
+    }
+
+    @GetMapping(value = "/{symbol}/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    public SseEmitter streamOrderBook(@PathVariable String symbol) {
+        return orderBookStreamService.subscribe(orderBookService.resolveActiveSymbol(symbol));
     }
 }

@@ -1,6 +1,8 @@
 <section class="dashboard-page">
 
+  <!-- ========================================= -->
   <!-- HEADER -->
+  <!-- ========================================= -->
 
   <header class="dashboard-header">
 
@@ -15,121 +17,529 @@
       </h1>
 
       <p>
-        Suivez votre capital virtuel,
-        vos positions, vos performances
-        et vos principaux indicateurs de risque.
+        Votre capital virtuel, vos positions, leur protection
+        et ce qui mérite votre attention aujourd’hui.
       </p>
+
+    </div>
+
+    <div class="header-side">
+
+      @if (dashboard) {
+        <span class="updated">
+          {{ refreshing ? 'Actualisation…' : 'Mis à jour à ' + (dashboard.generatedAt | date:'HH:mm:ss') }}
+        </span>
+      }
+
+      <button
+        type="button"
+        class="secondary-button"
+        [disabled]="loading || refreshing"
+        (click)="load(true)"
+      >
+        Actualiser
+      </button>
 
     </div>
 
   </header>
 
 
-  <!-- KPI -->
+  <!-- ========================================= -->
+  <!-- STATES -->
+  <!-- ========================================= -->
 
-  <section class="metrics-grid">
+  @if (errorMessage) {
 
-    @for (
-      metric of metrics;
-      track metric.label
-    ) {
+    <div
+      class="state-message state-error"
+      role="alert"
+    >
+
+      <span>{{ errorMessage }}</span>
+
+      <button
+        type="button"
+        (click)="load()"
+      >
+        Réessayer
+      </button>
+
+    </div>
+
+  }
+
+  @if (loading && !dashboard) {
+
+    <div
+      class="state-message loading-state"
+      role="status"
+    >
+      Chargement de vos données…
+    </div>
+
+  }
+
+
+  @if (dashboard; as d) {
+
+    <!-- ======================================= -->
+    <!-- HEADLINE (phrase du jour) -->
+    <!-- ======================================= -->
+
+    <section
+      class="headline"
+      [class.positive]="d.headline.tone === 'POSITIVE'"
+      [class.negative]="d.headline.tone === 'NEGATIVE'"
+      aria-live="polite"
+    >
+
+      <span
+        class="headline-mark"
+        aria-hidden="true"
+      >
+        {{ d.headline.tone === 'POSITIVE' ? '▲' : d.headline.tone === 'NEGATIVE' ? '▼' : '●' }}
+      </span>
+
+      <p>
+        {{ d.headline.text }}
+      </p>
+
+    </section>
+
+
+    <!-- ======================================= -->
+    <!-- KPI -->
+    <!-- ======================================= -->
+
+    <section class="metrics-grid">
 
       <article class="metric-card">
 
-        <span class="metric-label">
-          {{ metric.label }}
-        </span>
+        <span class="metric-label">Valeur du portefeuille</span>
 
         <strong class="metric-value">
-          {{ metric.value }}
+          {{ d.portfolio.totalValue | number:'1.2-2' }}
+          <small>{{ currency }}</small>
         </strong>
 
-        @if (metric.variation) {
+        <span
+          class="metric-variation"
+          [class.positive]="d.headline.dayChange > 0"
+          [class.negative]="d.headline.dayChange < 0"
+        >
+          {{ d.headline.dayChange > 0 ? '▲ +' : d.headline.dayChange < 0 ? '▼ ' : '' }}{{ d.headline.dayChangePercent | number:'1.2-2' }} % aujourd’hui
+        </span>
 
-          <span
-            class="metric-variation"
-            [class.positive]="metric.positive"
-            [class.negative]="metric.positive === false"
+      </article>
+
+
+      <article class="metric-card">
+
+        <span class="metric-label">Capital disponible</span>
+
+        <strong class="metric-value">
+          {{ d.portfolio.availableCash | number:'1.2-2' }}
+          <small>{{ currency }}</small>
+        </strong>
+
+        <span class="metric-detail">
+          @if (d.portfolio.reservedCash > 0) {
+            dont {{ d.portfolio.reservedCash | number:'1.2-2' }} réservés hors disponible
+          } @else {
+            Liquidités {{ d.portfolio.cash | number:'1.2-2' }}
+          }
+        </span>
+
+      </article>
+
+
+      <article class="metric-card">
+
+        <span class="metric-label">Performance globale</span>
+
+        <strong
+          class="metric-value"
+          [class.positive]="d.portfolio.totalPnl > 0"
+          [class.negative]="d.portfolio.totalPnl < 0"
+        >
+          {{ d.portfolio.totalPnl > 0 ? '+' : '' }}{{ d.portfolio.totalPnl | number:'1.2-2' }}
+          <small>{{ currency }}</small>
+        </strong>
+
+        <span class="metric-detail">
+          {{ d.portfolio.totalPnlPercent > 0 ? '+' : '' }}{{ d.portfolio.totalPnlPercent | number:'1.2-2' }} %
+          depuis le départ ({{ d.portfolio.initialCapital | number:'1.0-0' }})
+        </span>
+
+      </article>
+
+
+      <article class="metric-card">
+
+        <span class="metric-label">Positions ouvertes</span>
+
+        <strong class="metric-value">
+          {{ d.portfolio.openPositions.length }}
+        </strong>
+
+        <span class="metric-detail">
+          {{ d.portfolio.positionsValue | number:'1.2-2' }} investis · {{ d.portfolio.tradeCount }} transaction(s)
+        </span>
+
+      </article>
+
+    </section>
+
+
+    <!-- ======================================= -->
+    <!-- PERFORMANCE + ATTENTION -->
+    <!-- ======================================= -->
+
+    <section class="dashboard-grid">
+
+      <article class="dashboard-card">
+
+        <header class="card-header">
+
+          <div>
+            <span class="section-label">PORTEFEUILLE</span>
+            <h2>Performance sur 7 jours</h2>
+          </div>
+
+          <a
+            class="card-link"
+            routerLink="/app/portfolio"
           >
+            Détails →
+          </a>
 
-            {{ metric.variation }}
+        </header>
 
-          </span>
+        <app-equity-chart
+          [points]="d.portfolio.history"
+          [baseline]="d.portfolio.initialCapital"
+          [currency]="currency"
+          [benchmark]="d.performance.benchmark.history"
+          [benchmarkLabel]="d.performance.benchmark.name"
+        />
+
+      </article>
+
+
+      <article class="dashboard-card">
+
+        <header class="card-header">
+
+          <div>
+            <span class="section-label">À FAIRE</span>
+            <h2>Ce qui demande votre attention</h2>
+          </div>
+
+          <span class="count-badge">{{ d.insights.length }}</span>
+
+        </header>
+
+        @if (d.insights.length === 0) {
+
+          <div class="all-clear">
+            <span aria-hidden="true">✓</span>
+            Rien à signaler : aucun risque particulier détecté sur vos positions et vos ordres.
+          </div>
+
+        } @else {
+
+          <ul class="insights">
+
+            @for (insight of d.insights; track $index) {
+
+              <li [class]="'insight insight-' + insight.severity.toLowerCase()">
+
+                <!-- Icône et libellé : la gravité ne passe pas que par la couleur. -->
+
+                <span
+                  class="insight-icon"
+                  aria-hidden="true"
+                >
+                  {{ severityIcon(insight.severity) }}
+                </span>
+
+                <div>
+
+                  <strong>
+                    {{ insight.title }}
+                  </strong>
+
+                  <p>
+                    {{ insight.message }}
+                  </p>
+
+                  <span class="insight-footer">
+
+                    <span class="insight-severity">
+                      {{ severityLabel(insight.severity) }}
+                    </span>
+
+                    @if (insight.assetSymbol) {
+                      <a
+                        routerLink="/app/trading"
+                        [queryParams]="{ symbol: insight.assetSymbol }"
+                      >
+                        Ouvrir {{ insight.assetSymbol }}
+                      </a>
+                    }
+
+                  </span>
+
+                </div>
+
+              </li>
+
+            }
+
+          </ul>
 
         }
 
       </article>
 
+    </section>
+
+
+    <!-- ======================================= -->
+    <!-- WATCHLIST -->
+    <!-- ======================================= -->
+
+    @if (d.watchlist.length > 0) {
+
+      <section
+        class="watchlist"
+        aria-label="Vos actifs"
+      >
+
+        @for (asset of d.watchlist; track asset.assetSymbol) {
+
+          <a
+            class="watch-card"
+            routerLink="/app/trading"
+            [queryParams]="{ symbol: asset.assetSymbol }"
+          >
+
+            <div class="watch-head">
+
+              <strong>{{ asset.assetSymbol }}</strong>
+
+              @if (asset.changePercent !== null) {
+                <span
+                  [class.positive]="asset.changePercent > 0"
+                  [class.negative]="asset.changePercent < 0"
+                >
+                  {{ asset.changePercent > 0 ? '▲ +' : asset.changePercent < 0 ? '▼ ' : '' }}{{ asset.changePercent | number:'1.2-2' }} %
+                </span>
+              }
+
+            </div>
+
+            <span class="watch-price">
+              {{ asset.lastPrice !== null ? (asset.lastPrice | number:'1.2-4') : '—' }}
+            </span>
+
+            <app-sparkline
+              [points]="asset.sparkline"
+              [label]="'Évolution récente de ' + asset.assetSymbol"
+            />
+
+            <small>
+              @if (asset.positionValue !== null) {
+                Position {{ asset.positionValue | number:'1.2-2' }}
+                · {{ (asset.unrealizedPnl ?? 0) > 0 ? '+' : '' }}{{ asset.unrealizedPnl | number:'1.2-2' }}
+              } @else {
+                Ordre en attente
+              }
+            </small>
+
+          </a>
+
+        }
+
+      </section>
+
     }
 
-  </section>
 
+    <!-- ======================================= -->
+    <!-- POSITIONS & PROTECTIONS + RISK -->
+    <!-- ======================================= -->
 
-  <!-- PORTFOLIO PERFORMANCE -->
+    <section class="dashboard-grid">
 
-  <section class="dashboard-grid">
+      <article class="dashboard-card table-card">
 
-    <article class="dashboard-card performance-card">
+        <header class="card-header">
 
-      <header class="card-header">
+          <div>
+            <span class="section-label">POSITIONS</span>
+            <h2>Positions ouvertes et protections</h2>
+          </div>
 
-        <div>
+        </header>
 
-          <span class="section-label">
-            PORTEFEUILLE
-          </span>
+        <div class="table-wrapper">
 
-          <h2>
-            Performance
-          </h2>
+          <table>
+
+            <thead>
+
+              <tr>
+                <th>Actif</th>
+                <th>Quantité</th>
+                <th>Prix de revient</th>
+                <th>Résultat latent</th>
+                <th>Protection</th>
+              </tr>
+
+            </thead>
+
+            <tbody>
+
+              @for (row of positionRows; track row.position.assetSymbol) {
+
+                <tr>
+
+                  <td>
+                    <a
+                      class="asset-link"
+                      routerLink="/app/trading"
+                      [queryParams]="{ symbol: row.position.assetSymbol }"
+                    >
+                      {{ row.position.assetSymbol }}
+                    </a>
+                    <small class="cell-detail">
+                      {{ row.position.weightPercent | number:'1.0-1' }} % du portefeuille
+                    </small>
+                  </td>
+
+                  <td>
+                    {{ row.position.quantity | number:'1.0-8' }}
+                  </td>
+
+                  <td>
+                    {{ row.position.averagePrice | number:'1.2-8' }}
+                    <small class="cell-detail">cours {{ row.position.lastPrice | number:'1.2-8' }}</small>
+                  </td>
+
+                  <td>
+                    <strong
+                      [class.positive]="row.position.unrealizedPnl > 0"
+                      [class.negative]="row.position.unrealizedPnl < 0"
+                    >
+                      {{ row.position.unrealizedPnl > 0 ? '+' : '' }}{{ row.position.unrealizedPnl | number:'1.2-2' }} {{ currency }}
+                    </strong>
+                    <small class="cell-detail">
+                      {{ row.position.unrealizedPnlPercent > 0 ? '+' : '' }}{{ row.position.unrealizedPnlPercent | number:'1.2-2' }} %
+                    </small>
+                  </td>
+
+                  <td>
+
+                    @if (row.protection; as protection) {
+
+                      <span [class]="'protection-badge protection-' + protection.status.toLowerCase()">
+                        {{ protection.status === 'PROTECTED' ? '✓' : protection.status === 'PARTIAL' ? '◐' : '○' }}
+                        {{ protectionLabel(protection.status) }}
+                      </span>
+
+                      @if (protection.stopPrice !== null) {
+                        <small class="cell-detail">
+                          {{ protection.trailing ? 'Stop suiveur' : 'Stop' }} à {{ protection.stopPrice | number:'1.2-8' }}
+                          (−{{ protection.stopDistancePercent | number:'1.0-2' }} %)
+                          @if (protection.status === 'PARTIAL') {
+                            · {{ protection.protectedQuantity | number:'1.0-8' }} sur {{ protection.quantity | number:'1.0-8' }}
+                          }
+                        </small>
+                        <small class="cell-detail">
+                          Perte si touché : {{ protection.lossAtStop | number:'1.2-2' }}
+                        </small>
+                      }
+
+                      @if (protection.takeProfitPrice !== null) {
+                        <small class="cell-detail">
+                          Objectif {{ protection.takeProfitPrice | number:'1.2-8' }}
+                          (+{{ protection.takeProfitDistancePercent | number:'1.0-2' }} %)
+                        </small>
+                      }
+
+                      @if (protection.status === 'UNPROTECTED') {
+                        <a
+                          class="protect-link"
+                          routerLink="/app/trading"
+                          [queryParams]="{ symbol: protection.assetSymbol }"
+                        >
+                          Protéger
+                        </a>
+                      }
+
+                    } @else {
+                      <span class="muted">—</span>
+                    }
+
+                  </td>
+
+                </tr>
+
+              } @empty {
+
+                <tr>
+                  <td
+                    colspan="5"
+                    class="empty-row"
+                  >
+                    Aucune position ouverte.
+                    <a routerLink="/app/trading">Passez un ordre</a> pour commencer à investir.
+                  </td>
+                </tr>
+
+              }
+
+            </tbody>
+
+          </table>
 
         </div>
 
-      </header>
+      </article>
 
 
-      <div class="performance-chart">
+      <article class="dashboard-card">
 
-        <div class="chart-grid">
+        <header class="card-header">
 
-          <span></span>
+          <div>
+            <span class="section-label">RISQUE</span>
+            <h2>Indicateurs principaux</h2>
+          </div>
 
-          <span></span>
+        </header>
 
-          <span></span>
+        <div class="risk-list">
 
-          <span></span>
+          @for (risk of riskIndicators; track risk.label) {
 
-        </div>
+            <div class="risk-row">
 
+              <div>
 
-        <div class="chart-points">
+                <span>{{ risk.label }}</span>
 
-          @for (
-            point of portfolioHistory;
-            track $index
-          ) {
+                <strong>{{ risk.value }}</strong>
 
-            <div
-              class="chart-column"
-            >
-
-              <div class="point-area">
-
-                <span
-                  class="chart-point"
-                  [style.bottom.%]="
-                    pointHeight(point)
-                  "
-                  [title]="point + ' DT'"
-                ></span>
+                <small>{{ risk.explanation }}</small>
 
               </div>
 
-
-              <small>
-                J{{ $index + 1 }}
-              </small>
+              <span [class]="'risk-badge risk-' + risk.level.toLowerCase()">
+                {{ riskLabel(risk.level) }}
+              </span>
 
             </div>
 
@@ -137,326 +547,244 @@
 
         </div>
 
-      </div>
+      </article>
 
-    </article>
-
-
-    <!-- RISK -->
-
-    <article class="dashboard-card">
-
-      <header class="card-header">
-
-        <div>
-
-          <span class="section-label">
-            RISQUE
-          </span>
-
-          <h2>
-            Indicateurs principaux
-          </h2>
-
-        </div>
-
-      </header>
+    </section>
 
 
-      <div class="risk-list">
+    <!-- ======================================= -->
+    <!-- HABITS + ACTIVITY -->
+    <!-- ======================================= -->
 
-        @for (
-          risk of riskIndicators;
-          track risk.label
-        ) {
+    <section class="dashboard-grid">
 
-          <div class="risk-row">
+      <article class="dashboard-card">
 
-            <div>
+        <header class="card-header">
 
-              <span>
-                {{ risk.label }}
-              </span>
+          <div>
+            <span class="section-label">APPRENTISSAGE</span>
+            <h2>Mes habitudes de trading</h2>
+          </div>
 
-              <strong>
-                {{ risk.value }}
-              </strong>
+          <span class="count-badge">{{ d.habits.ordersPlaced }} ordre(s)</span>
 
+        </header>
+
+        @if (d.habits.ordersPlaced > 0) {
+
+          <div class="habit-grid">
+
+            <div class="habit">
+              <span>Taux de réussite</span>
+              <strong>{{ d.habits.winRatePercent !== null ? (d.habits.winRatePercent | number:'1.0-1') + ' %' : '—' }}</strong>
+              <small>{{ d.habits.closedTrades }} position(s) fermée(s)</small>
             </div>
 
+            <div class="habit">
+              <span>Facteur de profit</span>
+              <strong>{{ d.habits.profitFactor !== null ? (d.habits.profitFactor | number:'1.0-2') : '—' }}</strong>
+              <small>gains ÷ pertes</small>
+            </div>
 
-            <span
-              class="risk-badge"
-              [ngClass]="
-                riskClass(risk.level)
-              "
+            <div class="habit">
+              <span>Coût d’exécution</span>
+              <strong>{{ d.habits.averageTakerSlippageBps !== null ? (d.habits.averageTakerSlippageBps | number:'1.0-1') + ' pb' : '—' }}</strong>
+              <small>écart moyen au prix milieu</small>
+            </div>
+
+            <div class="habit">
+              <span>Achats protégés</span>
+              <strong>{{ d.habits.protectedEntryPercent !== null ? (d.habits.protectedEntryPercent | number:'1.0-1') + ' %' : '—' }}</strong>
+              <small>avec stop-loss / take-profit</small>
+            </div>
+
+          </div>
+
+          <!-- Répartition des types d'ordres : une barre, trois segments
+               séparés et nommés dans la légende. -->
+
+          <div class="order-mix">
+
+            <div
+              class="mix-bar"
+              aria-hidden="true"
             >
+              <span class="mix-limit" [style.flex-grow]="d.habits.limitOrderPercent ?? 0"></span>
+              <span class="mix-market" [style.flex-grow]="d.habits.marketOrderPercent ?? 0"></span>
+              <span class="mix-conditional" [style.flex-grow]="d.habits.conditionalOrderPercent ?? 0"></span>
+            </div>
 
-              {{ risk.level }}
-
-            </span>
+            <div class="mix-legend">
+              <span><i class="mix-limit"></i> Limite {{ d.habits.limitOrderPercent ?? 0 | number:'1.0-1' }} %</span>
+              <span><i class="mix-market"></i> Au marché {{ d.habits.marketOrderPercent ?? 0 | number:'1.0-1' }} %</span>
+              <span><i class="mix-conditional"></i> Conditionnels {{ d.habits.conditionalOrderPercent ?? 0 | number:'1.0-1' }} %</span>
+            </div>
 
           </div>
 
         }
 
-      </div>
+        <ul class="advice">
 
-    </article>
-
-  </section>
-
-
-  <!-- POSITIONS -->
-
-  <section class="dashboard-card table-card">
-
-    <header class="card-header">
-
-      <div>
-
-        <span class="section-label">
-          POSITIONS
-        </span>
-
-        <h2>
-          Positions ouvertes
-        </h2>
-
-      </div>
-
-    </header>
-
-
-    <div class="table-wrapper">
-
-      <table>
-
-        <thead>
-
-          <tr>
-
-            <th>
-              Actif
-            </th>
-
-            <th>
-              Type
-            </th>
-
-            <th>
-              Quantité
-            </th>
-
-            <th>
-              Prix
-            </th>
-
-            <th>
-              P&L
-            </th>
-
-          </tr>
-
-        </thead>
-
-
-        <tbody>
-
-          @for (
-            position of positions;
-            track position.asset
-          ) {
-
-            <tr>
-
-              <td>
-                <strong>
-                  {{ position.asset }}
-                </strong>
-              </td>
-
-
-              <td>
-
-                <span
-                  class="type-badge"
-                  [class.buy]="
-                    position.type === 'BUY'
-                  "
-                  [class.sell]="
-                    position.type === 'SELL'
-                  "
-                >
-
-                  {{ position.type }}
-
-                </span>
-
-              </td>
-
-
-              <td>
-                {{ position.quantity }}
-              </td>
-
-
-              <td>
-                {{ position.price }}
-              </td>
-
-
-              <td>
-
-                <span
-                  [class.positive-value]="
-                    position.pnl >= 0
-                  "
-                  [class.negative-value]="
-                    position.pnl < 0
-                  "
-                >
-
-                  {{
-                    position.pnl >= 0
-                      ? '+'
-                      : ''
-                  }}
-
-                  {{ position.pnl }} DT
-
-                </span>
-
-              </td>
-
-            </tr>
-
+          @for (advice of d.habits.advice; track $index) {
+            <li>{{ advice }}</li>
           }
 
-        </tbody>
+        </ul>
 
-      </table>
-
-    </div>
-
-  </section>
+      </article>
 
 
-  <!-- TRANSACTIONS -->
+      <article class="dashboard-card">
 
-  <section class="dashboard-card table-card">
+        <header class="card-header">
 
-    <header class="card-header">
+          <div>
+            <span class="section-label">CHRONOLOGIE</span>
+            <h2>Activité récente</h2>
+          </div>
 
-      <div>
+        </header>
 
-        <span class="section-label">
-          HISTORIQUE
-        </span>
+        @if (d.activity.length === 0) {
 
-        <h2>
-          Transactions récentes
-        </h2>
+          <div class="empty-row">
+            Aucune activité pour le moment.
+          </div>
+
+        } @else {
+
+          <ol class="timeline">
+
+            @for (event of d.activity; track $index) {
+
+              <li [class]="'event event-' + event.tone.toLowerCase()">
+
+                <span
+                  class="event-icon"
+                  aria-hidden="true"
+                >
+                  {{ activityIcon(event) }}
+                </span>
+
+                <div>
+
+                  <strong>{{ event.title }}</strong>
+
+                  <p>{{ event.detail }}</p>
+
+                  <time [attr.datetime]="event.time">
+                    {{ event.time | date:'dd/MM HH:mm:ss' }}
+                  </time>
+
+                </div>
+
+              </li>
+
+            }
+
+          </ol>
+
+        }
+
+      </article>
+
+    </section>
+
+
+    <!-- ======================================= -->
+    <!-- RECENT TRANSACTIONS -->
+    <!-- ======================================= -->
+
+    <section class="dashboard-card table-card">
+
+      <header class="card-header">
+
+        <div>
+          <span class="section-label">HISTORIQUE</span>
+          <h2>Transactions récentes</h2>
+        </div>
+
+        <a
+          class="card-link"
+          routerLink="/app/trading"
+        >
+          Tout voir →
+        </a>
+
+      </header>
+
+      <div class="table-wrapper">
+
+        <table>
+
+          <thead>
+
+            <tr>
+              <th>Date</th>
+              <th>Actif</th>
+              <th>Type</th>
+              <th>Quantité</th>
+              <th>Prix</th>
+              <th>Écart au milieu</th>
+            </tr>
+
+          </thead>
+
+          <tbody>
+
+            @for (transaction of transactions; track transaction.id) {
+
+              <tr>
+
+                <td>{{ transaction.createdAt | date:'dd/MM/yyyy HH:mm' }}</td>
+
+                <td><strong>{{ transaction.assetSymbol }}</strong></td>
+
+                <td>
+                  <span
+                    class="type-badge"
+                    [class.buy]="transaction.side === 'BUY'"
+                    [class.sell]="transaction.side === 'SELL'"
+                  >
+                    {{ transaction.side === 'BUY' ? 'ACHAT' : 'VENTE' }}
+                  </span>
+                </td>
+
+                <td>{{ transaction.quantity | number:'1.0-8' }}</td>
+
+                <td>{{ transaction.executionPrice | number:'1.2-8' }}</td>
+
+                <td>
+                  {{ transaction.slippageBps !== null
+                    ? (transaction.slippageBps > 0 ? '+' : '') + (transaction.slippageBps | number:'1.0-1') + ' pb'
+                    : '—' }}
+                </td>
+
+              </tr>
+
+            } @empty {
+
+              <tr>
+                <td
+                  colspan="6"
+                  class="empty-row"
+                >
+                  Aucune transaction pour le moment.
+                </td>
+              </tr>
+
+            }
+
+          </tbody>
+
+        </table>
 
       </div>
 
-    </header>
+    </section>
 
-
-    <div class="table-wrapper">
-
-      <table>
-
-        <thead>
-
-          <tr>
-
-            <th>
-              Date
-            </th>
-
-            <th>
-              Actif
-            </th>
-
-            <th>
-              Type
-            </th>
-
-            <th>
-              Quantité
-            </th>
-
-            <th>
-              Prix
-            </th>
-
-          </tr>
-
-        </thead>
-
-
-        <tbody>
-
-          @for (
-            transaction of transactions;
-            track $index
-          ) {
-
-            <tr>
-
-              <td>
-                {{ transaction.date }}
-              </td>
-
-
-              <td>
-
-                <strong>
-                  {{ transaction.asset }}
-                </strong>
-
-              </td>
-
-
-              <td>
-
-                <span
-                  class="type-badge"
-                  [class.buy]="
-                    transaction.type === 'BUY'
-                  "
-                  [class.sell]="
-                    transaction.type === 'SELL'
-                  "
-                >
-
-                  {{ transaction.type }}
-
-                </span>
-
-              </td>
-
-
-              <td>
-                {{ transaction.quantity }}
-              </td>
-
-
-              <td>
-                {{ transaction.price }}
-              </td>
-
-            </tr>
-
-          }
-
-        </tbody>
-
-      </table>
-
-    </div>
-
-  </section>
+  }
 
 </section>

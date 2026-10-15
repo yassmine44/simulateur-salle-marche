@@ -18,7 +18,10 @@ import tn.esprit.simulateurbackend.entity.Role;
 import tn.esprit.simulateurbackend.entity.User;
 import tn.esprit.simulateurbackend.repository.UserRepository;
 
+import java.util.concurrent.atomic.AtomicInteger;
+
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -36,13 +39,29 @@ class AuthenticationTests {
 
     MockMvc mvc;
 
+    private static final AtomicInteger CLIENTS =
+            new AtomicInteger();
+
     @BeforeEach
     void setup() {
 
         users.deleteAll();
 
+        // Une adresse IP par test : le rate limiting
+        // (5 connexions / minute / IP) ne doit pas
+        // faire échouer les tests suivants.
+
+        String clientIp =
+                "10.0.2." + CLIENTS.incrementAndGet();
+
         mvc = MockMvcBuilders
                 .webAppContextSetup(context)
+                .defaultRequest(
+                        get("/").with(request -> {
+                            request.setRemoteAddr(clientIp);
+                            return request;
+                        })
+                )
                 .build();
     }
 
@@ -57,7 +76,8 @@ class AuthenticationTests {
                                 .content("""
                                     {
                                       "email":"login.test@example.com",
-                                      "password":"Password123!"
+                                      "password":"Password123!",
+                                      "recaptchaToken":"test-token"
                                     }
                                     """)
                 )
@@ -130,7 +150,8 @@ class AuthenticationTests {
                                 .content("""
                                     {
                                       "email":" LOGIN.TEST@EXAMPLE.COM ",
-                                      "password":"Password123!"
+                                      "password":"Password123!",
+                                      "recaptchaToken":"test-token"
                                     }
                                     """)
                 )
@@ -154,7 +175,8 @@ class AuthenticationTests {
                                 .content("""
                                     {
                                       "email":"login.test@example.com",
-                                      "password":"WrongPassword123!"
+                                      "password":"WrongPassword123!",
+                                      "recaptchaToken":"test-token"
                                     }
                                     """)
                 )
@@ -172,7 +194,8 @@ class AuthenticationTests {
                                 .content("""
                                     {
                                       "email":"unknown@example.com",
-                                      "password":"Password123!"
+                                      "password":"Password123!",
+                                      "recaptchaToken":"test-token"
                                     }
                                     """)
                 )
@@ -192,7 +215,8 @@ class AuthenticationTests {
                                 .content("""
                                     {
                                       "email":"login.test@example.com",
-                                      "password":"Password123!"
+                                      "password":"Password123!",
+                                      "recaptchaToken":"test-token"
                                     }
                                     """)
                 )

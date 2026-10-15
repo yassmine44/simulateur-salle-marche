@@ -21,6 +21,14 @@ export interface AssetResponse {
   currency: string;
 
   active: boolean;
+
+  // Règles de trading de l'actif.
+
+  referencePrice: number | null;
+
+  tickSize: number | null;
+
+  minQuantity: number | null;
 }
 
 
@@ -36,6 +44,42 @@ export type OrderSide =
 export type OrderType =
   | 'LIMIT'
   | 'MARKET';
+
+
+export type TriggerType =
+  | 'STOP_LOSS'
+  | 'TAKE_PROFIT';
+
+
+// Choix proposés dans le formulaire.
+// TRAILING_STOP = stop-loss suiveur ; OCO = protection de titres détenus.
+
+export type OrderEntryType =
+  | OrderType
+  | TriggerType
+  | 'TRAILING_STOP'
+  | 'OCO';
+
+
+// GTC : jusqu'à annulation ; DAY : journée ;
+// IOC : immédiat, le reste est annulé ; FOK : tout ou rien immédiatement.
+
+export type TimeInForce =
+  | 'GTC'
+  | 'DAY'
+  | 'IOC'
+  | 'FOK';
+
+
+export type CancelReason =
+  | 'USER'
+  | 'REPLACED'
+  | 'EXPIRED'
+  | 'IOC'
+  | 'FOK'
+  | 'OCO'
+  | 'RESET'
+  | 'NO_LIQUIDITY';
 
 
 export type OrderStatus =
@@ -61,6 +105,106 @@ export interface CreateOrderRequest {
   quantity: number;
 
   limitPrice: number | null;
+
+  // Ordre conditionnel : type MARKET + seuil de déclenchement.
+
+  triggerType?: TriggerType | null;
+
+  triggerPrice?: number | null;
+
+  timeInForce?: TimeInForce | null;
+
+  // Stop suiveur : distance en % entre le cours et le seuil.
+
+  trailPercent?: number | null;
+
+  // Bracket (achat) : protections créées à l'exécution.
+
+  stopLossPrice?: number | null;
+
+  takeProfitPrice?: number | null;
+}
+
+
+// Protection de titres détenus : take-profit + stop-loss liés.
+
+export interface CreateOcoRequest {
+
+  assetSymbol: string;
+
+  quantity: number;
+
+  takeProfitPrice: number;
+
+  stopLossPrice: number;
+
+  trailPercent?: number | null;
+}
+
+
+// Aperçu d'un ordre avant envoi (rien n'est enregistré).
+
+export interface OrderPreviewResponse {
+
+  accepted: boolean;
+
+  refusalReason: string | null;
+
+  warnings: string[];
+
+  currency: string;
+
+  bestBid: number | null;
+
+  bestAsk: number | null;
+
+  midPrice: number | null;
+
+  lastPrice: number | null;
+
+  immediateQuantity: number | null;
+
+  averagePrice: number | null;
+
+  immediateAmount: number | null;
+
+  slippageBps: number | null;
+
+  levelsConsumed: number;
+
+  restingQuantity: number | null;
+
+  cancelledQuantity: number | null;
+
+  triggerPrice: number | null;
+
+  triggerDistancePercent: number | null;
+
+  expiresAt: string | null;
+
+  availableCashBefore: number | null;
+
+  availableCashAfter: number | null;
+
+  heldQuantityBefore: number | null;
+
+  heldQuantityAfter: number | null;
+
+  positionWeightAfterPercent: number | null;
+
+  potentialGain: number | null;
+
+  potentialLoss: number | null;
+
+  rewardRiskRatio: number | null;
+}
+
+
+export interface ModifyOrderRequest {
+
+  quantity: number;
+
+  limitPrice: number;
 }
 
 
@@ -88,6 +232,30 @@ export interface OrderResponse {
 
   status: OrderStatus;
 
+  triggerType: TriggerType | null;
+
+  triggerPrice: number | null;
+
+  triggeredAt: string | null;
+
+  trailPercent: number | null;
+
+  timeInForce: TimeInForce;
+
+  expiresAt: string | null;
+
+  cancelReason: CancelReason | null;
+
+  bracketStopPrice: number | null;
+
+  bracketTakeProfitPrice: number | null;
+
+  parentOrderId: number | null;
+
+  ocoGroup: string | null;
+
+  arrivalMidPrice: number | null;
+
   createdAt: string;
 
   updatedAt: string;
@@ -105,6 +273,10 @@ export interface OrderBookLevel {
   totalQuantity: number;
 
   orderCount: number;
+
+  // Part du niveau appartenant à l'utilisateur connecté.
+
+  myQuantity: number;
 }
 
 
@@ -118,6 +290,84 @@ export interface OrderBookResponse {
 
   generatedAt: string;
 }
+
+
+// ==========================================
+// MARKET DATA
+// ==========================================
+
+export type CandleInterval =
+  | '1m'
+  | '5m'
+  | '15m';
+
+
+export interface MarketSummary {
+
+  assetSymbol: string;
+
+  lastPrice: number | null;
+
+  changePercent: number | null;
+
+  high24h: number | null;
+
+  low24h: number | null;
+
+  volume24h: number;
+
+  tradeCount24h: number;
+}
+
+
+// Exécution publique du marché.
+
+export interface MarketTrade {
+
+  id: number;
+
+  price: number;
+
+  quantity: number;
+
+  aggressorSide: OrderSide | null;
+
+  createdAt: string;
+}
+
+
+export interface Candle {
+
+  time: string;
+
+  open: number;
+
+  high: number;
+
+  low: number;
+
+  close: number;
+
+  volume: number;
+}
+
+
+export interface MarketOverviewResponse {
+
+  summary: MarketSummary;
+
+  recentTrades: MarketTrade[];
+
+  candleInterval: CandleInterval;
+
+  candles: Candle[];
+}
+
+
+export type OrderBookStreamEvent =
+  | 'connected'
+  | 'changed'
+  | 'disconnected';
 
 
 // ==========================================
@@ -139,92 +389,17 @@ export interface TradeResponse {
   quantity: number;
 
   createdAt: string;
-}
-// ==========================================
-// ORDER BOOK METRICS
-// ==========================================
 
-export interface OrderBookMetricsResponse {
+  // Qualité d'exécution.
+  // TAKER : votre ordre a pris un prix existant ; MAKER : il attendait.
 
-  assetSymbol: string;
+  liquidity: 'TAKER' | 'MAKER' | null;
 
-  bestBid: number | null;
+  arrivalMidPrice: number | null;
 
-  bestAsk: number | null;
+  // Écart au prix milieu en points de base (> 0 = coût).
 
-  midPrice: number | null;
+  slippageBps: number | null;
 
-  spread: number | null;
-
-  relativeSpread: number | null;
-
-  relativeSpreadPercent: number | null;
-
-  totalBidVolume: number;
-
-  totalAskVolume: number;
-
-  orderBookImbalance: number | null;
-
-  weightedBidDepth: number | null;
-
-  weightedAskDepth: number | null;
-
-  generatedAt: string;
-}
-// ==========================================
-// TEMPORAL METRICS
-// ==========================================
-
-export interface OrderBookTemporalMetricsResponse {
-
-  assetSymbol: string;
-
-  currentMidPrice: number | null;
-
-  volatility60s: number | null;
-
-  volatility60sPercent: number | null;
-
-  momentum30s: number | null;
-
-  momentum30sPercent: number | null;
-
-  observationCount: number;
-
-  generatedAt: string;
-}
-
-
-// ==========================================
-// SLIPPAGE ESTIMATE
-// ==========================================
-
-export interface SlippageEstimateResponse {
-
-  assetSymbol: string;
-
-  side: OrderSide;
-
-  requestedQuantity: number;
-
-  executableQuantity: number;
-
-  remainingQuantity: number;
-
-  fullyExecutable: boolean;
-
-  bestPrice: number | null;
-
-  expectedExecutionPrice: number | null;
-
-  absoluteSlippage: number | null;
-
-  relativeSlippage: number | null;
-
-  slippagePercent: number | null;
-
-  levelsConsumed: number;
-
-  generatedAt: string;
+  slippageAmount: number | null;
 }
