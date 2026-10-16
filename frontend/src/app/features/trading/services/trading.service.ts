@@ -10,8 +10,10 @@ import {
   CreateOrderRequest,
   MarketOverviewResponse,
   ModifyOrderRequest,
+  OrderBookMetricsResponse,
   OrderBookResponse,
   OrderBookStreamEvent,
+  OrderBookTemporalMetricsResponse,
   OrderPreviewResponse,
   OrderResponse,
   TradeResponse
@@ -81,6 +83,28 @@ export class TradingService {
       {
         withCredentials: true
       }
+    );
+  }
+
+
+  getOrderBookMetrics(
+    symbol: string
+  ): Observable<OrderBookMetricsResponse> {
+    const normalizedSymbol = symbol.trim().toUpperCase();
+    return this.http.get<OrderBookMetricsResponse>(
+      `${this.apiUrl}/order-book/${encodeURIComponent(normalizedSymbol)}/metrics`,
+      { withCredentials: true }
+    );
+  }
+
+
+  getTemporalMetrics(
+    symbol: string
+  ): Observable<OrderBookTemporalMetricsResponse> {
+    const normalizedSymbol = symbol.trim().toUpperCase();
+    return this.http.get<OrderBookTemporalMetricsResponse>(
+      `${this.apiUrl}/order-book/${encodeURIComponent(normalizedSymbol)}/temporal-metrics`,
+      { withCredentials: true }
     );
   }
 

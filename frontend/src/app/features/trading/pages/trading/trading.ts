@@ -34,8 +34,10 @@ import {
   CandleInterval,
   CreateOrderRequest,
   MarketOverviewResponse,
+  OrderBookMetricsResponse,
   OrderBookLevel,
   OrderBookResponse,
+  OrderBookTemporalMetricsResponse,
   OrderEntryType,
   OrderPreviewResponse,
   OrderResponse,
@@ -47,7 +49,7 @@ import {
 import { TradingService }
   from '../../services/trading.service';
 
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, RouterLink } from '@angular/router';
 
 import { BuyingPowerResponse }
   from '../../../portfolio/models/portfolio.models';
@@ -73,6 +75,10 @@ import { CandleChart }
 interface MarketData {
 
   orderBook: OrderBookResponse;
+
+  metrics: OrderBookMetricsResponse | null;
+
+  temporalMetrics: OrderBookTemporalMetricsResponse | null;
 
   market: MarketOverviewResponse;
 
@@ -117,7 +123,8 @@ interface BookLevelView
   imports: [
     CommonModule,
     ReactiveFormsModule,
-    CandleChart
+    CandleChart,
+    RouterLink
   ],
 
   templateUrl: './trading.html',
@@ -210,6 +217,12 @@ export class Trading
   orderBook:
     OrderBookResponse | null = null;
 
+  metrics:
+    OrderBookMetricsResponse | null = null;
+
+  temporalMetrics:
+    OrderBookTemporalMetricsResponse | null = null;
+
 
   // Carnet avec quantités cumulées (profondeur).
 
@@ -237,6 +250,13 @@ export class Trading
 
   readonly candleIntervals:
     CandleInterval[] = ['1m', '5m', '15m'];
+
+  get bidPressurePercent(): number {
+    const bids = this.metrics?.totalBidVolume ?? 0;
+    const asks = this.metrics?.totalAskVolume ?? 0;
+    const total = bids + asks;
+    return total > 0 ? bids / total * 100 : 50;
+  }
 
 
   // Ordre en cours de modification.
@@ -707,6 +727,16 @@ export class Trading
             symbol
           ),
 
+      metrics:
+        this.tradingService
+          .getOrderBookMetrics(symbol)
+          .pipe(catchError(() => of(null))),
+
+      temporalMetrics:
+        this.tradingService
+          .getTemporalMetrics(symbol)
+          .pipe(catchError(() => of(null))),
+
       market:
         this.tradingService
           .getMarketOverview(
@@ -738,6 +768,10 @@ export class Trading
 
     this.orderBook =
       data.orderBook;
+
+    this.metrics = data.metrics;
+
+    this.temporalMetrics = data.temporalMetrics;
 
     this.market =
       data.market;

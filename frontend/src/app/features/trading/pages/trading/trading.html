@@ -21,6 +21,11 @@
         dans le carnet virtuel.
       </p>
 
+      <a class="chart-shortcut" routerLink="/app/charts">
+        Voir le graphique TradingView
+        <span aria-hidden="true">↗</span>
+      </a>
+
     </div>
 
 
@@ -424,6 +429,80 @@
 
     </article>
 
+  </section>
+
+
+  <section class="microstructure-panel" aria-label="Microstructure du marché">
+    <div class="microstructure-heading">
+      <div>
+        <span class="eyebrow">{{ normalizedSymbol }} · MARCHÉ VIRTUEL</span>
+        <h2>Microstructure du marché</h2>
+      </div>
+      <span class="microstructure-updated" *ngIf="metrics">
+        Actualisé {{ metrics.generatedAt | date:'HH:mm:ss' }}
+      </span>
+    </div>
+
+    <div class="microstructure-grid">
+      <article class="microstructure-card">
+        <span>Meilleur BID</span>
+        <strong class="buy-value">{{ metrics?.bestBid !== null && metrics?.bestBid !== undefined ? (metrics?.bestBid | number:'1.2-8') : '—' }}</strong>
+      </article>
+      <article class="microstructure-card">
+        <span>Meilleur ASK</span>
+        <strong class="sell-value">{{ metrics?.bestAsk !== null && metrics?.bestAsk !== undefined ? (metrics?.bestAsk | number:'1.2-8') : '—' }}</strong>
+      </article>
+      <article class="microstructure-card">
+        <span>Mid-price</span>
+        <strong>{{ metrics?.midPrice !== null && metrics?.midPrice !== undefined ? (metrics?.midPrice | number:'1.2-8') : '—' }}</strong>
+      </article>
+      <article class="microstructure-card">
+        <span>Spread relatif</span>
+        <strong>{{ metrics?.relativeSpreadPercent !== null && metrics?.relativeSpreadPercent !== undefined ? ((metrics?.relativeSpreadPercent | number:'1.2-4') + ' %') : '—' }}</strong>
+      </article>
+      <article class="microstructure-card">
+        <span>Volume BID</span>
+        <strong class="buy-value">{{ metrics?.totalBidVolume | number:'1.0-4' }}</strong>
+      </article>
+      <article class="microstructure-card">
+        <span>Volume ASK</span>
+        <strong class="sell-value">{{ metrics?.totalAskVolume | number:'1.0-4' }}</strong>
+      </article>
+      <article class="microstructure-card">
+        <span>Profondeur BID pondérée</span>
+        <strong class="buy-value">{{ metrics?.weightedBidDepth !== null && metrics?.weightedBidDepth !== undefined ? (metrics?.weightedBidDepth | number:'1.2-4') : '—' }}</strong>
+      </article>
+      <article class="microstructure-card">
+        <span>Profondeur ASK pondérée</span>
+        <strong class="sell-value">{{ metrics?.weightedAskDepth !== null && metrics?.weightedAskDepth !== undefined ? (metrics?.weightedAskDepth | number:'1.2-4') : '—' }}</strong>
+      </article>
+      <article class="microstructure-card">
+        <span>Volatilité · 60 s</span>
+        <strong>{{ temporalMetrics?.volatility60sPercent !== null && temporalMetrics?.volatility60sPercent !== undefined ? ((temporalMetrics?.volatility60sPercent | number:'1.2-4') + ' %') : '—' }}</strong>
+      </article>
+      <article class="microstructure-card">
+        <span>Momentum · 30 s</span>
+        <strong [class.buy-value]="(temporalMetrics?.momentum30sPercent ?? 0) > 0" [class.sell-value]="(temporalMetrics?.momentum30sPercent ?? 0) < 0">
+          {{ temporalMetrics?.momentum30sPercent !== null && temporalMetrics?.momentum30sPercent !== undefined ? ((temporalMetrics?.momentum30sPercent | number:'1.2-4') + ' %') : '—' }}
+        </strong>
+      </article>
+    </div>
+
+    <div class="pressure-visual" *ngIf="metrics">
+      <div class="pressure-labels">
+        <span class="buy-value">Pression acheteurs · {{ bidPressurePercent | number:'1.0-0' }} %</span>
+        <span class="sell-value">Pression vendeurs · {{ 100 - bidPressurePercent | number:'1.0-0' }} %</span>
+      </div>
+      <div class="pressure-track" role="img" [attr.aria-label]="'Répartition des volumes : ' + (bidPressurePercent | number:'1.0-0') + ' pour cent acheteurs'">
+        <span class="pressure-bids" [style.width.%]="bidPressurePercent"></span>
+        <span class="pressure-asks" [style.width.%]="100 - bidPressurePercent"></span>
+      </div>
+      <div class="pressure-caption">
+        <span>Déséquilibre du carnet (OBI)</span>
+        <strong>{{ metrics.orderBookImbalance !== null ? (metrics.orderBookImbalance | number:'1.3-3') : '—' }}</strong>
+        <span>{{ temporalMetrics?.observationCount ?? 0 }} observations sur 60 s</span>
+      </div>
+    </div>
   </section>
 
 
