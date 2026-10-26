@@ -15,6 +15,7 @@ import tn.esprit.simulateurbackend.entity.Trade;
 import tn.esprit.simulateurbackend.entity.User;
 
 import tn.esprit.simulateurbackend.repository.OrderRepository;
+import tn.esprit.simulateurbackend.repository.AssetRepository;
 import tn.esprit.simulateurbackend.repository.TradeRepository;
 
 import java.math.BigDecimal;
@@ -47,7 +48,12 @@ class MatchingEngineServiceTest {
         matchingEngineService =
                 new MatchingEngineService(
                         orderRepository,
-                        tradeRepository
+                        tradeRepository,
+                        mock(AssetRepository.class),
+                        mock(MarketDataService.class),
+                        mock(TradingRulesService.class),
+                        mock(LinkedOrderService.class),
+                        mock(OrderValidator.class)
                 );
     }
 
@@ -876,10 +882,10 @@ class MatchingEngineServiceTest {
          */
         when(
                 orderRepository
-                        .findMarketBids(
+                        .findMatchingBids(
                                 eq("AAPL"),
                                 eq(OrderSide.BUY),
-                                anyList(),
+                                anyList(), any(),
                                 eq(10L)
                         )
         ).thenReturn(
@@ -1139,10 +1145,10 @@ class MatchingEngineServiceTest {
 
         when(
                 orderRepository
-                        .findMarketAsks(
+                        .findMatchingAsks(
                                 eq("AAPL"),
                                 eq(OrderSide.SELL),
-                                anyList(),
+                                anyList(), any(),
                                 eq(20L)
                         )
         ).thenReturn(
@@ -1316,7 +1322,7 @@ class MatchingEngineServiceTest {
         );
     }
     @Test
-    void shouldCancelMarketBuyWhenOrderBookIsEmpty() {
+    void shouldRejectMarketBuyWhenOrderBookIsEmpty() {
 
         User buyer =
                 mock(User.class);
@@ -1369,10 +1375,10 @@ class MatchingEngineServiceTest {
          */
         when(
                 orderRepository
-                        .findMarketAsks(
+                        .findMatchingAsks(
                                 eq("AAPL"),
                                 eq(OrderSide.SELL),
-                                anyList(),
+                                anyList(), any(),
                                 eq(30L)
                         )
         ).thenReturn(
@@ -1411,7 +1417,7 @@ class MatchingEngineServiceTest {
         // Rien n'a été exécuté :
         //
         // quantité restante = 10
-        // statut = CANCELLED
+        // statut = REJECTED (aucune liquidité)
         // =====================================================
 
         assertDecimal(
@@ -1421,7 +1427,7 @@ class MatchingEngineServiceTest {
 
 
         assertEquals(
-                OrderStatus.CANCELLED,
+                OrderStatus.REJECTED,
                 marketBuy.getStatus()
         );
 

@@ -116,6 +116,12 @@ export const routes: Routes = [
         component:
           ProfileComponent
       },
+      {
+  path: 'scenarios',
+  loadComponent: () =>
+    import('./features/scenarios/scenario-lab.component')
+      .then(m => m.ScenarioLabComponent)
+},
 
 
       // =====================
