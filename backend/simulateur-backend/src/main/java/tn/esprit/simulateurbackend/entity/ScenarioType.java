@@ -1,4 +1,5 @@
-package tn.esprit.simulateurbackend.scenario;
+package tn.esprit.simulateurbackend.entity;
 
-public class ScenarioType {
+public enum ScenarioType {
+    CRASH
 }

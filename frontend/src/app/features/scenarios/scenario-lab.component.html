@@ -1,0 +1,1099 @@
+  <div class="scenario-lab">
+
+      <div class="heading">
+        <div>
+          <span class="eyebrow">MARKET SIMULATION</span>
+          <h1>Market Scenario Lab</h1>
+          <p>Simulation de crises et surveillance du marché</p>
+        </div>
+
+        <span
+          class="status-badge"
+          [class.active]="status?.active"
+        >
+          {{ status?.active ? '● CRISE ACTIVE' : '● MARCHÉ NORMAL' }}
+        </span>
+      </div>
+
+      <div class="controls">
+
+        <div class="field">
+          <label for="scenario-symbol">Actif</label>
+          <select
+            id="scenario-symbol"
+            [(ngModel)]="symbol"
+            (ngModelChange)="onSymbolChange()"
+            [disabled]="busy"
+          >
+            @for (asset of assets; track asset) {
+              <option [value]="asset">{{ asset }}</option>
+            }
+          </select>
+        </div>
+
+        <div class="field">
+          <label for="scenario-intensity">
+            Intensité : {{ intensity * 100 | number:'1.0-0' }} %
+          </label>
+          <input
+            id="scenario-intensity"
+            type="range"
+            min="0.1"
+            max="1"
+            step="0.1"
+            [(ngModel)]="intensity"
+            [disabled]="busy"
+          />
+        </div>
+
+        <div class="field">
+          <label for="scenario-duration">Durée</label>
+          <select
+            id="scenario-duration"
+            [(ngModel)]="durationSeconds"
+            [disabled]="busy"
+          >
+            <option [ngValue]="30">30 secondes</option>
+            <option [ngValue]="60">60 secondes</option>
+            <option [ngValue]="120">120 secondes</option>
+            <option [ngValue]="300">300 secondes</option>
+          </select>
+        </div>
+
+        <button
+          class="start-button"
+          (click)="startScenario()"
+          [disabled]="busy || status?.active"
+        >
+          Démarrer le krach
+        </button>
+
+        <button
+          class="stop-button"
+          (click)="stopScenario()"
+          [disabled]="busy || !status?.active"
+        >
+          Arrêter
+        </button>
+
+      </div>
+
+      @if (status?.active) {
+        <div class="scenario-info">
+          <strong>Scénario actif : {{ status?.type }}</strong>
+          <span>Actif : {{ status?.symbol }}</span>
+          <span>
+            Temps restant :
+            {{ status?.remainingSeconds }} s
+          </span>
+        </div>
+      }
+
+      @if (actionError) {
+        <p class="error">{{ actionError }}</p>
+      }
+
+      @if (statusError) {
+        <p class="error">{{ statusError }}</p>
+      }
+
+      <div class="metrics">
+
+        <div class="metric">
+          <span>PRIX DE RÉFÉRENCE</span>
+          <strong>
+            @if (market?.referencePrice != null) {
+              {{ market?.referencePrice | number:'1.2-4' }}
+            } @else {
+              —
+            }
+          </strong>
+          <small>Prix initial de l'actif</small>
+        </div>
+
+        <div class="metric">
+          <span>MID-PRICE COTÉ</span>
+          <strong>
+            @if (market?.quotedMidPrice != null) {
+              {{ market?.quotedMidPrice | number:'1.2-4' }}
+            } @else {
+              En attente
+            }
+          </strong>
+          <small>Calculé par le Market Maker</small>
+        </div>
+
+        <div class="metric">
+          <span>VARIATION</span>
+          <strong
+            [class.negative]="
+              (market?.variationPercent ?? 0) < 0
+            "
+            [class.positive]="
+              (market?.variationPercent ?? 0) > 0
+            "
+          >
+            @if (market?.variationPercent != null) {
+              {{ market!.variationPercent! > 0 ? '+' : '' }}
+              {{ market!.variationPercent | number:'1.4-4' }} %
+            } @else {
+              —
+            }
+          </strong>
+          <small>Par rapport au prix de référence</small>
+        </div>
+
+        <div class="metric">
+          <span>DERNIÈRE OBSERVATION</span>
+          <strong>
+            @if (market?.capturedAt) {
+              {{ market?.capturedAt | date:'HH:mm:ss' }}
+            } @else {
+              —
+            }
+          </strong>
+          <small>Actualisation toutes les 2 s</small>
+        </div>
+
+      </div>
+
+      @if (marketError) {
+        <p class="error">{{ marketError }}</p>
+      }
+
+<section class="liquidity-section">
+
+  <div class="liquidity-heading">
+    <h2>Liquidité du marché</h2>
+    <p>
+      Microstructure réelle du carnet d'ordres — {{ symbol }}
+    </p>
+  </div>
+
+  <div class="metrics">
+
+    <div class="metric">
+      <span>MEILLEUR BID</span>
+
+      <strong class="positive">
+        @if (orderBookMetrics?.bestBid != null) {
+          {{ orderBookMetrics?.bestBid | number:'1.2-4' }}
+        } @else {
+          —
+        }
+      </strong>
+
+      <small>Meilleur prix d'achat disponible</small>
+    </div>
+
+    <div class="metric">
+      <span>MEILLEUR ASK</span>
+
+      <strong class="negative">
+        @if (orderBookMetrics?.bestAsk != null) {
+          {{ orderBookMetrics?.bestAsk | number:'1.2-4' }}
+        } @else {
+          —
+        }
+      </strong>
+
+      <small>Meilleur prix de vente disponible</small>
+    </div>
+
+    <div class="metric">
+      <span>SPREAD</span>
+
+      <strong>
+        @if (orderBookMetrics?.spread != null) {
+          {{ orderBookMetrics?.spread | number:'1.2-4' }}
+        } @else {
+          —
+        }
+      </strong>
+
+      <small>Écart ASK − BID</small>
+    </div>
+
+    <div class="metric">
+      <span>SPREAD RELATIF</span>
+
+      <strong>
+        @if (orderBookMetrics?.relativeSpreadPercent != null) {
+          {{ orderBookMetrics?.relativeSpreadPercent | number:'1.2-3' }} %
+        } @else {
+          —
+        }
+      </strong>
+
+      <small>Coût de liquidité en pourcentage</small>
+    </div>
+
+  </div>
+
+  @if (orderBookMetricsError) {
+    <p class="error">{{ orderBookMetricsError }}</p>
+  }
+
+
+</section>
+
+<section class="recovery-monitor">
+
+  <div class="recovery-header">
+
+    <div>
+      <h2>Market Recovery Monitor</h2>
+      <p>
+        Surveillance du stress de liquidité — {{ symbol }}
+      </p>
+    </div>
+
+    @if (recovery) {
+
+      <span
+        class="phase-label"
+        [class.phase-crash]="recovery.phase === 'CRASH'"
+        [class.phase-recovery]="recovery.phase === 'RECOVERY'"
+        [class.phase-normal]="recovery.phase === 'NORMAL'"
+      >
+        {{ recovery.phase }}
+      </span>
+
+    }
+
+  </div>
+
+  @if (recovery) {
+
+    <div class="recovery-stats">
+
+      <div class="recovery-stat">
+        <span>STRESS RÉSIDUEL</span>
+
+        <strong>
+          {{
+            recovery.residualIntensity * 100
+              | number:'1.2-2'
+          }} %
+        </strong>
+      </div>
+
+      <div class="recovery-stat">
+        <span>TEMPS RESTANT</span>
+
+        <strong>
+          {{ recovery.remainingSeconds }} s
+        </strong>
+      </div>
+
+    </div>
+
+    <div
+      class="recovery-progress"
+      role="progressbar"
+      [attr.aria-valuenow]="recovery.residualIntensity * 100"
+      aria-valuemin="0"
+      aria-valuemax="100"
+      aria-label="Intensité du stress de liquidité"
+    >
+      <div
+        class="recovery-progress-fill"
+        [style.width.%]="recovery.residualIntensity * 100"
+        [class.fill-crash]="recovery.phase === 'CRASH'"
+        [class.fill-recovery]="recovery.phase === 'RECOVERY'"
+      ></div>
+    </div>
+
+    @if (recovery.phase === 'CRASH') {
+      <p class="recovery-description">
+        Choc de marché actif : le spread et les quantités
+        disponibles subissent le stress du scénario.
+      </p>
+    }
+
+    @if (recovery.phase === 'RECOVERY') {
+      <p class="recovery-description">
+        Le choc baissier du scénario est terminé.
+        La liquidité se restaure progressivement.
+      </p>
+    }
+
+    @if (recovery.phase === 'NORMAL') {
+      <p class="recovery-description">
+        Aucun stress de scénario actif sur cet actif.
+      </p>
+    }
+
+  } @else {
+
+    <p class="recovery-description">
+      En attente de l'état du marché...
+    </p>
+
+  }
+
+  @if (recoveryError) {
+    <p class="error">{{ recoveryError }}</p>
+  }
+
+</section>
+
+<!-- ======================================= -->
+<!-- LIQUIDITY RECOVERY TIME DASHBOARD -->
+<!-- ======================================= -->
+
+<section class="lrt-panel">
+
+  <div class="lrt-header">
+
+    <div>
+      <span class="lrt-eyebrow">MARKET RESILIENCE</span>
+
+      <h2>Liquidity Recovery Time</h2>
+
+      <p>
+        Rétablissement effectif de la liquidité — {{ symbol }}
+      </p>
+    </div>
+
+    @if (liquidityRecovery; as lrt) {
+
+      <span
+        class="lrt-badge"
+        [class.lrt-badge-crash]="lrt.phase === 'CRASH'"
+        [class.lrt-badge-recovering]="lrt.phase === 'RECOVERING'"
+        [class.lrt-badge-stabilizing]="lrt.phase === 'STABILIZING'"
+        [class.lrt-badge-recovered]="lrt.phase === 'RECOVERED'"
+      >
+
+        @switch (lrt.phase) {
+
+          @case ('CRASH') {
+            CRASH
+          }
+
+          @case ('RECOVERING') {
+            RECOVERING
+          }
+
+          @case ('STABILIZING') {
+            STABILIZING
+          }
+
+          @case ('RECOVERED') {
+            RECOVERED
+          }
+
+          @default {
+            NOT STARTED
+          }
+
+        }
+
+      </span>
+
+    } @else {
+
+      <span class="lrt-badge">
+        NOT STARTED
+      </span>
+
+    }
+
+  </div>
+
+  @if (liquidityRecovery; as lrt) {
+
+    <!-- CONDITIONS DE RECUPERATION -->
+
+    <div class="lrt-metrics">
+
+      <!-- SPREAD -->
+
+      <div class="lrt-metric-card">
+
+        <span class="lrt-metric-label">
+          SPREAD ACTUEL
+        </span>
+
+        <strong class="lrt-metric-value">
+          @if (lrt.currentSpread !== null) {
+            {{ lrt.currentSpread | number:'1.2-4' }}
+          } @else {
+            —
+          }
+        </strong>
+
+        <div class="lrt-metric-reference">
+          Avant CRASH :
+          {{ lrt.baselineSpread | number:'1.2-4' }}
+        </div>
+
+        <div class="lrt-metric-threshold">
+          Seuil acceptable :
+          ≤ {{ lrt.spreadThreshold | number:'1.2-4' }}
+        </div>
+
+        @if (lrt.currentSpread !== null) {
+
+          <span
+            class="lrt-condition"
+            [class.lrt-condition-ok]="
+              lrt.currentSpread <= lrt.spreadThreshold
+            "
+            [class.lrt-condition-failed]="
+              lrt.currentSpread > lrt.spreadThreshold
+            "
+          >
+
+            @if (lrt.currentSpread <= lrt.spreadThreshold) {
+              ✓ Condition respectée
+            } @else {
+              ✕ Spread trop élevé
+            }
+
+          </span>
+
+        } @else {
+
+          <span class="lrt-condition lrt-condition-pending">
+            En attente de mesure
+          </span>
+
+        }
+
+      </div>
+
+      <!-- PROFONDEUR -->
+
+      <div class="lrt-metric-card">
+
+        <span class="lrt-metric-label">
+          PROFONDEUR DU CARNET
+        </span>
+
+        <strong class="lrt-metric-value">
+          @if (lrt.currentDepth !== null) {
+            {{ lrt.currentDepth | number:'1.2-4' }}
+          } @else {
+            —
+          }
+        </strong>
+
+        <div class="lrt-metric-reference">
+          Avant CRASH :
+          {{ lrt.baselineDepth | number:'1.2-4' }}
+        </div>
+
+        <div class="lrt-metric-threshold">
+          Seuil acceptable :
+          ≥ {{ lrt.depthThreshold | number:'1.2-4' }}
+        </div>
+
+        @if (lrt.currentDepth !== null) {
+
+          <span
+            class="lrt-condition"
+            [class.lrt-condition-ok]="
+              lrt.currentDepth >= lrt.depthThreshold
+            "
+            [class.lrt-condition-failed]="
+              lrt.currentDepth < lrt.depthThreshold
+            "
+          >
+
+            @if (lrt.currentDepth >= lrt.depthThreshold) {
+              ✓ Condition respectée
+            } @else {
+              ✕ Profondeur insuffisante
+            }
+
+          </span>
+
+        } @else {
+
+          <span class="lrt-condition lrt-condition-pending">
+            En attente de mesure
+          </span>
+
+        }
+
+      </div>
+
+    </div>
+
+    <!-- RESULTAT ET ETAT DE LA RECUPERATION -->
+
+    <div class="lrt-result">
+
+      @switch (lrt.phase) {
+
+        @case ('CRASH') {
+
+          <div class="lrt-result-title">
+            Choc de marché en cours
+          </div>
+
+          <p>
+            Le calcul du temps de récupération commencera
+            après la fin du CRASH.
+          </p>
+
+        }
+
+        @case ('RECOVERING') {
+
+          <div class="lrt-result-title">
+            Récupération de la liquidité en cours
+          </div>
+
+          <p>
+            Le spread et la profondeur ne respectent
+            pas encore simultanément les seuils définis.
+          </p>
+
+        }
+
+        @case ('STABILIZING') {
+
+          <div class="lrt-result-title">
+            Stabilisation en cours
+          </div>
+
+          <p>
+            Les deux conditions sont satisfaites.
+            Le système vérifie leur maintien pendant
+            10 secondes consécutives d'observation.
+          </p>
+
+        }
+
+        @case ('RECOVERED') {
+
+          <div class="lrt-result-title">
+            Liquidité rétablie
+          </div>
+
+          <div class="lrt-final-time">
+
+            @if (lrt.recoveryTimeSeconds !== null) {
+
+              {{ lrt.recoveryTimeSeconds }} s
+
+            } @else {
+
+              —
+
+            }
+
+          </div>
+
+          <p>
+            Temps de récupération observé après la
+            première détection de la fin du CRASH.
+            Les seuils ont été respectés pendant
+            au moins 10 secondes d'observation.
+          </p>
+
+        }
+
+        @default {
+
+          <div class="lrt-result-title">
+            En attente du scénario
+          </div>
+
+        }
+
+      }
+
+    </div>
+
+    <p class="lrt-footnote">
+      Critères expérimentaux :
+      spread ≤ 110 % de sa valeur initiale,
+      profondeur ≥ 90 % de sa valeur initiale,
+      avec 10 secondes de stabilité.
+      Mesure réalisée à partir des observations Angular.
+    </p>
+
+  } @else {
+
+    <!-- AUCUN SCENARIO ENREGISTRE -->
+
+    <div class="lrt-empty">
+
+      <div class="lrt-empty-icon">◷</div>
+
+      <h3>Aucune mesure disponible</h3>
+
+      <p>
+        Démarre un scénario CRASH pour enregistrer
+        le spread et la profondeur de référence.
+        Le temps de récupération sera ensuite calculé
+        automatiquement à partir des cotations du carnet.
+      </p>
+
+    </div>
+
+  }
+
+</section>
+
+<section class="chart-panel impact-panel">
+
+  <div class="chart-heading">
+    <div>
+      <h2>Portfolio Stress Impact</h2>
+      <p>
+        Valorisation du portefeuille connecté aux
+        cotations du Market Maker
+      </p>
+    </div>
+  </div>
+
+  @if (portfolioStressError) {
+    <p class="error">{{ portfolioStressError }}</p>
+  }
+
+  @if (portfolioStress; as stress) {
+
+    <div class="metrics">
+
+      <div class="metric">
+        <span>VALEUR NORMALE</span>
+
+        <strong>
+          {{ stress.normalTotalValue | number:'1.2-2' }}
+        </strong>
+
+        <small>{{ stress.currency }} — Derniers cours</small>
+      </div>
+
+      <div class="metric">
+        <span>VALEUR AUX COTATIONS</span>
+
+        <strong>
+          @if (stress.quotedTotalValue !== null) {
+            {{ stress.quotedTotalValue | number:'1.2-2' }}
+          } @else {
+            —
+          }
+        </strong>
+
+        <small>{{ stress.currency }} — Mid-prices cotés</small>
+      </div>
+
+      <div class="metric">
+        <span>ÉCART DE VALORISATION</span>
+
+        <strong
+          [class.negative]="
+            (stress.valuationDifference ?? 0) < 0
+          "
+          [class.positive]="
+            (stress.valuationDifference ?? 0) > 0
+          "
+        >
+          @if (stress.valuationDifference !== null) {
+            {{ stress.valuationDifference | number:'1.2-2' }}
+          } @else {
+            —
+          }
+        </strong>
+
+        <small>{{ stress.currency }}</small>
+      </div>
+
+      <div class="metric">
+        <span>IMPACT SUR LE PORTEFEUILLE</span>
+
+        <strong
+          [class.negative]="
+            (stress.valuationDifferencePercent ?? 0) < 0
+          "
+          [class.positive]="
+            (stress.valuationDifferencePercent ?? 0) > 0
+          "
+        >
+          @if (stress.valuationDifferencePercent !== null) {
+            {{ stress.valuationDifferencePercent | number:'1.2-2' }} %
+          } @else {
+            —
+          }
+        </strong>
+
+        <small>Variation indicative</small>
+      </div>
+
+    </div>
+
+    @if (!stress.quoteCoverageComplete) {
+      <p class="notice">
+        Cotations incomplètes : certaines positions ne disposent
+        pas encore d'un mid-price exploitable.
+        L'impact global est indisponible.
+      </p>
+    }
+
+    @if (stress.positions.length > 0) {
+
+      <div
+        class="impact-scroll"
+        role="region"
+        aria-label="Impact de valorisation par position"
+        tabindex="0"
+      >
+        <table>
+          <thead>
+            <tr>
+              <th scope="col">Actif</th>
+              <th scope="col">Quantité</th>
+              <th scope="col">Dernier cours</th>
+              <th scope="col">Mid-price coté</th>
+              <th scope="col">Valeur cotée</th>
+              <th scope="col">Écart</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            @for (position of stress.positions;
+                  track position.assetSymbol) {
+
+              <tr>
+                <th scope="row">
+                  {{ position.assetSymbol }}
+                </th>
+
+                <td>
+                  {{ position.quantity | number:'1.0-4' }}
+                </td>
+
+                <td>
+                  {{ position.lastTradePrice | number:'1.2-4' }}
+                </td>
+
+                <td>
+                  @if (position.quotedMidPrice !== null) {
+                    {{ position.quotedMidPrice | number:'1.2-4' }}
+                  } @else {
+                    —
+                  }
+                </td>
+
+                <td>
+                  @if (position.quotedMarketValue !== null) {
+                    {{ position.quotedMarketValue | number:'1.2-2' }}
+                  } @else {
+                    —
+                  }
+                </td>
+
+                <td
+                  [class.negative]="
+                    (position.valuationDifference ?? 0) < 0
+                  "
+                  [class.positive]="
+                    (position.valuationDifference ?? 0) > 0
+                  "
+                >
+                  @if (position.valuationDifference !== null) {
+                    {{ position.valuationDifference | number:'1.2-2' }}
+                  } @else {
+                    —
+                  }
+                </td>
+              </tr>
+
+            }
+          </tbody>
+        </table>
+      </div>
+
+    } @else {
+
+      <p class="notice">
+        Aucune position ouverte sur le portefeuille
+        du compte connecté.
+      </p>
+
+    }
+
+    <p class="notice">
+      Comparaison indicative entre les derniers prix
+      exécutés et les cotations du Market Maker.
+      Elle n'isole pas exclusivement l'effet du CRASH.
+      Aucun solde ni aucune transaction n'est modifié.
+    </p>
+
+  } @else if (!portfolioStressError) {
+
+    <p class="notice">
+      Chargement des données du portefeuille...
+    </p>
+
+  }
+
+</section>
+
+
+
+      <section class="chart-panel impact-panel" aria-labelledby="impact-title">
+        <div class="chart-heading">
+          <div>
+            <h2 id="impact-title">Stress Impact Dashboard</h2>
+            <p>Prix, spread et profondeur : trois effets distincts sur le marché.</p>
+          </div>
+          @if (baseline) { <span class="status-badge">{{ impactPhase }}</span> }
+        </div>
+        @if (baseline) {
+          <p class="notice">
+            Référence {{ baseline.market.symbol }} avant lancement : prix à {{ baseline.market.capturedAt | date:'HH:mm:ss' }},
+            carnet à {{ baseline.book.generatedAt | date:'HH:mm:ss' }}.
+          </p>
+          <div class="impact-scroll" role="region" aria-label="Comparaison avant et après lancement du krach" tabindex="0">
+            <table>
+              <thead><tr><th scope="col">Indicateur</th><th scope="col">Avant CRASH</th><th scope="col">Observation actuelle</th><th scope="col">Impact</th></tr></thead>
+              <tbody>
+                @for (row of impactRows; track row.label) {
+                  <tr>
+                    <th scope="row">{{ row.label }}<small>{{ row.meaning }}</small></th>
+                    <td>{{ row.before == null ? '—' : (row.before | number:'1.2-4') }}</td>
+                    <td>{{ row.current == null ? '—' : (row.current | number:'1.2-4') }}</td>
+                    <td>
+                      @if (row.impact != null) {
+                        {{ row.impact > 0 ? '+' : '' }}{{ row.impact | number:(row.unit === 'pt' ? '1.4-4' : '1.2-2') }} {{ row.unit }}
+                      } @else { — }
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+          <p class="notice">Profondeur = volume total BID + ASK renvoyé par le carnet. Un pourcentage est indisponible si la référence est nulle ou égale à zéro. Les deux API sont interrogées séparément ; ces écarts décrivent les observations et n’isolent pas l’effet des autres ordres.</p>
+        } @else {
+          <p class="notice">Au prochain démarrage, les prix et le carnet seront relevés avant de lancer le CRASH. La référence reste disponible jusqu’au changement d’actif, au prochain lancement ou au rechargement de la page.</p>
+        }
+      </section>
+      
+<section class="chart-panel market-chart-panel">
+
+  <div class="chart-heading">
+
+    <div>
+      <h2>Évolution du prix coté</h2>
+      <p>
+        {{ symbol }} · Cotations du Market Maker en temps réel
+      </p>
+    </div>
+
+    <div class="legend">
+      <span class="legend-price">● Mid-price coté</span>
+      <span class="legend-reference">┄ Prix de référence</span>
+
+      @if (baseline?.market?.quotedMidPrice != null) {
+        <span class="legend-before">
+          ┄ Prix avant CRASH
+        </span>
+      }
+    </div>
+
+  </div>
+
+  @if (priceHistory.length >= 2) {
+
+    <div class="market-chart-viewport">
+
+      <svg
+        class="price-chart"
+        viewBox="0 0 940 340"
+        preserveAspectRatio="xMidYMid meet"
+        role="img"
+        [attr.aria-label]="
+          'Évolution du mid-price coté de ' + symbol
+        "
+      >
+
+        <!-- GRADUATIONS DE PRIX ET GRILLE -->
+
+        @for (tick of yAxisTicks; track $index) {
+
+          <line
+            x1="78"
+            [attr.y1]="tick.y"
+            x2="870"
+            [attr.y2]="tick.y"
+            class="chart-grid-line"
+          />
+
+          <text
+            x="66"
+            [attr.y]="tick.y + 4"
+            text-anchor="end"
+            class="chart-axis-label"
+          >
+            {{ tick.price | number:'1.2-4' }}
+          </text>
+
+        }
+
+        <!-- GRADUATIONS DU TEMPS -->
+
+        @for (tick of timeAxisTicks; track $index) {
+
+          <line
+            [attr.x1]="tick.x"
+            y1="30"
+            [attr.x2]="tick.x"
+            y2="278"
+            class="chart-grid-line chart-grid-vertical"
+          />
+
+          <text
+            [attr.x]="tick.x"
+            y="305"
+            text-anchor="middle"
+            class="chart-axis-label"
+          >
+            {{ tick.time | date:'HH:mm:ss' }}
+          </text>
+
+        }
+
+        <!-- PRIX DE RÉFÉRENCE -->
+
+        @if (referenceY !== null) {
+
+          <line
+            x1="78"
+            [attr.y1]="referenceY"
+            x2="870"
+            [attr.y2]="referenceY"
+            class="chart-reference-line"
+          />
+
+        }
+
+        <!-- PRIX JUSTE AVANT LE CRASH -->
+
+        @if (baselineY !== null) {
+
+          <line
+            x1="78"
+            [attr.y1]="baselineY"
+            x2="870"
+            [attr.y2]="baselineY"
+            class="chart-before-line"
+          />
+
+        }
+
+        <!-- COURBE DU MARKET MAKER -->
+
+        <polyline
+          [attr.points]="chartPoints"
+          class="chart-price-line"
+        />
+
+        <!-- POINTS SURVOLABLES -->
+
+        @for (point of chartDataPoints; track $index) {
+
+          <circle
+            [attr.cx]="point.x"
+            [attr.cy]="point.y"
+            r="9"
+            class="chart-hover-point"
+          >
+            <title>
+              {{ point.time | date:'HH:mm:ss' }}
+              — {{ point.price | number:'1.2-4' }}
+            </title>
+          </circle>
+
+        }
+
+        <!-- DERNIERE COTATION -->
+
+        @if (lastChartPoint; as last) {
+
+          <circle
+            [attr.cx]="last.x"
+            [attr.cy]="last.y"
+            r="5"
+            class="chart-last-point"
+          />
+
+          <text
+            [attr.x]="last.x - 12"
+            [attr.y]="last.y - 13"
+            text-anchor="end"
+            class="chart-last-label"
+          >
+            {{ last.price | number:'1.2-4' }}
+          </text>
+
+        }
+
+        <!-- TITRE AXE HORIZONTAL -->
+
+        <text
+          x="474"
+          y="330"
+          text-anchor="middle"
+          class="chart-axis-title"
+        >
+          Heure des observations
+        </text>
+
+      </svg>
+
+    </div>
+
+    <div class="chart-summary">
+
+      <span>
+        Minimum :
+        <strong>
+          {{ minObservedPrice | number:'1.2-4' }}
+        </strong>
+      </span>
+
+      <span>
+        Maximum :
+        <strong>
+          {{ maxObservedPrice | number:'1.2-4' }}
+        </strong>
+      </span>
+
+      <span>
+        Dernier prix :
+        <strong>
+          {{ lastChartPoint?.price | number:'1.2-4' }}
+        </strong>
+      </span>
+
+      <span>
+        {{ priceHistory.length }} observations
+      </span>
+
+    </div>
+
+  } @else {
+
+    <div class="chart-empty">
+      En attente des premières cotations...
+    </div>
+
+  }
+
+</section>
+
+ 
+      <p class="notice">
+        Le graphique représente le mid-price coté et non
+        nécessairement le dernier prix exécuté.
+        Historique temporaire conservé dans le navigateur.
+      </p>
+
+    </div>

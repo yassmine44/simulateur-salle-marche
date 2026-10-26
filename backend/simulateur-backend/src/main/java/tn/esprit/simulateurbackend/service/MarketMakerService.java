@@ -6,6 +6,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import tn.esprit.simulateurbackend.entity.Asset;
+import tn.esprit.simulateurbackend.entity.ScenarioType;
+import tn.esprit.simulateurbackend.dto.ScenarioStatusResponse;
 import tn.esprit.simulateurbackend.entity.Order;
 import tn.esprit.simulateurbackend.entity.OrderSide;
 import tn.esprit.simulateurbackend.entity.OrderStatus;
@@ -24,6 +26,7 @@ import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Locale;
 import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -74,6 +77,10 @@ public class MarketMakerService {
 
     private static final double MEAN_REVERSION = 0.02;
 
+
+    // Retrait maximal de liquidité pendant un CRASH.
+    private static final double MAX_BID_WITHDRAWAL = 0.80;
+    private static final double MAX_ASK_WITHDRAWAL = 0.30;
     /*
      * Impact de marché (loi en racine carrée).
      *
@@ -107,6 +114,7 @@ public class MarketMakerService {
     private final MarketDataService marketDataService;
     private final TradeRepository tradeRepository;
     private final ApplicationEventPublisher eventPublisher;
+    private final ScenarioService scenarioService;
 
     private final Map<String, BigDecimal> midPrices =
             new ConcurrentHashMap<>();
@@ -134,7 +142,8 @@ public class MarketMakerService {
             MatchingEngineService matchingEngineService,
             MarketDataService marketDataService,
             TradeRepository tradeRepository,
-            ApplicationEventPublisher eventPublisher
+            ApplicationEventPublisher eventPublisher,
+            ScenarioService scenarioService
     ) {
         this.tradeRepository = tradeRepository;
         this.orderRepository = orderRepository;
@@ -143,12 +152,21 @@ public class MarketMakerService {
         this.matchingEngineService = matchingEngineService;
         this.marketDataService = marketDataService;
         this.eventPublisher = eventPublisher;
+        this.scenarioService = scenarioService;
     }
 
 
     // =========================================
     // QUOTABLE ASSETS
     // =========================================
+
+    /** Last calculated quote, or null before the first market-maker cycle. */
+    public BigDecimal currentQuotedMidPrice(String symbol) {
+        if (symbol == null || symbol.isBlank()) {
+            return null;
+        }
+        return midPrices.get(symbol.trim().toUpperCase(Locale.ROOT));
+    }
 
     @Transactional(readOnly = true)
     public List<String> quotableSymbols() {
@@ -206,7 +224,40 @@ public class MarketMakerService {
         // exprimée en nombre de tailles typiques.
         double flowPressure = flowPressure(asset);
 
-        BigDecimal mid = nextMidPrice(asset, flowPressure);
+        // One snapshot per quote cycle keeps price and spread consistent at expiry.
+
+
+        ScenarioStatusResponse scenario = scenarioService.status();
+
+// Le krach est-il actif sur CET actif ?
+        boolean crashActive =
+                scenario.active()
+                        && scenario.type() == ScenarioType.CRASH
+                        && asset.getSymbol().equalsIgnoreCase(
+                        scenario.symbol()
+                );
+
+// Intensité du choc baissier :
+// uniquement pendant CRASH.
+        double crashIntensity = crashActive
+                ? scenario.intensity().doubleValue()
+                : 0.0;
+
+// Intensité du stress de liquidité :
+// CRASH actif ou récupération progressive.
+        double liquidityIntensity = crashActive
+                ? crashIntensity
+                : scenarioService.recoveryIntensity(
+                asset.getSymbol()
+        );
+
+// IMPORTANT : la récupération ne doit pas
+// prolonger la dérive baissière du prix.
+        BigDecimal mid = nextMidPrice(
+                asset,
+                flowPressure,
+                crashIntensity
+        );
 
         BigDecimal tick = asset.getTickSize();
 
@@ -222,7 +273,7 @@ public class MarketMakerService {
                 mid.multiply(HALF_SPREAD_RATIO)
                         .multiply(
                                 BigDecimal.valueOf(
-                                        1 + MAX_SPREAD_WIDENING * stress
+                                        (1 + MAX_SPREAD_WIDENING * stress) * (1 + 2 * liquidityIntensity)
                                 )
                         )
                         .max(tick);
@@ -273,6 +324,21 @@ public class MarketMakerService {
 
             BigDecimal quantity =
                     levelQuantity(asset, mid, level);
+            BigDecimal bidQuantity =
+                    stressedQuoteQuantity(
+                            asset,
+                            quantity,
+                            OrderSide.BUY,
+                            liquidityIntensity
+                    );
+
+            BigDecimal askQuantity =
+                    stressedQuoteQuantity(
+                            asset,
+                            quantity,
+                            OrderSide.SELL,
+                            liquidityIntensity
+                    );
 
             if (firstLevelQuantity == null) {
                 firstLevelQuantity = quantity;
@@ -288,7 +354,7 @@ public class MarketMakerService {
                                 asset.getSymbol(),
                                 OrderSide.BUY,
                                 bidPrice,
-                                quantity
+                                bidQuantity
                         )
                 );
             }
@@ -301,7 +367,7 @@ public class MarketMakerService {
                             asset.getSymbol(),
                             OrderSide.SELL,
                             askPrice,
-                            quantity
+                            askQuantity
                     )
             );
         }
@@ -528,14 +594,15 @@ public class MarketMakerService {
      */
     private BigDecimal nextMidPrice(
             Asset asset,
-            double flowPressure
+            double flowPressure,
+            double intensity
     ) {
 
         BigDecimal reference = asset.getReferencePrice();
 
         BigDecimal current =
                 midPrices.computeIfAbsent(
-                        asset.getSymbol(),
+                        asset.getSymbol().toUpperCase(Locale.ROOT),
                         ignored ->
                                 marketDataService
                                         .lastPrice(asset)
@@ -555,8 +622,9 @@ public class MarketMakerService {
         double next =
                 mid
                         + mid * impact
-                        + mid * VOLATILITY * random.nextGaussian()
-                        + (reference.doubleValue() - mid) * MEAN_REVERSION;
+                        + mid * VOLATILITY * (1 + 2 * intensity) * random.nextGaussian()
+                        + (reference.doubleValue() - mid) * MEAN_REVERSION
+                        - mid * 0.006 * intensity;
 
         BigDecimal bounded =
                 BigDecimal.valueOf(next)
@@ -564,10 +632,57 @@ public class MarketMakerService {
                         .min(reference.multiply(MAX_MID_RATIO))
                         .setScale(8, RoundingMode.HALF_UP);
 
-        midPrices.put(asset.getSymbol(), bounded);
+        midPrices.put(asset.getSymbol().toUpperCase(Locale.ROOT), bounded);
 
         return bounded;
     }
+
+    /**
+     * Fraction de liquidité maintenue par le Market Maker.
+     *
+     * Hors crise : facteur = 1.
+     * Pendant CRASH : retrait plus fort côté BID.
+     *
+     * intensity est bornée entre 0 et 1.
+     */
+    static double liquidityFactor(
+            OrderSide side,
+            double intensity
+    ) {
+
+        double safeIntensity =
+                Math.max(0.0, Math.min(1.0, intensity));
+
+        // Decimal arithmetic avoids rounding 100 * 0.36 down to 35.
+        double withdrawal = side == OrderSide.BUY ? MAX_BID_WITHDRAWAL : MAX_ASK_WITHDRAWAL;
+        return BigDecimal.ONE.subtract(BigDecimal.valueOf(withdrawal)
+                .multiply(BigDecimal.valueOf(safeIntensity))).doubleValue();
+    }
+
+    /**
+     * Ajuste une quantité de cotation à la liquidité disponible.
+     * Respecte le pas minimal de quantité de l'actif.
+     */
+    private BigDecimal stressedQuoteQuantity(
+            Asset asset,
+            BigDecimal normalQuantity,
+            OrderSide side,
+            double intensity
+    ) {
+
+        BigDecimal factor = BigDecimal.valueOf(
+                liquidityFactor(side, intensity)
+        );
+
+        BigDecimal minimum = asset.getMinQuantity();
+
+        return normalQuantity
+                .multiply(factor)
+                .divide(minimum, 0, RoundingMode.FLOOR)
+                .multiply(minimum)
+                .max(minimum);
+    }
+
 
 
     private BigDecimal levelQuantity(

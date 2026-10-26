@@ -1,4 +1,9 @@
+
 package tn.esprit.simulateurbackend.dto;
 
-public class ScenarioRecoveryStatusResponse {
-}
+public record ScenarioRecoveryStatusResponse(
+        String symbol,
+        String phase,
+        double residualIntensity,
+        long remainingSeconds
+) {}
