@@ -645,6 +645,75 @@
   <div class="chart-heading">
     <div>
       <h2>Portfolio Stress Impact</h2>
+      
+@if (crashPortfolioComparison; as comparison) {
+
+  <div class="metrics">
+
+    <div class="metric">
+      <span>PRIX AVANT CRASH</span>
+      <strong>
+        {{ comparison.priceBefore | number:'1.2-4' }}
+      </strong>
+      <small>{{ comparison.symbol }}</small>
+    </div>
+
+    <div class="metric">
+      <span>PRIX OBSERVÉ</span>
+      <strong>
+        {{ comparison.priceNow | number:'1.2-4' }}
+      </strong>
+      <small>Mid-price du Market Maker</small>
+    </div>
+
+    <div class="metric">
+      <span>IMPACT SUR LA POSITION INITIALE</span>
+      <strong
+        [class.negative]="comparison.impact < 0"
+        [class.positive]="comparison.impact > 0"
+      >
+        {{ comparison.impact | number:'1.2-2' }}
+      </strong>
+      <small>{{ comparison.currency }}</small>
+    </div>
+
+    <div class="metric">
+      <span>PORTEFEUILLE PROJETÉ</span>
+      <strong>
+        @if (comparison.projectedPortfolio !== null) {
+          {{
+            comparison.projectedPortfolio
+              | number:'1.2-2'
+          }}
+        } @else {
+          —
+        }
+      </strong>
+      <small>
+        {{ comparison.currency }}
+        — autres positions constantes
+      </small>
+    </div>
+
+  </div>
+
+  <p class="notice">
+    Référence enregistrée avant le lancement du CRASH.
+    Impact calculé sur la quantité initialement détenue de
+    {{ comparison.symbol }}.
+    La projection ne constitue pas une opération réelle.
+  </p>
+
+} @else if (baseline) {
+
+  <p class="notice">
+    Comparaison avant/après indisponible :
+    position absente, cotation manquante,
+    quantité modifiée ou référence portefeuille indisponible.
+  </p>
+
+}
+
       <p>
         Valorisation du portefeuille connecté aux
         cotations du Market Maker
