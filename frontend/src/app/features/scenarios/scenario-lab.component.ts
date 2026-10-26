@@ -16,7 +16,9 @@ import {
   forkJoin,
   switchMap,
   finalize,
-  map
+  map,
+  catchError,
+  of  
 } from 'rxjs';
 
 import {
@@ -45,6 +47,7 @@ import {
 interface StressBaseline {
   market: ScenarioMarketSnapshot;
   book: OrderBookMetricsResponse;
+  portfolio: PortfolioStressResponse | null;
   startedAt: string | null;
 }
 
@@ -681,17 +684,17 @@ if (
     // pour mesurer ensuite l'impact du CRASH.
 
     this.subscriptions.add(
-      forkJoin({
+  forkJoin({
+  market: this.scenarioService.marketSnapshot(symbol),
 
-        market: this.scenarioService
-          .marketSnapshot(symbol),
+  book: this.tradingService.getOrderBookMetrics(symbol),
 
-        book: this.tradingService
-          .getOrderBookMetrics(symbol),
+  status: this.scenarioService.status(),
 
-        status: this.scenarioService.status()
-
-      })
+  portfolio: this.portfolioStressService.getMyStress().pipe(
+    catchError(() => of(null))
+  )
+})
         .pipe(
 
           switchMap(snapshot => {
@@ -715,12 +718,12 @@ if (
               );
             }
 
-            const candidate: StressBaseline = {
-              market: { ...snapshot.market },
-              book: { ...snapshot.book },
-              startedAt: null
-            };
-
+const candidate: StressBaseline = {
+  market: { ...snapshot.market },
+  book: { ...snapshot.book },
+  portfolio: snapshot.portfolio,
+  startedAt: null
+};
             return this.scenarioService
               .start(request)
               .pipe(
@@ -854,6 +857,76 @@ if (
   // ========================================
   // STRESS IMPACT DASHBOARD
   // ========================================
+  
+get crashPortfolioComparison() {
+
+  const baseline = this.baseline;
+  const current = this.portfolioStress;
+
+  if (!baseline?.portfolio || !current) {
+    return null;
+  }
+
+  if (baseline.market.symbol !== this.symbol) {
+    return null;
+  }
+
+  const startTime = Date.parse(baseline.startedAt ?? '');
+  const observationTime = Date.parse(current.generatedAt);
+
+  if (
+    !Number.isFinite(startTime) ||
+    !Number.isFinite(observationTime) ||
+    observationTime < startTime
+  ) {
+    return null;
+  }
+
+  const before = baseline.portfolio.positions.find(
+    position => position.assetSymbol === this.symbol
+  );
+
+  const after = current.positions.find(
+    position => position.assetSymbol === this.symbol
+  );
+
+  if (
+    !before ||
+    !after ||
+    before.quotedMidPrice === null ||
+    after.quotedMidPrice === null ||
+    before.quantity !== after.quantity
+  ) {
+    return null;
+  }
+
+  const quantity = before.quantity;
+
+  const priceBefore = before.quotedMidPrice;
+  const priceNow = after.quotedMidPrice;
+
+  const impact = quantity * (priceNow - priceBefore);
+
+  const portfolioBefore =
+    baseline.portfolio.quotedTotalValue;
+
+  const projectedPortfolio =
+    portfolioBefore === null
+      ? null
+      : portfolioBefore + impact;
+
+  return {
+    symbol: this.symbol,
+    quantity,
+    priceBefore,
+    priceNow,
+    impact,
+    portfolioBefore,
+    projectedPortfolio,
+    currency: baseline.portfolio.currency
+  };
+}
+
 
   get impactRows() {
 
