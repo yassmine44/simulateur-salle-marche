@@ -1,4 +1,17 @@
+
+/* =========================================================
+   SIX7 — TRADING ARENA
+   GLOBAL DESIGN SYSTEM
+   Light / Dark / Premium Glassmorphism
+   ========================================================= */
+
+
+/* =========================================================
+   1. LIGHT THEME — DEFAULT
+   ========================================================= */
+
 :root {
+
   /* Backgrounds */
   --bg-page: #f5f7fb;
   --bg-card: #ffffff;
@@ -32,11 +45,12 @@
   --warning: #d97706;
   --warning-soft: #fffbeb;
 
-  /* UI */
+  /* Border radius */
   --radius-sm: 6px;
   --radius-md: 10px;
   --radius-lg: 14px;
 
+  /* Shadows */
   --shadow-sm:
     0 1px 3px rgba(15, 23, 42, 0.06);
 
@@ -45,7 +59,155 @@
 
   --shadow-lg:
     0 20px 45px rgba(15, 23, 42, 0.10);
+
+
+  /* =====================================================
+     SIX7 PREMIUM GLASSMORPHISM — LIGHT
+     ===================================================== */
+
+  --glass-bg:
+    rgba(255, 255, 255, 0.78);
+
+  --glass-bg-hover:
+    rgba(255, 255, 255, 0.92);
+
+  --glass-border:
+    rgba(225, 234, 247, 0.9);
+
+  --glass-shadow:
+    0 12px 36px rgba(25, 50, 90, 0.08);
+
+  --glass-shadow-hover:
+    0 20px 45px rgba(25, 65, 130, 0.15);
+
+  --glass-blur: 18px;
+
+  --six7-glow:
+    rgba(29, 78, 216, 0.13);
+
+  --six7-gradient:
+    linear-gradient(135deg, #1d4ed8, #0284c7);
+
+
+  /* SIX7 semantic aliases */
+
+  --six7-page: #edf3fb;
+  --six7-text: #14233e;
+  --six7-muted: #60738e;
+  --six7-accent: #1679ed;
+
+  --six7-glass: var(--glass-bg);
+  --six7-glass-border: var(--glass-border);
+  --six7-glass-shadow: var(--glass-shadow);
+
 }
+
+
+/* =========================================================
+   2. DARK THEME
+   ========================================================= */
+
+/*
+   Compatible avec plusieurs sélecteurs courants.
+   Nous vérifierons ensuite celui utilisé par
+   ton bouton soleil/lune existant.
+*/
+
+[data-theme="dark"],
+html.dark,
+body.dark,
+.dark-theme,
+.dark-mode {
+
+  /* Backgrounds */
+  --bg-page: #081421;
+  --bg-card: #112238;
+  --bg-muted: #15283f;
+  --bg-hover: #1c324c;
+
+  /* Text */
+  --text-primary: #f1f5f9;
+  --text-secondary: #afc0d4;
+  --text-muted: #8298b1;
+
+  /* Borders */
+  --border-color: #2b405a;
+  --border-strong: #425b77;
+
+  /* Brand */
+  --primary: #60a5fa;
+  --primary-hover: #93c5fd;
+  --primary-soft: #152d4b;
+
+  --accent: #38bdf8;
+  --accent-soft: #0d3044;
+
+  /* Financial states */
+  --success: #4ade80;
+  --success-soft: #103d30;
+
+  --danger: #fb7185;
+  --danger-soft: #491e31;
+
+  --warning: #fbbf24;
+  --warning-soft: #473519;
+
+  /* Shadows */
+  --shadow-sm:
+    0 1px 4px rgba(0, 0, 0, 0.2);
+
+  --shadow-md:
+    0 8px 24px rgba(0, 0, 0, 0.28);
+
+  --shadow-lg:
+    0 20px 45px rgba(0, 0, 0, 0.4);
+
+
+  /* =====================================================
+     SIX7 PREMIUM GLASSMORPHISM — DARK
+     ===================================================== */
+
+  --glass-bg:
+    rgba(20, 40, 64, 0.72);
+
+  --glass-bg-hover:
+    rgba(27, 51, 78, 0.86);
+
+  --glass-border:
+    rgba(165, 194, 231, 0.16);
+
+  --glass-shadow:
+    0 15px 42px rgba(0, 0, 0, 0.24);
+
+  --glass-shadow-hover:
+    0 24px 52px rgba(0, 0, 0, 0.34);
+
+  --glass-blur: 18px;
+
+  --six7-glow:
+    rgba(56, 189, 248, 0.17);
+
+  --six7-gradient:
+    linear-gradient(135deg, #2563eb, #06b6d4);
+
+
+  /* SIX7 semantic aliases */
+
+  --six7-page: #08172d;
+  --six7-text: #f3f8ff;
+  --six7-muted: #a0b4cb;
+  --six7-accent: #44c8ff;
+
+  --six7-glass: var(--glass-bg);
+  --six7-glass-border: var(--glass-border);
+  --six7-glass-shadow: var(--glass-shadow);
+
+}
+
+
+/* =========================================================
+   3. GLOBAL RESET
+   ========================================================= */
 
 * {
   box-sizing: border-box;
@@ -62,6 +224,7 @@ body {
 }
 
 body {
+
   font-family:
     Inter,
     system-ui,
@@ -71,9 +234,15 @@ body {
     sans-serif;
 
   color: var(--text-primary);
+
   background: var(--bg-page);
 
   -webkit-font-smoothing: antialiased;
+
+  transition:
+    background-color 250ms ease,
+    color 250ms ease;
+
 }
 
 button,
@@ -88,7 +257,113 @@ a {
   -webkit-tap-highlight-color: transparent;
 }
 
-/* Impression (relevé de compte) : seul le document est imprimé. */
+
+/* =========================================================
+   4. SIX7 REUSABLE GLASS EFFECT
+   ========================================================= */
+
+/*
+   Ajoute class="six7-glass" à un élément
+   pour obtenir une surface vitrée.
+*/
+
+.six7-glass {
+
+  background: var(--glass-bg);
+
+  border:
+    1px solid var(--glass-border);
+
+  border-radius: 18px;
+
+  box-shadow: var(--glass-shadow);
+
+  -webkit-backdrop-filter:
+    blur(var(--glass-blur));
+
+  backdrop-filter:
+    blur(var(--glass-blur));
+
+}
+
+
+/* =========================================================
+   5. SIX7 INTERACTIVE GLASS EFFECT
+   ========================================================= */
+
+/*
+   Ajoute class="six7-glass-interactive"
+   aux cartes cliquables.
+*/
+
+.six7-glass-interactive {
+
+  background: var(--glass-bg);
+
+  border:
+    1px solid var(--glass-border);
+
+  border-radius: 18px;
+
+  box-shadow: var(--glass-shadow);
+
+  -webkit-backdrop-filter:
+    blur(var(--glass-blur));
+
+  backdrop-filter:
+    blur(var(--glass-blur));
+
+  transition:
+    transform 250ms ease,
+    box-shadow 250ms ease,
+    background 250ms ease,
+    border-color 250ms ease;
+
+}
+
+.six7-glass-interactive:hover {
+
+  transform: translateY(-5px);
+
+  background: var(--glass-bg-hover);
+
+  border-color: var(--six7-accent);
+
+  box-shadow: var(--glass-shadow-hover);
+
+}
+
+.six7-glass-interactive:active {
+  transform: scale(0.985);
+}
+
+
+/* =========================================================
+   6. ACCESSIBILITY — REDUCED MOTION
+   ========================================================= */
+
+@media (prefers-reduced-motion: reduce) {
+
+  html {
+    scroll-behavior: auto;
+  }
+
+  body,
+  .six7-glass-interactive {
+    transition: none;
+  }
+
+  .six7-glass-interactive:hover,
+  .six7-glass-interactive:active {
+    transform: none;
+  }
+
+}
+
+
+/* =========================================================
+   7. PRINT — PORTFOLIO STATEMENTS
+   ========================================================= */
 
 @media print {
 
@@ -99,6 +374,7 @@ a {
 
   body {
     background: #ffffff !important;
+    color: #0f172a !important;
   }
 
 }
