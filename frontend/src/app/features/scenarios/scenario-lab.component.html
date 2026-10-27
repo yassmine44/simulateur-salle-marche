@@ -1,20 +1,25 @@
   <div class="scenario-lab">
 
       <div class="heading">
-        <div>
+        <div class="heading-copy">
           <span class="eyebrow">MARKET SIMULATION</span>
           <h1>Market Scenario Lab</h1>
           <p>Simulation de crises et surveillance du marché</p>
         </div>
 
-        <span
-          class="status-badge"
-          [class.active]="status?.active"
-        >
-          {{ status?.active ? '● CRISE ACTIVE' : '● MARCHÉ NORMAL' }}
-        </span>
+        <div class="scenario-header-actions">
+          <span class="status-badge" [class.active]="status?.active">
+            {{ status?.active ? '● CRISE ACTIVE' : '● MARCHÉ NORMAL' }}
+          </span>
+        </div>
       </div>
-
+      <nav class="scenario-tabs" aria-label="Navigation du Scenario Lab">
+        <a class="scenario-tab is-current" routerLink="/app/scenarios" aria-current="page">Laboratoire</a>
+        <a class="scenario-tab" routerLink="/app/scenarios/history">
+          <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M3 11a9 9 0 1 1 2.6 7.4M3 5v6h6M12 7v5l3 2"/></svg>
+          Historique
+        </a>
+      </nav>
       <div class="controls">
 
         <div class="field">

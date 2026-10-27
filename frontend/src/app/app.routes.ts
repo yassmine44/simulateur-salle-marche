@@ -123,6 +123,14 @@ export const routes: Routes = [
       .then(m => m.ScenarioLabComponent)
 },
 
+{
+  path: 'scenarios/history',
+  loadComponent: () =>
+    import('./features/scenarios/scenario-history.component')
+      .then(m => m.ScenarioHistoryComponent)
+},
+
+
 
       // =====================
       // TRADING
