@@ -1,0 +1,113 @@
+<section class="history-page">
+  <header class="page-header">
+    
+    <div>
+      <p class="eyebrow">SIX7 · Market Scenario Lab</p>
+      <h1>Historique des stress tests</h1>
+      <p class="muted">Retrouvez les simulations enregistrées et consultez leur bilan d'exécution.</p>
+    </div>
+    <div class="header-actions">
+      <button type="button" class="action action--primary" (click)="loadPage(page)" [disabled]="loading">Actualiser</button>
+    </div>
+  </header>
+      <nav class="scenario-tabs" aria-label="Navigation du Scenario Lab">
+        <a class="scenario-tab" routerLink="/app/scenarios">Laboratoire</a>
+        <a class="scenario-tab is-current" routerLink="/app/scenarios/history" aria-current="page">
+          <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M3 11a9 9 0 1 1 2.6 7.4M3 5v6h6M12 7v5l3 2"/></svg>
+          Historique
+        </a>
+      </nav>
+
+
+  <div class="summary">
+    <article class="glass stat">
+      <span>Total des simulations</span>
+      <strong>{{ history?.totalElements ?? '—' }}</strong>
+      <small>Toutes pages confondues</small>
+    </article>
+    <article class="glass stat">
+      <span>Page affichée</span>
+      <strong>{{ history ? (history.page + 1) : '—' }}</strong>
+      <small>Sur {{ history?.totalPages || 0 }} page(s)</small>
+    </article>
+    <article class="glass stat">
+      <span>Exécutions sur cette page</span>
+      <strong>{{ history?.content?.length ?? '—' }}</strong>
+      <small>Maximum {{ pageSize }} par page</small>
+    </article>
+  </div>
+
+  <p *ngIf="listError" class="error" role="alert">{{ listError }}</p>
+  <div class="glass table-panel">
+    <div class="panel-heading">
+      <h2>Simulations</h2>
+      <span *ngIf="loading" class="muted" role="status">Chargement…</span>
+    </div>
+
+    <div class="table-scroll" *ngIf="history && history.content.length > 0; else emptyHistory">
+      <table>
+        <thead>
+          <tr>
+            <th>Identifiant</th>
+            <th>Actif</th>
+            <th>Scénario</th>
+            <th>Intensité</th>
+            <th>Début</th>
+            <th>Statut</th>
+            <th>Bilan</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let item of history.content; trackBy: trackById" [class.selected-row]="selected?.id === item.id">
+            <td>#{{ item.id }}</td>
+            <td><strong>{{ item.symbol }}</strong></td>
+            <td>{{ item.type }}</td>
+            <td>{{ item.intensity * 100 | number:'1.0-2' }} %</td>
+            <td>{{ item.startedAt | date:'dd/MM/yyyy HH:mm:ss' }}</td>
+            <td><span class="status" [ngClass]="'status--' + item.status.toLowerCase()">{{ statusLabel(item.status) }}</span></td>
+            <td>
+              <button type="button" class="details-button" (click)="selectExecution(item)" [attr.aria-label]="'Voir le bilan du stress test ' + item.id">Voir le bilan</button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <ng-template #emptyHistory>
+      <p class="empty" *ngIf="!loading && !listError">Aucune simulation enregistrée sur cette page.</p>
+    </ng-template>
+
+    <div class="pagination" *ngIf="history && history.totalPages > 0">
+      <button type="button" class="action action--secondary" [disabled]="!hasPrevious" (click)="loadPage(page - 1)">Précédent</button>
+      <span>Page {{ page + 1 }} / {{ history.totalPages }}</span>
+      <button type="button" class="action action--secondary" [disabled]="!hasNext" (click)="loadPage(page + 1)">Suivant</button>
+    </div>
+  </div>
+
+  <section class="glass report" *ngIf="selected" aria-labelledby="report-title">
+    <div class="panel-heading">
+      <div>
+        <p class="eyebrow">Bilan d'exécution</p>
+        <h2 id="report-title">{{ selected.type }} — {{ selected.symbol }} · #{{ selected.id }}</h2>
+      </div>
+      <span class="status" [ngClass]="'status--' + selected.status.toLowerCase()">{{ statusLabel(selected.status) }}</span>
+    </div>
+
+    <p *ngIf="reportLoading" class="muted" role="status">Chargement du bilan…</p>
+    <p *ngIf="reportError" class="error" role="alert">{{ reportError }}</p>
+
+    <ng-container *ngIf="report as r">
+      <div class="report-grid">
+        <div><span>Intensité</span><strong>{{ r.intensity * 100 | number:'1.0-2' }} %</strong></div>
+        <div><span>Durée prévue</span><strong>{{ r.plannedDurationSeconds }} s</strong></div>
+        <div><span>Durée effective</span><strong>{{ r.actualDurationSeconds === null ? 'En cours' : (r.actualDurationSeconds + ' s') }}</strong></div>
+        <div><span>Part de durée réalisée</span><strong>{{ r.completionPercent === null ? '—' : ((r.completionPercent | number:'1.0-2') + ' %') }}</strong></div>
+        <div><span>Début</span><strong>{{ r.startedAt | date:'dd/MM/yyyy HH:mm:ss' }}</strong></div>
+        <div><span>Fin prévue</span><strong>{{ r.scheduledEndsAt | date:'dd/MM/yyyy HH:mm:ss' }}</strong></div>
+        <div><span>Fin réelle</span><strong>{{ r.actualEndedAt ? (r.actualEndedAt | date:'dd/MM/yyyy HH:mm:ss') : 'Non terminée' }}</strong></div>
+        <div><span>Statut</span><strong>{{ statusLabel(r.status) }}</strong></div>
+      </div>
+      <p class="report-note">Ce bilan décrit l'exécution du scénario. Les pertes, le drawdown et les mesures de liquidité ne sont pas encore historisés dans cette API.</p>
+    </ng-container>
+  </section>
+</section>

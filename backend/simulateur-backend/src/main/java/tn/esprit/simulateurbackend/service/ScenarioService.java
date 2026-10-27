@@ -22,6 +22,7 @@ public class ScenarioService {
 
     private final AssetRepository assetRepository;
     private final Clock clock;
+    private final ScenarioHistoryService historyService;
 
     // Un seul scénario actif pour le simulateur.
     // État en mémoire, non persistant après redémarrage.
@@ -31,17 +32,31 @@ public class ScenarioService {
     private RecoveryState recoveryState;
 
     @Autowired
-    public ScenarioService(AssetRepository assetRepository) {
-        this(assetRepository, Clock.systemUTC());
+    public ScenarioService(
+            AssetRepository assetRepository,
+            ScenarioHistoryService historyService
+    ) {
+        this(assetRepository, Clock.systemUTC(), historyService);
     }
 
-    // Constructeur utilisable par les tests déterministes.
+    // Compatibilité avec les tests déterministes existants :
+    // sans base de données, l'historique n'est pas activé.
     ScenarioService(
             AssetRepository assetRepository,
             Clock clock
     ) {
+        this(assetRepository, clock, null);
+    }
+
+    // Constructeur pour tester l'intégration historique avec une horloge fixe.
+    ScenarioService(
+            AssetRepository assetRepository,
+            Clock clock,
+            ScenarioHistoryService historyService
+    ) {
         this.assetRepository = assetRepository;
         this.clock = clock;
+        this.historyService = historyService;
     }
 
     // =========================================
@@ -78,12 +93,27 @@ public class ScenarioService {
             );
         }
 
-        activeScenario = new ActiveScenario(
+        Instant scheduledEndsAt = now.plusSeconds(request.durationSeconds());
+
+        // Persister d'abord : si PostgreSQL refuse l'écriture,
+        // aucun scénario ne doit devenir actif en mémoire.
+        Long executionId = historyService == null
+                ? null
+                : historyService.recordStart(
                 request.type(),
                 symbol,
                 request.intensity(),
                 now,
-                now.plusSeconds(request.durationSeconds())
+                scheduledEndsAt
+        );
+
+        activeScenario = new ActiveScenario(
+                executionId,
+                request.type(),
+                symbol,
+                request.intensity(),
+                now,
+                scheduledEndsAt
         );
 
         // Le nouveau scénario remplace
@@ -115,6 +145,11 @@ public class ScenarioService {
         clearIfExpired(now);
 
         if (activeScenario != null) {
+
+            // Persister avant de changer l'état en mémoire.
+            if (historyService != null && activeScenario.executionId() != null) {
+                historyService.recordStop(activeScenario.executionId(), now);
+            }
 
             if (activeScenario.type() == ScenarioType.CRASH) {
                 beginRecovery(
@@ -188,6 +223,15 @@ public class ScenarioService {
 
         if (activeScenario.endsAt().isAfter(now)) {
             return;
+        }
+
+        // L'heure réelle de fin est l'heure prévue, même si
+        // l'expiration est détectée plus tard par une requête.
+        if (historyService != null && activeScenario.executionId() != null) {
+            historyService.recordExpiration(
+                    activeScenario.executionId(),
+                    activeScenario.endsAt()
+            );
         }
 
         // Début de la récupération à l'instant
@@ -280,6 +324,7 @@ public class ScenarioService {
     // =========================================
 
     private record ActiveScenario(
+            Long executionId,
             ScenarioType type,
             String symbol,
             BigDecimal intensity,

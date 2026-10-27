@@ -5,6 +5,7 @@ import {
   OnDestroy,
   inject
 } from '@angular/core';
+import { RouterLink } from '@angular/router';
 
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -87,10 +88,11 @@ interface LiquidityRecoveryMetrics {
   selector: 'app-scenario-lab',
   standalone: true,
 
-  imports: [
-    CommonModule,
-    FormsModule
-  ],
+imports: [
+  CommonModule,
+  FormsModule,
+  RouterLink
+],
 
   templateUrl: './scenario-lab.component.html',
   styleUrl: './scenario-lab.component.scss'
