@@ -22,7 +22,7 @@
 
   margin-bottom: 6px;
 
-  color: #64748b;
+  color: var(--text-secondary);
 
   font-size: 10px;
   font-weight: 800;
@@ -33,7 +33,7 @@
 .dashboard-header h1 {
   margin: 0;
 
-  color: #172033;
+  color: var(--text-primary);
 
   font-size: 28px;
 }
@@ -43,7 +43,7 @@
 
   margin: 7px 0 0;
 
-  color: #64748b;
+  color: var(--text-secondary);
 
   font-size: 13px;
   line-height: 1.6;
@@ -56,20 +56,20 @@
 }
 
 .updated {
-  color: #94a3b8;
+  color: var(--text-muted);
 
   font-size: 12px;
 }
 
 .secondary-button {
-  border: 1px solid #dbe1ea;
+  border: 1px solid var(--border-color);
   border-radius: 10px;
 
-  background: #fff;
+  background: var(--bg-card);
 
   padding: 9px 13px;
 
-  color: #172033;
+  color: var(--text-primary);
 
   cursor: pointer;
 
@@ -92,9 +92,9 @@
 
   border-radius: 12px;
 
-  background: #f1f5f9;
+  background: var(--bg-muted);
 
-  color: #475569;
+  color: var(--text-secondary);
 
   font-size: 14px;
   font-weight: 600;
@@ -106,11 +106,11 @@
   justify-content: space-between;
   gap: 12px;
 
-  border: 1px solid #fecaca;
+  border: 1px solid var(--danger-soft);
 
-  background: #fef2f2;
+  background: var(--danger-soft);
 
-  color: #b91c1c;
+  color: var(--danger);
 }
 
 .state-error button {
@@ -147,40 +147,40 @@
 
   padding: 18px 20px;
 
-  border: 1px solid #e2e8f0;
-  border-left: 4px solid #94a3b8;
+  border: 1px solid var(--border-color);
+  border-left: 4px solid var(--text-muted);
   border-radius: 14px;
 
-  background: #ffffff;
+  background: var(--bg-card);
 }
 
 .headline.positive {
-  border-left-color: #16a34a;
+  border-left-color: var(--success);
 }
 
 .headline.negative {
-  border-left-color: #dc2626;
+  border-left-color: var(--danger);
 }
 
 .headline-mark {
-  color: #94a3b8;
+  color: var(--text-muted);
 
   font-size: 14px;
   line-height: 1.6;
 }
 
 .headline.positive .headline-mark {
-  color: #16a34a;
+  color: var(--success);
 }
 
 .headline.negative .headline-mark {
-  color: #dc2626;
+  color: var(--danger);
 }
 
 .headline p {
   margin: 0;
 
-  color: #172033;
+  color: var(--text-primary);
 
   font-size: 15px;
   font-weight: 600;
@@ -207,57 +207,57 @@
 
   padding: 18px;
 
-  border: 1px solid #e7ebf0;
+  border: 1px solid var(--border-color);
   border-radius: 16px;
 
-  background: #ffffff;
+  background: var(--bg-card);
 
   box-shadow: 0 6px 20px rgba(15, 23, 42, 0.04);
 }
 
 .metric-label {
-  color: #64748b;
+  color: var(--text-secondary);
 
   font-size: 11px;
 }
 
 .metric-value {
-  color: #172033;
+  color: var(--text-primary);
 
   font-size: 22px;
   font-variant-numeric: tabular-nums;
 }
 
 .metric-value small {
-  color: #94a3b8;
+  color: var(--text-muted);
 
   font-size: 12px;
 }
 
 .metric-variation {
-  color: #64748b;
+  color: var(--text-secondary);
 
   font-size: 11px;
   font-weight: 700;
 }
 
 .metric-detail {
-  color: #64748b;
+  color: var(--text-secondary);
 
   font-size: 11px;
   line-height: 1.4;
 }
 
 .positive {
-  color: #16a34a !important;
+  color: var(--success) !important;
 }
 
 .negative {
-  color: #dc2626 !important;
+  color: var(--danger) !important;
 }
 
 .muted {
-  color: #94a3b8;
+  color: var(--text-muted);
 }
 
 
@@ -276,10 +276,10 @@
 .dashboard-card {
   overflow: hidden;
 
-  border: 1px solid #e7ebf0;
+  border: 1px solid var(--border-color);
   border-radius: 18px;
 
-  background: #ffffff;
+  background: var(--bg-card);
 
   box-shadow: 0 6px 24px rgba(15, 23, 42, 0.04);
 }
@@ -292,19 +292,19 @@
 
   padding: 18px 20px;
 
-  border-bottom: 1px solid #edf0f4;
+  border-bottom: 1px solid var(--border-color);
 }
 
 .card-header h2 {
   margin: 0;
 
-  color: #172033;
+  color: var(--text-primary);
 
   font-size: 16px;
 }
 
 .card-link {
-  color: #1d4ed8;
+  color: var(--primary);
 
   font-size: 12px;
   font-weight: 700;
@@ -317,9 +317,9 @@
 
   border-radius: 8px;
 
-  background: #f1f5f9;
+  background: var(--bg-muted);
 
-  color: #475569;
+  color: var(--text-secondary);
 
   font-size: 12px;
   font-weight: 800;
@@ -328,13 +328,13 @@
 .empty-row {
   padding: 28px 20px !important;
 
-  color: #94a3b8;
+  color: var(--text-muted);
 
   text-align: center !important;
 }
 
 .empty-row a {
-  color: #1d4ed8;
+  color: var(--primary);
 }
 
 
@@ -349,7 +349,7 @@
 
   padding: 20px;
 
-  color: #047857;
+  color: var(--success);
 
   font-size: 13px;
   line-height: 1.5;
@@ -366,7 +366,7 @@
 
   border-radius: 50%;
 
-  background: #ecfdf5;
+  background: var(--success-soft);
 
   font-weight: 800;
 }
@@ -387,7 +387,7 @@
 
   padding: 14px 20px;
 
-  border-top: 1px solid #f1f5f9;
+  border-top: 1px solid var(--bg-muted);
 }
 
 .insight:first-child {
@@ -410,24 +410,24 @@
 }
 
 .insight-critical .insight-icon {
-  background: #fef2f2;
-  color: #b91c1c;
+  background: var(--danger-soft);
+  color: var(--danger);
 }
 
 .insight-warning .insight-icon {
-  background: #fff7ed;
-  color: #c2410c;
+  background: var(--warning-soft);
+  color: var(--warning);
 }
 
 .insight-info .insight-icon {
-  background: #eff6ff;
-  color: #1d4ed8;
+  background: var(--primary-soft);
+  color: var(--primary);
 }
 
 .insight strong {
   display: block;
 
-  color: #172033;
+  color: var(--text-primary);
 
   font-size: 13px;
 }
@@ -435,7 +435,7 @@
 .insight p {
   margin: 4px 0 6px;
 
-  color: #475569;
+  color: var(--text-secondary);
 
   font-size: 12px;
   line-height: 1.5;
@@ -449,7 +449,7 @@
 }
 
 .insight-severity {
-  color: #64748b;
+  color: var(--text-secondary);
 
   font-weight: 800;
   text-transform: uppercase;
@@ -457,7 +457,7 @@
 }
 
 .insight-footer a {
-  color: #1d4ed8;
+  color: var(--primary);
 
   font-weight: 700;
 
@@ -484,10 +484,10 @@
 
   padding: 14px;
 
-  border: 1px solid #e7ebf0;
+  border: 1px solid var(--border-color);
   border-radius: 14px;
 
-  background: #fff;
+  background: var(--bg-card);
 
   color: inherit;
 
@@ -498,7 +498,7 @@
 
 .watch-card:hover,
 .watch-card:focus-visible {
-  border-color: #93c5fd;
+  border-color: var(--six7-accent);
 
   box-shadow: 0 6px 18px rgba(37, 99, 235, 0.08);
 }
@@ -512,13 +512,13 @@
 }
 
 .watch-head strong {
-  color: #172033;
+  color: var(--text-primary);
 
   font-size: 13px;
 }
 
 .watch-price {
-  color: #172033;
+  color: var(--text-primary);
 
   font-size: 18px;
   font-weight: 800;
@@ -526,7 +526,7 @@
 }
 
 .watch-card small {
-  color: #94a3b8;
+  color: var(--text-muted);
 
   font-size: 11px;
 }
@@ -559,9 +559,9 @@ td {
 }
 
 th {
-  background: #f8fafc;
+  background: var(--bg-muted);
 
-  color: #64748b;
+  color: var(--text-secondary);
 
   font-size: 10px;
   font-weight: 800;
@@ -570,9 +570,9 @@ th {
 }
 
 td {
-  border-top: 1px solid #f1f5f9;
+  border-top: 1px solid var(--bg-muted);
 
-  color: #334155;
+  color: var(--text-primary);
 }
 
 .cell-detail {
@@ -580,13 +580,13 @@ td {
 
   margin-top: 3px;
 
-  color: #94a3b8;
+  color: var(--text-muted);
 
   font-size: 11px;
 }
 
 .asset-link {
-  color: #172033;
+  color: var(--text-primary);
 
   font-weight: 800;
 
@@ -607,13 +607,13 @@ td {
 }
 
 .type-badge.buy {
-  background: #ecfdf5;
-  color: #047857;
+  background: var(--success-soft);
+  color: var(--success);
 }
 
 .type-badge.sell {
-  background: #fef2f2;
-  color: #b91c1c;
+  background: var(--danger-soft);
+  color: var(--danger);
 }
 
 .protection-badge {
@@ -626,18 +626,18 @@ td {
 }
 
 .protection-protected {
-  background: #ecfdf5;
-  color: #047857;
+  background: var(--success-soft);
+  color: var(--success);
 }
 
 .protection-partial {
-  background: #fff7ed;
-  color: #c2410c;
+  background: var(--warning-soft);
+  color: var(--warning);
 }
 
 .protection-unprotected {
-  background: #f1f5f9;
-  color: #475569;
+  background: var(--bg-muted);
+  color: var(--text-secondary);
 }
 
 .protect-link {
@@ -645,7 +645,7 @@ td {
 
   margin-top: 4px;
 
-  color: #1d4ed8;
+  color: var(--primary);
 
   font-size: 11px;
   font-weight: 700;
@@ -669,7 +669,7 @@ td {
 
   padding: 13px 20px;
 
-  border-top: 1px solid #f1f5f9;
+  border-top: 1px solid var(--bg-muted);
 }
 
 .risk-row:first-child {
@@ -679,7 +679,7 @@ td {
 .risk-row span {
   display: block;
 
-  color: #64748b;
+  color: var(--text-secondary);
 
   font-size: 11px;
 }
@@ -689,13 +689,13 @@ td {
 
   margin: 3px 0;
 
-  color: #172033;
+  color: var(--text-primary);
 
   font-size: 14px;
 }
 
 .risk-row small {
-  color: #94a3b8;
+  color: var(--text-muted);
 
   font-size: 11px;
 }
@@ -712,18 +712,18 @@ td {
 }
 
 .risk-low {
-  background: #ecfdf5;
-  color: #047857 !important;
+  background: var(--success-soft);
+  color: var(--success) !important;
 }
 
 .risk-medium {
-  background: #fff7ed;
-  color: #c2410c !important;
+  background: var(--warning-soft);
+  color: var(--warning) !important;
 }
 
 .risk-high {
-  background: #fef2f2;
-  color: #b91c1c !important;
+  background: var(--danger-soft);
+  color: var(--danger) !important;
 }
 
 
@@ -744,16 +744,16 @@ td {
 .habit {
   padding: 12px;
 
-  border: 1px solid #edf0f4;
+  border: 1px solid var(--border-color);
   border-radius: 12px;
 
-  background: #fafbfc;
+  background: var(--bg-muted);
 }
 
 .habit span {
   display: block;
 
-  color: #64748b;
+  color: var(--text-secondary);
 
   font-size: 11px;
   font-weight: 700;
@@ -764,14 +764,14 @@ td {
 
   margin: 6px 0 3px;
 
-  color: #172033;
+  color: var(--text-primary);
 
   font-size: 17px;
   font-variant-numeric: tabular-nums;
 }
 
 .habit small {
-  color: #94a3b8;
+  color: var(--text-muted);
 
   font-size: 11px;
 }
@@ -791,7 +791,7 @@ td {
 
   overflow: hidden;
 
-  background: #f1f5f9;
+  background: var(--bg-muted);
 }
 
 .mix-bar span {
@@ -799,11 +799,11 @@ td {
 }
 
 .mix-limit {
-  background: #2563eb;
+  background: var(--primary);
 }
 
 .mix-market {
-  background: #d97706;
+  background: var(--warning);
 }
 
 .mix-conditional {
@@ -817,7 +817,7 @@ td {
 
   margin-top: 8px;
 
-  color: #475569;
+  color: var(--text-secondary);
 
   font-size: 11px;
 }
@@ -843,9 +843,9 @@ td {
 
   border-radius: 12px;
 
-  background: #eff6ff;
+  background: var(--primary-soft);
 
-  color: #1e3a8a;
+  color: var(--text-primary);
 
   font-size: 12px;
   line-height: 1.55;
@@ -891,7 +891,7 @@ td {
 
   width: 2px;
 
-  background: #edf0f4;
+  background: var(--border-color);
 }
 
 .event-icon {
@@ -905,28 +905,28 @@ td {
 
   border-radius: 50%;
 
-  background: #f1f5f9;
+  background: var(--bg-muted);
 
-  color: #475569;
+  color: var(--text-secondary);
 
   font-size: 11px;
   font-weight: 900;
 }
 
 .event-positive .event-icon {
-  background: #ecfdf5;
-  color: #047857;
+  background: var(--success-soft);
+  color: var(--success);
 }
 
 .event-negative .event-icon {
-  background: #fef2f2;
-  color: #b91c1c;
+  background: var(--danger-soft);
+  color: var(--danger);
 }
 
 .event strong {
   display: block;
 
-  color: #172033;
+  color: var(--text-primary);
 
   font-size: 13px;
 }
@@ -934,14 +934,14 @@ td {
 .event p {
   margin: 3px 0;
 
-  color: #475569;
+  color: var(--text-secondary);
 
   font-size: 12px;
   line-height: 1.45;
 }
 
 .event time {
-  color: #94a3b8;
+  color: var(--text-muted);
 
   font-size: 11px;
 }
@@ -982,4 +982,224 @@ td {
     font-size: 23px;
   }
 
+}
+
+
+/* ============================================================
+   SIX7 — GLASS DASHBOARD (LIGHT + DARK)
+   Les couleurs suivent les variables dans src/styles.scss.
+   Le décor est nécessaire pour révéler la transparence du verre.
+   ============================================================ */
+
+.dashboard-page {
+  position: relative;
+  isolation: isolate;
+  min-height: 100%;
+  padding: clamp(16px, 2vw, 28px);
+  border-radius: 24px;
+  color: var(--text-primary);
+
+  /* Plusieurs sources lumineuses restent visibles sous les cartes. */
+  background:
+    radial-gradient(ellipse 48% 42% at 4% 7%, rgba(54, 130, 255, 0.30), transparent 75%),
+    radial-gradient(ellipse 42% 40% at 98% 30%, rgba(23, 190, 216, 0.28), transparent 78%),
+    radial-gradient(ellipse 44% 38% at 25% 78%, rgba(23, 170, 153, 0.17), transparent 83%),
+    radial-gradient(ellipse 32% 30% at 90% 94%, var(--six7-glow), transparent 85%),
+    var(--bg-page);
+}
+
+/* Éviter que la page ne disparaisse en mode sombre à cause des anciens hex. */
+.dashboard-header h1,
+.card-header h2,
+.metric-value,
+.watch-head strong,
+.watch-price,
+.insight strong,
+.event strong,
+.risk-row strong,
+.habit strong,
+.asset-link {
+  color: var(--text-primary);
+}
+
+.dashboard-header p,
+.dashboard-header .eyebrow,
+.dashboard-header .updated,
+.metric-label,
+.metric-detail,
+.metric-value small,
+.card-header .section-label,
+.watch-card small,
+.risk-row span,
+.risk-row small,
+.habit span,
+.habit small,
+.event p,
+.insight p {
+  color: var(--text-secondary);
+}
+
+/* La même matière de verre s'applique aux cartes réelles de l'application. */
+.metric-card,
+.dashboard-card,
+.watch-card,
+.headline {
+  border: 1px solid var(--glass-border);
+  border-radius: 20px;
+
+  /* Valeur de repli puis transparence renforcée (navigateurs modernes). */
+  background: var(--glass-bg);
+  background: color-mix(in srgb, var(--glass-bg) 72%, transparent);
+
+  box-shadow:
+    var(--glass-shadow),
+    inset 0 1px 0 rgba(255, 255, 255, 0.28),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.06);
+
+  -webkit-backdrop-filter: blur(24px) saturate(150%);
+  backdrop-filter: blur(24px) saturate(150%);
+
+  transition:
+    transform 260ms cubic-bezier(.2,.8,.2,1),
+    box-shadow 260ms ease,
+    border-color 260ms ease,
+    background-color 260ms ease;
+}
+
+/* Liseré de tendance qui garde l'information de la phrase du jour. */
+.headline {
+  border-left: 4px solid var(--border-strong);
+}
+.headline.positive {
+  border-left-color: var(--success);
+}
+.headline.negative {
+  border-left-color: var(--danger);
+}
+.headline p {
+  color: var(--text-primary);
+}
+
+/* Micro-interactions : sobres pour garder l'ergonomie d'un terminal financier. */
+.metric-card:hover,
+.watch-card:hover,
+.dashboard-card:focus-within {
+  transform: translateY(-5px);
+  border-color: var(--six7-accent);
+  box-shadow:
+    var(--glass-shadow-hover),
+    inset 0 1px 0 rgba(255,255,255,0.40);
+}
+
+.metric-card:active,
+.watch-card:active {
+  transform: translateY(-1px) scale(0.995);
+}
+
+/* Contenu interne cohérent sur verre clair ou sombre. */
+.card-header,
+.insight,
+.risk-row,
+.event:not(:last-child)::before {
+  border-color: var(--border-color);
+}
+
+.card-header {
+  border-bottom-color: var(--border-color);
+}
+
+.secondary-button,
+.habit,
+.count-badge,
+.state-message {
+  color: var(--text-primary);
+  border-color: var(--border-color);
+  background: var(--bg-muted);
+}
+
+.secondary-button:hover:not(:disabled) {
+  border-color: var(--six7-accent);
+  background: var(--glass-bg-hover);
+}
+
+/* Sous-cartes plus discrètes pour préserver la hiérarchie du dashboard. */
+.habit,
+.count-badge {
+  background: color-mix(in srgb, var(--bg-muted) 78%, transparent);
+}
+
+th {
+  background: color-mix(in srgb, var(--bg-muted) 77%, transparent);
+  color: var(--text-secondary);
+}
+
+td {
+  background: transparent;
+  color: var(--text-primary);
+  border-top-color: var(--border-color);
+}
+
+.cell-detail,
+.event time {
+  color: var(--text-muted);
+}
+
+.card-link,
+.protect-link,
+.asset-link:hover,
+.insight-footer a {
+  color: var(--primary);
+}
+
+.advice {
+  background: var(--primary-soft);
+  color: var(--text-primary);
+}
+
+.mix-bar {
+  background: var(--bg-hover);
+}
+
+.event:not(:last-child)::before {
+  background: var(--border-color);
+}
+
+/* Contraste d'état : ne pas dépendre uniquement des couleurs. */
+.positive {
+  color: var(--success) !important;
+}
+.negative {
+  color: var(--danger) !important;
+}
+
+.metric-card:focus-within,
+.watch-card:focus-visible,
+.secondary-button:focus-visible {
+  outline: 2px solid var(--six7-accent);
+  outline-offset: 3px;
+}
+
+@media (hover: none) {
+  .metric-card:hover,
+  .watch-card:hover,
+  .dashboard-card:focus-within {
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .metric-card,
+  .dashboard-card,
+  .watch-card,
+  .headline {
+    transition: none;
+  }
+
+  .metric-card:hover,
+  .watch-card:hover,
+  .dashboard-card:focus-within,
+  .metric-card:active,
+  .watch-card:active {
+    transform: none;
+  }
 }

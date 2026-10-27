@@ -651,3 +651,28 @@ small {
   }
 
 }
+/* SIX7 brand: clear on the shared light theme. */
+.brand-icon {
+  background: transparent;
+  box-shadow: none;
+  flex-shrink: 0;
+}
+.brand-icon .six7-symbol {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+.brand-copy strong, .brand-text strong, .brand-name {
+  color: #f8fafc;
+  font-size: 24px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  line-height: 1.1;
+}
+.brand-copy small, .brand-text small, .brand-subtitle {
+  color: #94a3b8;
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}

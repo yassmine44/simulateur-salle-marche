@@ -9,7 +9,11 @@ import {
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
-
+import {
+  PortfolioDrawdownState,
+  createDrawdownState,
+  observePortfolioValue
+} from './portfolio-drawdown';
 import {
   Subscription,
   timer,
@@ -296,6 +300,7 @@ private updateLiquidityRecovery(
   recovery: ScenarioRecoveryStatus | null = null;
 
   portfolioStress: PortfolioStressResponse | null = null;
+  portfolioDrawdown: PortfolioDrawdownState | null = null;
 
 portfolioStressError = '';
 
@@ -416,6 +421,7 @@ this.lastLiquidityBookTimestamp = null;
     this.market = null;
     this.orderBookMetrics = null;
     this.recovery = null;
+    this.portfolioDrawdown = null;
 
     this.priceHistory = [];
 
@@ -747,6 +753,18 @@ const candidate: StressBaseline = {
               ...candidate,
               startedAt: response.startedAt
             };
+            const initialPortfolioValue =
+  this.baseline.portfolio?.quoteCoverageComplete
+    ? this.baseline.portfolio.quotedTotalValue
+    : null;
+
+this.portfolioDrawdown =
+  initialPortfolioValue !== null &&
+  initialPortfolioValue !== undefined &&
+  Number.isFinite(initialPortfolioValue) &&
+  initialPortfolioValue > 0
+    ? createDrawdownState(initialPortfolioValue)
+    : null;
 
             this.initializeLiquidityRecovery();
 
@@ -1327,11 +1345,12 @@ refreshPortfolioStress(): void {
         })
       )
       .subscribe({
+next: response => {
+  this.portfolioStress = response;
+  this.portfolioStressError = '';
 
-        next: response => {
-          this.portfolioStress = response;
-          this.portfolioStressError = '';
-        },
+  this.updatePortfolioDrawdown();
+},
 
         error: error => {
           this.portfolioStress = null;
@@ -1367,4 +1386,46 @@ refreshPortfolioStress(): void {
 
     return `${operation} : erreur inconnue.`;
   }
+  
+private updatePortfolioDrawdown(): void {
+  const state = this.portfolioDrawdown;
+  const baseline = this.baseline;
+  const comparison = this.crashPortfolioComparison;
+
+  if (!state || !baseline || !comparison) {
+    return;
+  }
+
+  // Observer uniquement le scénario que nous avons lancé.
+  if (
+    this.status?.active !== true ||
+    this.status.startedAt !== baseline.startedAt ||
+    this.status.symbol !== baseline.market.symbol
+  ) {
+    return;
+  }
+
+  // Ne pas prolonger les mesures après l'expiration du CRASH.
+  const endsAt = Date.parse(this.status.endsAt ?? '');
+
+  if (Number.isFinite(endsAt) && Date.now() >= endsAt) {
+    return;
+  }
+
+  const projectedValue = comparison.projectedPortfolio;
+
+  if (
+    projectedValue === null ||
+    !Number.isFinite(projectedValue) ||
+    projectedValue <= 0
+  ) {
+    return;
+  }
+
+  this.portfolioDrawdown = observePortfolioValue(
+    state,
+    projectedValue
+  );
+}
+
 }

@@ -11,18 +11,16 @@
       class="brand"
     >
 
-      <span class="brand-icon">
-        ↗
-      </span>
+      <span class="brand-icon"><img src="branding/six7-symbol.png" alt="" width="48" height="48" class="six7-symbol"></span>
 
       <div class="brand-copy">
 
         <strong>
-          Trading Room
+          SIX7
         </strong>
 
         <small>
-          Market Simulator
+          Trading Arena
         </small>
 
       </div>
@@ -262,16 +260,25 @@
         </button>
 
 
-        <!-- THEME -->
 
-        <button
-          type="button"
-          class="theme-button"
-          aria-label="Changer le thème"
-          title="Changer le thème"
-        >
-          ☀
-        </button>
+<!-- ========================= -->
+<!-- SIX7 LIGHT / DARK THEME -->
+<!-- ========================= -->
+
+<button
+  type="button"
+  class="theme-button"
+  (click)="toggleTheme()"
+  [attr.aria-label]="
+    isDark ? 'Activer le mode clair' : 'Activer le mode sombre'
+  "
+  [attr.title]="
+    isDark ? 'Passer en mode clair' : 'Passer en mode sombre'
+  "
+  [attr.aria-pressed]="isDark"
+>
+  {{ isDark ? '☀' : '☾' }}
+</button>
 
 
         <!-- ========================= -->

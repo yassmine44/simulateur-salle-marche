@@ -1,4 +1,12 @@
-import { Component, inject } from '@angular/core';
+
+import { Component, inject, PLATFORM_ID } from '@angular/core';
+
+import {
+  AsyncPipe,
+  DOCUMENT,
+  isPlatformBrowser
+} from '@angular/common';
+
 import {
   Router,
   RouterLink,
@@ -6,11 +14,8 @@ import {
   RouterOutlet
 } from '@angular/router';
 
-import { AsyncPipe } from '@angular/common';
-
 import { AuthService } from '../../services/auth.service';
 import { AuthStateService } from '../../services/auth-state.service';
-
 
 @Component({
   selector: 'app-app-layout',
@@ -28,19 +33,53 @@ import { AuthStateService } from '../../services/auth-state.service';
 })
 export class AppLayoutComponent {
 
-  private readonly authService =
-    inject(AuthService);
+  private readonly authService = inject(AuthService);
+  private readonly authState = inject(AuthStateService);
+  private readonly router = inject(Router);
 
-  private readonly authState =
-    inject(AuthStateService);
+  private readonly document = inject(DOCUMENT);
+  private readonly platformId = inject(PLATFORM_ID);
 
-  private readonly router =
-    inject(Router);
+  readonly user$ = this.authState.currentUser$;
 
+  // =========================
+  // THEME
+  // =========================
 
-  readonly user$ =
-    this.authState.currentUser$;
+  isDark = false;
 
+  constructor() {
+    if (isPlatformBrowser(this.platformId)) {
+
+      const savedTheme =
+        localStorage.getItem('six7-theme');
+
+      this.isDark = savedTheme === 'dark';
+
+      this.applyTheme();
+    }
+  }
+
+  toggleTheme(): void {
+    this.isDark = !this.isDark;
+
+    this.applyTheme();
+  }
+
+  private applyTheme(): void {
+    if (!isPlatformBrowser(this.platformId)) {
+      return;
+    }
+
+    const theme = this.isDark ? 'dark' : 'light';
+
+    this.document.documentElement.setAttribute(
+      'data-theme',
+      theme
+    );
+
+    localStorage.setItem('six7-theme', theme);
+  }
 
   // =========================
   // ADMIN MENU
@@ -48,19 +87,13 @@ export class AppLayoutComponent {
 
   adminMenuOpen = false;
 
-
   toggleAdminMenu(): void {
-
-    this.adminMenuOpen =
-      !this.adminMenuOpen;
+    this.adminMenuOpen = !this.adminMenuOpen;
   }
-
 
   closeAdminMenu(): void {
-
     this.adminMenuOpen = false;
   }
-
 
   // =========================
   // LOGOUT
@@ -68,29 +101,17 @@ export class AppLayoutComponent {
 
   logout(): void {
 
-    this.authService
-      .logout()
-      .subscribe({
+    this.authService.logout().subscribe({
 
-        next: () => {
+      next: () => {
+        this.authState.clearUser();
+        this.router.navigate(['/login']);
+      },
 
-          this.authState.clearUser();
-
-          this.router.navigate([
-            '/login'
-          ]);
-        },
-
-
-        error: () => {
-
-          this.authState.clearUser();
-
-          this.router.navigate([
-            '/login'
-          ]);
-        }
-
-      });
+      error: () => {
+        this.authState.clearUser();
+        this.router.navigate(['/login']);
+      }
+    });
   }
 }
