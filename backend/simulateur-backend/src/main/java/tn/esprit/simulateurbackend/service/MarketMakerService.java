@@ -6,7 +6,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import tn.esprit.simulateurbackend.entity.Asset;
-import tn.esprit.simulateurbackend.entity.ScenarioType;
 import tn.esprit.simulateurbackend.dto.ScenarioStatusResponse;
 import tn.esprit.simulateurbackend.entity.Order;
 import tn.esprit.simulateurbackend.entity.OrderSide;
@@ -78,7 +77,7 @@ public class MarketMakerService {
     private static final double MEAN_REVERSION = 0.02;
 
 
-    // Retrait maximal de liquidité pendant un CRASH.
+    // Coefficients historiques CRASH conserves pour liquidityFactor().
     private static final double MAX_BID_WITHDRAWAL = 0.80;
     private static final double MAX_ASK_WITHDRAWAL = 0.30;
     /*
@@ -229,35 +228,30 @@ public class MarketMakerService {
 
         ScenarioStatusResponse scenario = scenarioService.status();
 
-// Le krach est-il actif sur CET actif ?
-        boolean crashActive =
+        // Les effets ne concernent que l'actif du scenario courant.
+        boolean scenarioActiveForAsset =
                 scenario.active()
-                        && scenario.type() == ScenarioType.CRASH
-                        && asset.getSymbol().equalsIgnoreCase(
-                        scenario.symbol()
-                );
+                        && asset.getSymbol().equalsIgnoreCase(scenario.symbol());
 
-// Intensité du choc baissier :
-// uniquement pendant CRASH.
-        double crashIntensity = crashActive
-                ? scenario.intensity().doubleValue()
-                : 0.0;
+        ScenarioMarketProfile profile;
+        if (scenarioActiveForAsset) {
+            long durationMillis = Math.max(1,
+                    java.time.Duration.between(
+                            scenario.startedAt(), scenario.endsAt()).toMillis());
+            long elapsedMillis = Math.max(0,
+                    java.time.Duration.between(
+                            scenario.startedAt(), java.time.Instant.now()).toMillis());
+            double progress = Math.min(1.0, (double) elapsedMillis / durationMillis);
+            profile = ScenarioMarketProfile.active(
+                    scenario.type(), scenario.intensity().doubleValue(), progress);
+        } else {
+            // La recuperation historique du CRASH affecte seulement
+            // le spread et la profondeur (jamais la derive du prix).
+            profile = ScenarioMarketProfile.crashRecovery(
+                    scenarioService.recoveryIntensity(asset.getSymbol()));
+        }
 
-// Intensité du stress de liquidité :
-// CRASH actif ou récupération progressive.
-        double liquidityIntensity = crashActive
-                ? crashIntensity
-                : scenarioService.recoveryIntensity(
-                asset.getSymbol()
-        );
-
-// IMPORTANT : la récupération ne doit pas
-// prolonger la dérive baissière du prix.
-        BigDecimal mid = nextMidPrice(
-                asset,
-                flowPressure,
-                crashIntensity
-        );
+        BigDecimal mid = nextMidPrice(asset, flowPressure, profile);
 
         BigDecimal tick = asset.getTickSize();
 
@@ -273,7 +267,7 @@ public class MarketMakerService {
                 mid.multiply(HALF_SPREAD_RATIO)
                         .multiply(
                                 BigDecimal.valueOf(
-                                        (1 + MAX_SPREAD_WIDENING * stress) * (1 + 2 * liquidityIntensity)
+                                        (1 + MAX_SPREAD_WIDENING * stress) * profile.spreadMultiplier()
                                 )
                         )
                         .max(tick);
@@ -328,16 +322,14 @@ public class MarketMakerService {
                     stressedQuoteQuantity(
                             asset,
                             quantity,
-                            OrderSide.BUY,
-                            liquidityIntensity
+                            profile.bidLiquidityFactor()
                     );
 
             BigDecimal askQuantity =
                     stressedQuoteQuantity(
                             asset,
                             quantity,
-                            OrderSide.SELL,
-                            liquidityIntensity
+                            profile.askLiquidityFactor()
                     );
 
             if (firstLevelQuantity == null) {
@@ -387,7 +379,7 @@ public class MarketMakerService {
                 firstLevelQuantity != null
                         && random.nextDouble() < tradeProbability
         ) {
-            simulateMarketFlow(asset, firstLevelQuantity);
+            simulateMarketFlow(asset, firstLevelQuantity, profile.buyFlowProbability());
         }
 
         matchingEngineService.triggerConditionalOrders(
@@ -483,7 +475,8 @@ public class MarketMakerService {
 
     private void simulateMarketFlow(
             Asset asset,
-            BigDecimal firstLevelQuantity
+            BigDecimal firstLevelQuantity,
+            double buyFlowProbability
     ) {
 
         User flow =
@@ -501,11 +494,11 @@ public class MarketMakerService {
         order.setUser(flow);
         order.setAssetSymbol(asset.getSymbol());
 
-        order.setSide(
-                random.nextBoolean()
-                        ? OrderSide.BUY
-                        : OrderSide.SELL
-        );
+        // Le hasard reste 50/50 hors scenario et pendant le CRASH historique.
+        boolean buy = buyFlowProbability == 0.5
+                ? random.nextBoolean()
+                : random.nextDouble() < buyFlowProbability;
+        order.setSide(buy ? OrderSide.BUY : OrderSide.SELL);
 
         order.setType(OrderType.MARKET);
         order.setStatus(OrderStatus.PENDING);
@@ -595,7 +588,7 @@ public class MarketMakerService {
     private BigDecimal nextMidPrice(
             Asset asset,
             double flowPressure,
-            double intensity
+            ScenarioMarketProfile profile
     ) {
 
         BigDecimal reference = asset.getReferencePrice();
@@ -622,9 +615,9 @@ public class MarketMakerService {
         double next =
                 mid
                         + mid * impact
-                        + mid * VOLATILITY * (1 + 2 * intensity) * random.nextGaussian()
+                        + mid * VOLATILITY * profile.volatilityMultiplier() * random.nextGaussian()
                         + (reference.doubleValue() - mid) * MEAN_REVERSION
-                        - mid * 0.006 * intensity;
+                        + mid * profile.priceDriftPerCycle();
 
         BigDecimal bounded =
                 BigDecimal.valueOf(next)
@@ -666,13 +659,10 @@ public class MarketMakerService {
     private BigDecimal stressedQuoteQuantity(
             Asset asset,
             BigDecimal normalQuantity,
-            OrderSide side,
-            double intensity
+            double liquidityFactor
     ) {
 
-        BigDecimal factor = BigDecimal.valueOf(
-                liquidityFactor(side, intensity)
-        );
+        BigDecimal factor = BigDecimal.valueOf(liquidityFactor);
 
         BigDecimal minimum = asset.getMinQuantity();
 

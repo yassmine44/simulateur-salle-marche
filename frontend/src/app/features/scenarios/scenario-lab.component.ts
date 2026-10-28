@@ -36,6 +36,7 @@ import {
 
 import {
   ScenarioService,
+  ScenarioType,
   ScenarioStatus,
   ScenarioMarketSnapshot,
   ScenarioRecoveryStatus
@@ -288,6 +289,41 @@ private updateLiquidityRecovery(
   symbol = 'AAPL';
   intensity = 0.5;
   durationSeconds = 120;
+  
+readonly scenarioTypes: {
+  value: ScenarioType;
+  label: string;
+  description: string;
+}[] = [
+  {
+    value: 'CRASH',
+    label: 'Crash classique',
+    description: 'Choc baissier et retrait de liquidité'
+  },
+  {
+    value: 'LIQUIDITY_CRISIS',
+    label: 'Crise de liquidité',
+    description: 'Spread élargi et carnet moins profond'
+  },
+  {
+    value: 'SELLING_PANIC',
+    label: 'Panique vendeuse',
+    description: 'Pression vendeuse sur les cours'
+  },
+  {
+    value: 'BULL_RALLY',
+    label: 'Rallye haussier',
+    description: 'Pression acheteuse et hausse des cours'
+  },
+  {
+    value: 'FLASH_CRASH',
+    label: 'Flash crash',
+    description: 'Chute rapide suivie d’un rebond'
+  }
+];
+
+selectedScenarioType: ScenarioType = 'CRASH';
+
 
   // ========================================
   // MARKET STATE
@@ -678,13 +714,12 @@ if (
 
     const symbol = this.symbol;
 
-    const request = {
-      type: 'CRASH' as const,
-      symbol,
-      intensity: Number(this.intensity),
-      durationSeconds: Number(this.durationSeconds)
-    };
-
+ const request = {
+  type: this.selectedScenarioType,
+  symbol,
+  intensity: Number(this.intensity),
+  durationSeconds: Number(this.durationSeconds)
+};
     this.busy = true;
     this.actionError = '';
 
