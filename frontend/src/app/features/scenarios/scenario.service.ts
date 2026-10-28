@@ -3,7 +3,12 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 
-export type ScenarioType = 'CRASH';
+export type ScenarioType =
+  | 'CRASH'
+  | 'LIQUIDITY_CRISIS'
+  | 'SELLING_PANIC'
+  | 'BULL_RALLY'
+  | 'FLASH_CRASH';
 
 export interface StartScenarioRequest {
   type: ScenarioType;

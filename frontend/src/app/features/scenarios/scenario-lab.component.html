@@ -64,11 +64,35 @@
             <option [ngValue]="300">300 secondes</option>
           </select>
         </div>
+        
+        
+<div class="field scenario-type-field">
+  <label for="scenarioType">
+    Type de scénario
+  </label>
+
+  <select
+    id="scenarioType"
+    name="scenarioType" aria-describedby="scenario-type-description"
+    [(ngModel)]="selectedScenarioType"
+   [disabled]="busy || status?.active === true"
+  >
+    <option
+      *ngFor="let scenario of scenarioTypes"
+      [ngValue]="scenario.value"
+    >
+      {{ scenario.label }}
+    </option>
+  </select>
+
+
+</div>
+
 
         <button
           class="start-button"
           (click)="startScenario()"
-          [disabled]="busy || status?.active"
+          [disabled]="busy || (status?.active ?? false)"
         >
           Démarrer le krach
         </button>
@@ -80,6 +104,14 @@
         >
           Arrêter
         </button>
+
+        <p class="scenario-type-description" id="scenario-type-description" aria-live="polite">
+  @for (scenario of scenarioTypes; track scenario.value) {
+    @if (scenario.value === selectedScenarioType) {
+      {{ scenario.description }}
+    }
+  }
+</p>
 
       </div>
 
