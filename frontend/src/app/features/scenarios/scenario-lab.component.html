@@ -689,7 +689,7 @@
   <div class="metrics">
 
     <div class="metric">
-      <span>PRIX AVANT CRASH</span>
+      <span>PRIX AVANT SCÉNARIO</span>
       <strong>
         {{ comparison.priceBefore | number:'1.2-4' }}
       </strong>
@@ -735,12 +735,20 @@
 
   </div>
 
-  <p class="notice">
-    Référence enregistrée avant le lancement du CRASH.
-    Impact calculé sur la quantité initialement détenue de
-    {{ comparison.symbol }}.
-    La projection ne constitue pas une opération réelle.
-  </p>
+<p class="notice">
+  Référence financière enregistrée avant le lancement du scénario.
+  L'impact est calculé sur la quantité initialement détenue de
+  {{ comparison.symbol }}, à partir de la variation du mid-price.
+
+  La valeur projetée suppose que les autres positions et
+  les liquidités du portefeuille restent constantes.
+
+  Cette estimation ne permet pas d'attribuer exclusivement
+  la variation au scénario : d'autres mouvements de marché
+  peuvent également influencer le prix observé.
+
+  Aucune transaction réelle ni aucun solde n'est modifié.
+</p>
 
 } @else if (baseline) {
 
@@ -797,18 +805,43 @@
 
     </div>
 
-    <p class="notice">
-      {{ drawdown.observationCount - 1 }}
-      observations pendant le CRASH.
-      Le drawdown maximal est conservé après le scénario.
-      Aucune transaction ni aucun solde n'est modifié.
-    </p>
+<p class="notice">
+  {{ drawdown.observationCount - 1 }}
+  observations financières pendant le scénario.
 
+  Le maximum drawdown représente la plus forte baisse
+  observée depuis un sommet précédent du portefeuille projeté.
+
+  Il est conservé après la fin du scénario, même si
+  la valorisation se redresse.
+
+  Cet indicateur est calculé en mémoire et n'affecte
+  aucune transaction ni aucun solde réel.
+</p>
   }
-  <!-- FIN MAXIMUM DRAWDOWN -->
-  @if (portfolioStressError) {
-    <p class="error">{{ portfolioStressError }}</p>
-  }
+<!-- FIN MAXIMUM DRAWDOWN -->
+
+@if (baseline && baseline.portfolio === null) {
+  <p class="notice">
+    Référence financière indisponible avant le lancement du scénario.
+    Les mesures de marché restent accessibles, mais l'impact
+    avant/après sur le portefeuille et le maximum drawdown
+    projeté ne peuvent pas être calculés.
+  </p>
+}
+
+@if (baseline && baseline.portfolio !== null &&
+     !baseline.portfolio.quoteCoverageComplete) {
+  <p class="notice">
+    Référence financière incomplète : certaines positions
+    ne disposent pas de cotations exploitables.
+    Le maximum drawdown projeté est indisponible.
+  </p>
+}
+
+@if (portfolioStressError) {
+  <p class="error">{{ portfolioStressError }}</p>
+}
 
   @if (portfolioStress; as stress) {
     <div class="metrics">
@@ -1025,7 +1058,12 @@
           </div>
           <p class="notice">Profondeur = volume total BID + ASK renvoyé par le carnet. Un pourcentage est indisponible si la référence est nulle ou égale à zéro. Les deux API sont interrogées séparément ; ces écarts décrivent les observations et n’isolent pas l’effet des autres ordres.</p>
         } @else {
-          <p class="notice">Au prochain démarrage, les prix et le carnet seront relevés avant de lancer le CRASH. La référence reste disponible jusqu’au changement d’actif, au prochain lancement ou au rechargement de la page.</p>
+         <p class="notice">
+  Au prochain démarrage, les prix et le carnet seront relevés
+  avant de lancer le scénario.
+  La référence reste disponible jusqu’au changement d’actif,
+  au prochain lancement ou au rechargement de la page.
+</p>
         }
       </section>
       
