@@ -25,7 +25,9 @@ import {
   catchError,
   of  
 } from 'rxjs';
-
+import {
+  calculatePortfolioScenarioImpact
+} from './portfolio-scenario-impact';
 import {
   TradingService
 } from '../trading/services/trading.service';
@@ -912,9 +914,7 @@ this.portfolioDrawdown =
   // ========================================
   // STRESS IMPACT DASHBOARD
   // ========================================
-  
 get crashPortfolioComparison() {
-
   const baseline = this.baseline;
   const current = this.portfolioStress;
 
@@ -937,49 +937,11 @@ get crashPortfolioComparison() {
     return null;
   }
 
-  const before = baseline.portfolio.positions.find(
-    position => position.assetSymbol === this.symbol
+  return calculatePortfolioScenarioImpact(
+    this.symbol,
+    baseline.portfolio,
+    current
   );
-
-  const after = current.positions.find(
-    position => position.assetSymbol === this.symbol
-  );
-
-  if (
-    !before ||
-    !after ||
-    before.quotedMidPrice === null ||
-    after.quotedMidPrice === null ||
-    before.quantity !== after.quantity
-  ) {
-    return null;
-  }
-
-  const quantity = before.quantity;
-
-  const priceBefore = before.quotedMidPrice;
-  const priceNow = after.quotedMidPrice;
-
-  const impact = quantity * (priceNow - priceBefore);
-
-  const portfolioBefore =
-    baseline.portfolio.quotedTotalValue;
-
-  const projectedPortfolio =
-    portfolioBefore === null
-      ? null
-      : portfolioBefore + impact;
-
-  return {
-    symbol: this.symbol,
-    quantity,
-    priceBefore,
-    priceNow,
-    impact,
-    portfolioBefore,
-    projectedPortfolio,
-    currency: baseline.portfolio.currency
-  };
 }
 
 
