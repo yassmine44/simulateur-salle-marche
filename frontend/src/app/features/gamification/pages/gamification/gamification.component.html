@@ -1,0 +1,799 @@
+<div class="gamification-page">
+
+  <header class="page-header">
+
+    <div>
+
+      <span class="eyebrow">
+        MODE HORS LIGNE
+      </span>
+
+      <h1>
+        Gamification
+      </h1>
+
+      <p>
+        Affrontez des crises historiques avec un portefeuille
+        virtuel isolé de 100 000 $. Le marché live n’est pas affecté.
+      </p>
+
+    </div>
+
+
+    <div class="header-meta">
+
+      <span class="mode-badge">
+        OFFLINE SIM
+      </span>
+
+      @if (portfolio) {
+
+        <span class="progress-badge">
+          {{ portfolio.visibleCandleCount }}
+          /
+          {{ portfolio.totalCandles }}
+          semaines
+          ({{ displayProgress }}%)
+        </span>
+
+      }
+
+    </div>
+
+  </header>
+
+
+  <section class="challenge-picker">
+
+    <h2>
+      Choisir un défi
+    </h2>
+
+    <div class="challenge-grid">
+
+      @for (challenge of challenges; track challenge.key) {
+
+        <button
+          type="button"
+          class="challenge-card"
+          [class.active]="selectedEvent === challenge.key"
+          [disabled]="busy"
+          (click)="selectChallenge(challenge.key)"
+        >
+
+          <strong>
+            {{ challenge.label }}
+          </strong>
+
+          <span>
+            {{ challenge.description }}
+          </span>
+
+        </button>
+
+      }
+
+    </div>
+
+  </section>
+
+
+  @if (errorMessage) {
+
+    <div class="alert alert-error">
+      {{ errorMessage }}
+    </div>
+
+  }
+
+
+  @if (successMessage) {
+
+    <div class="alert alert-success">
+      {{ successMessage }}
+    </div>
+
+  }
+
+
+  @if (!selectedEvent) {
+
+    <section class="empty-state">
+
+      <h2>
+        Sélectionnez une crise pour commencer
+      </h2>
+
+      <p>
+        Les 10 premières bougies hebdomadaires seront révélées.
+        Utilisez « Semaine suivante » pour découvrir la suite.
+      </p>
+
+    </section>
+
+  } @else {
+
+    <section class="workspace">
+
+      <div class="chart-panel">
+
+        <div class="panel-heading">
+
+          <div>
+
+            <span class="panel-kicker">
+              S&amp;P 500 — {{ challengeLabel }}
+            </span>
+
+            <h2>
+              Graphique historique
+            </h2>
+
+          </div>
+
+
+          <button
+            type="button"
+            class="advance-button"
+            [disabled]="
+              busy
+              || !isPlaying
+              || portfolio?.completed
+            "
+            (click)="advanceWeek()"
+          >
+            Semaine suivante
+          </button>
+
+        </div>
+
+
+        <div
+          #chartHost
+          class="chart-host"
+        >
+        </div>
+
+
+        @if (loading) {
+
+          <p class="chart-hint">
+            Chargement des données…
+          </p>
+
+        } @else if (portfolio?.completed) {
+
+          <p class="chart-hint done">
+            Fin du scénario. Relancez le défi pour recommencer.
+          </p>
+
+        } @else {
+
+          <p class="chart-hint">
+            Prix de référence (close courant) :
+            <strong>
+              {{ formatMoney(portfolio?.currentPrice) }} $
+            </strong>
+          </p>
+
+        }
+
+      </div>
+
+
+      <aside class="side-panel">
+
+        <section class="portfolio-card">
+
+          <h3>
+            Portefeuille isolé
+          </h3>
+
+          <div class="objective-tracker">
+
+            <div class="objective-labels">
+
+              <span>
+                Stop-out
+                {{ formatMoney(stopOutEquity) }} $
+              </span>
+
+              <span>
+                Objectif
+                {{ formatMoney(victoryEquity) }} $
+              </span>
+
+            </div>
+
+            <div
+              class="objective-track"
+              aria-label="Progression vers l'objectif"
+            >
+
+              <div
+                class="objective-fill"
+                [style.width.%]="objectiveProgressPercent"
+                [class.danger]="objectiveProgressPercent <= 15"
+                [class.success]="objectiveProgressPercent >= 95"
+              >
+              </div>
+
+              <span
+                class="objective-start"
+                [style.left.%]="startMarkerPercent"
+                title="Capital de départ"
+              >
+              </span>
+
+            </div>
+
+            <p class="objective-hint">
+              Equity actuelle :
+              <strong>
+                {{ formatMoney(portfolio?.equity) }} $
+              </strong>
+              — survie &gt; 90k, victoire ≥ 110k
+            </p>
+
+          </div>
+
+          <div class="metric-grid">
+
+            <div>
+
+              <span>
+                Cash
+              </span>
+
+              <strong>
+                {{ formatMoney(portfolio?.cashBalance) }} $
+              </strong>
+
+            </div>
+
+            <div>
+
+              <span>
+                Parts
+              </span>
+
+              <strong>
+                {{ portfolio?.sharesHeld ?? 0 }}
+              </strong>
+
+            </div>
+
+            <div>
+
+              <span>
+                Prix moyen
+              </span>
+
+              <strong>
+                {{ formatMoney(portfolio?.averageEntryPrice) }} $
+              </strong>
+
+            </div>
+
+            <div>
+
+              <span>
+                Valeur titres
+              </span>
+
+              <strong>
+                {{ formatMoney(portfolio?.marketValue) }} $
+              </strong>
+
+            </div>
+
+            <div>
+
+              <span>
+                PnL latent
+              </span>
+
+              <strong
+                [class.positive]="(portfolio?.unrealizedPnl ?? 0) >= 0"
+                [class.negative]="(portfolio?.unrealizedPnl ?? 0) < 0"
+              >
+                {{ formatMoney(portfolio?.unrealizedPnl) }} $
+              </strong>
+
+            </div>
+
+            <div>
+
+              <span>
+                Equity
+              </span>
+
+              <strong>
+                {{ formatMoney(portfolio?.equity) }} $
+              </strong>
+
+            </div>
+
+            <div class="full">
+
+              <span>
+                Performance
+              </span>
+
+              <strong
+                [class.positive]="(portfolio?.totalReturnPct ?? 0) >= 0"
+                [class.negative]="(portfolio?.totalReturnPct ?? 0) < 0"
+              >
+                {{ portfolio?.totalReturnPct ?? 0 }} %
+              </strong>
+
+            </div>
+
+          </div>
+
+        </section>
+
+
+        <section class="order-card">
+
+          <h3>
+            Ordre marché
+          </h3>
+
+          <p class="order-hint">
+            Exécution instantanée au close de la bougie visible.
+          </p>
+
+          <label for="qty">
+            Quantité
+          </label>
+
+          <input
+            id="qty"
+            type="number"
+            min="0.00000001"
+            step="1"
+            [(ngModel)]="quantity"
+            [disabled]="busy || !isPlaying"
+          >
+
+          <div class="order-actions">
+
+            <button
+              type="button"
+              class="buy"
+              [disabled]="
+                busy
+                || !isPlaying
+                || portfolio?.completed
+              "
+              (click)="placeOrder('BUY')"
+            >
+              Acheter
+            </button>
+
+            <button
+              type="button"
+              class="sell"
+              [disabled]="
+                busy
+                || !isPlaying
+                || portfolio?.completed
+              "
+              (click)="placeOrder('SELL')"
+            >
+              Vendre
+            </button>
+
+          </div>
+
+          <button
+            type="button"
+            class="restart"
+            [disabled]="busy"
+            (click)="restartCurrentChallenge()"
+          >
+            Relancer le défi
+          </button>
+
+        </section>
+
+
+        <section class="orders-card">
+
+          <h3>
+            Derniers ordres
+          </h3>
+
+          @if (!portfolio?.recentOrders?.length) {
+
+            <p class="empty-orders">
+              Aucun ordre pour l’instant.
+            </p>
+
+          } @else {
+
+            <ul>
+
+              @for (
+                order of portfolio?.recentOrders;
+                track order.id
+              ) {
+
+                <li>
+
+                  <span
+                    class="side"
+                    [class.buy]="order.side === 'BUY'"
+                    [class.sell]="order.side === 'SELL'"
+                  >
+                    {{ order.side }}
+                  </span>
+
+                  <span>
+                    {{ order.quantity }}
+                    ×
+                    {{ formatMoney(order.executionPrice) }} $
+                  </span>
+
+                </li>
+
+              }
+
+            </ul>
+
+          }
+
+        </section>
+
+      </aside>
+
+    </section>
+
+
+    <section class="context-grid">
+
+      <article class="context-card ai-card">
+
+        <div class="context-heading">
+
+          <div>
+
+            <span class="panel-kicker">
+              QUANT &amp; FONDAMENTAL
+            </span>
+
+            <h3>
+              Analyse Quant &amp; Fondamentale (IA)
+            </h3>
+
+          </div>
+
+          <span class="week-chip">
+            Semaine {{ currentWeekLabel }}
+          </span>
+
+        </div>
+
+
+        @if (!aiAnalysis) {
+
+          <p class="context-empty">
+            En attente du moteur quantitatif…
+          </p>
+
+        } @else {
+
+          <div class="ai-terminal">
+
+            <div class="ai-metrics">
+
+              <div class="metric-box">
+
+                <span class="metric-label">
+                  RSI(14)
+                </span>
+
+                <strong
+                  class="rsi-value"
+                  [attr.data-tone]="rsiTone"
+                >
+                  {{
+                    aiAnalysis.learningPhase
+                      || aiAnalysis.rsiValue === null
+                      ? '—'
+                      : (aiAnalysis.rsiValue | number:'1.1-1')
+                  }}
+                </strong>
+
+                <small [attr.data-tone]="rsiTone">
+                  @switch (rsiTone) {
+                    @case ('overbought') { Surachat }
+                    @case ('oversold') { Survente }
+                    @case ('learning') { Apprentissage }
+                    @default { Neutre }
+                  }
+                </small>
+
+              </div>
+
+
+              <div class="metric-box">
+
+                <span class="metric-label">
+                  Tendance SMA(20)
+                </span>
+
+                <strong>
+                  {{ aiAnalysis.trendIndicator }}
+                </strong>
+
+                <small>
+                  {{
+                    aiAnalysis.smaValue === null
+                      ? 'SMA en formation'
+                      : ('SMA ' + (aiAnalysis.smaValue | number:'1.2-2'))
+                  }}
+                </small>
+
+              </div>
+
+
+              <div class="metric-box">
+
+                <span class="metric-label">
+                  Volatilité
+                </span>
+
+                <strong>
+                  {{
+                    aiAnalysis.volatility === null
+                      ? '—'
+                      : ((aiAnalysis.volatility | number:'1.2-2') + '%')
+                  }}
+                </strong>
+
+                <small>
+                  Écart-type relatif
+                </small>
+
+              </div>
+
+
+              <div class="metric-box">
+
+                <span class="metric-label">
+                  Sentiment fonda.
+                </span>
+
+                <strong class="sentiment-text">
+                  {{ aiAnalysis.fundamentalSentiment }}
+                </strong>
+
+              </div>
+
+            </div>
+
+
+            <div
+              class="confidence-block"
+              [attr.data-direction]="predictionTone"
+            >
+
+              <div class="confidence-header">
+
+                <span>
+                  Score ML simulé
+                </span>
+
+                <strong>
+                  {{
+                    aiAnalysis.learningPhase
+                      ? "En phase d'apprentissage"
+                      : aiAnalysis.mlConfidenceLabel
+                  }}
+                </strong>
+
+              </div>
+
+              <div class="confidence-track">
+
+                <div
+                  class="confidence-fill"
+                  [style.width.%]="
+                    aiAnalysis.learningPhase
+                      ? 18
+                      : confidencePercent
+                  "
+                >
+                </div>
+
+              </div>
+
+            </div>
+
+
+            <div class="analysis-text">
+
+              <span class="analysis-label">
+                Desk output
+              </span>
+
+              <p>
+                {{ aiAnalysis.detailedAnalysis }}
+              </p>
+
+            </div>
+
+          </div>
+
+        }
+
+      </article>
+
+
+      <article class="context-card calendar-card">
+
+        <div class="context-heading">
+
+          <div>
+
+            <span class="panel-kicker">
+              MACRO &amp; GÉOPOLITIQUE
+            </span>
+
+            <h3>
+              Calendrier économique
+            </h3>
+
+          </div>
+
+          <span class="week-chip">
+            Semaine {{ currentWeekLabel }}
+          </span>
+
+        </div>
+
+
+        @if (!calendarEvents.length) {
+
+          <p class="context-empty">
+            Aucun événement économique majeur cette semaine.
+          </p>
+
+        } @else {
+
+          <ol class="event-timeline">
+
+            @for (
+              event of calendarEvents;
+              track event.date + event.description
+            ) {
+
+              <li [attr.data-impact]="impactClass(event.impact)">
+
+                <span
+                  class="timeline-dot"
+                  [attr.data-impact]="impactClass(event.impact)"
+                  aria-hidden="true"
+                >
+                </span>
+
+                <div class="timeline-body">
+
+                  <div class="timeline-meta">
+
+                    <time>
+                      {{ event.date }}
+                    </time>
+
+                    <span
+                      class="impact-pill"
+                      [attr.data-impact]="impactClass(event.impact)"
+                    >
+                      {{ event.impact }}
+                    </span>
+
+                  </div>
+
+                  <p>
+                    {{ event.description }}
+                  </p>
+
+                </div>
+
+              </li>
+
+            }
+
+          </ol>
+
+        }
+
+      </article>
+
+    </section>
+
+  }
+
+
+  @if (isGameOver) {
+
+    <div
+      class="endgame-overlay"
+      role="dialog"
+      aria-modal="true"
+      [attr.aria-label]="
+        gameStatus === 'WON'
+          ? 'Victoire'
+          : 'Défaite'
+      "
+    >
+
+      <div
+        class="endgame-card"
+        [class.won]="gameStatus === 'WON'"
+        [class.lost]="gameStatus === 'LOST'"
+      >
+
+        <span class="endgame-kicker">
+          {{
+            gameStatus === 'WON'
+              ? 'MISSION ACCOMPLIE'
+              : 'MISSION ÉCHOUÉE'
+          }}
+        </span>
+
+        <h2>
+          {{
+            gameStatus === 'WON'
+              ? 'Victoire'
+              : 'Défaite'
+          }}
+        </h2>
+
+        <p class="endgame-message">
+          {{ endGameMessage }}
+        </p>
+
+        <div class="endgame-equity">
+
+          <span>
+            Equity finale
+          </span>
+
+          <strong>
+            {{ formatMoney(finalEquity) }} $
+          </strong>
+
+        </div>
+
+        <div class="endgame-actions">
+
+          <button
+            type="button"
+            class="primary"
+            [disabled]="busy"
+            (click)="restartCurrentChallenge()"
+          >
+            Relancer le défi
+          </button>
+
+          <button
+            type="button"
+            class="secondary"
+            [disabled]="busy"
+            (click)="chooseAnotherChallenge()"
+          >
+            Choisir un autre défi
+          </button>
+
+        </div>
+
+      </div>
+
+    </div>
+
+  }
+
+</div>
