@@ -107,7 +107,276 @@
         <div><span>Fin réelle</span><strong>{{ r.actualEndedAt ? (r.actualEndedAt | date:'dd/MM/yyyy HH:mm:ss') : 'Non terminée' }}</strong></div>
         <div><span>Statut</span><strong>{{ statusLabel(r.status) }}</strong></div>
       </div>
-      <p class="report-note">Ce bilan décrit l'exécution du scénario. Les pertes, le drawdown et les mesures de liquidité ne sont pas encore historisés dans cette API.</p>
+  <p class="report-note">
+  Ce bilan présente les informations d'exécution du scénario.
+  Les mesures de marché historiques disponibles sont présentées
+  ci-dessous. Le P&amp;L et le drawdown historiques propres
+  à chaque portefeuille ne sont pas encore persistés.
+</p>
     </ng-container>
+    
+<!-- HISTORIQUE FINANCIER DU SCENARIO -->
+
+<p *ngIf="marketLoading"
+   class="muted"
+   role="status">
+  Chargement des observations financières...
+</p>
+
+<p *ngIf="marketError"
+   class="error"
+   role="alert">
+  {{ marketError }}
+</p>
+
+<ng-container *ngIf="marketHistory as market">
+
+  <div class="panel-heading">
+    <div>
+      <h3>Évolution financière du scénario</h3>
+      <p class="muted">
+        Cotations historiques du carnet d'ordres —
+        {{ market.symbol }}
+      </p>
+    </div>
+  </div>
+
+  <div class="report-grid">
+
+    <div>
+      <span>MID-PRICE AVANT SCÉNARIO</span>
+      <strong>
+        {{ (market.baseline?.midPrice | number:'1.2-4') ?? '—' }}
+      </strong>
+    </div>
+
+    <div>
+      <span>DERNIER MID-PRICE OBSERVÉ</span>
+      <strong>
+        {{ (market.lastDuring?.midPrice | number:'1.2-4') ?? '—' }}
+      </strong>
+    </div>
+
+    <div>
+      <span>VARIATION DU PRIX</span>
+      <strong
+        [class.negative]="(market.priceChangePercent ?? 0) < 0"
+        [class.positive]="(market.priceChangePercent ?? 0) > 0">
+        {{ market.priceChangePercent === null
+          ? '—'
+          : ((market.priceChangePercent | number:'1.2-4') + ' %') }}
+      </strong>
+    </div>
+
+    <div>
+      <span>SPREAD INITIAL</span>
+      <strong>
+        {{ (market.baseline?.spread | number:'1.2-4') ?? '—' }}
+      </strong>
+    </div>
+
+    <div>
+      <span>DERNIER SPREAD</span>
+      <strong>
+        {{ (market.lastDuring?.spread | number:'1.2-4') ?? '—' }}
+      </strong>
+    </div>
+
+    <div>
+      <span>PROFONDEUR BID INITIALE</span>
+      <strong>
+        {{ (market.baseline?.weightedBidDepth | number:'1.2-2') ?? '—' }}
+      </strong>
+    </div>
+
+    <div>
+      <span>DERNIÈRE PROFONDEUR BID</span>
+      <strong>
+        {{ (market.lastDuring?.weightedBidDepth | number:'1.2-2') ?? '—' }}
+      </strong>
+    </div>
+
+    <div>
+      <span>OBSERVATIONS ENREGISTRÉES</span>
+      <strong>{{ market.during.length }}</strong>
+    </div>
+
+  </div>
+
+  <p class="report-note">
+    Les données proviennent des snapshots du carnet d'ordres.
+    La référence initiale est la dernière observation disponible
+    dans les 30 secondes précédant le démarrage.
+    Ces mesures sont indicatives et ne démontrent pas
+    l'effet causal exclusif du scénario.
+  </p>
+
+<div class="market-chart" *ngIf="priceChartCount > 0">
+
+  <h3>Évolution du mid-price</h3>
+
+  <p class="muted">
+    {{ priceChartCount }} cotation(s) observée(s)
+    pendant le scénario.
+  </p>
+
+  <div class="market-chart__graph">
+    <svg
+      viewBox="0 0 800 240"
+      preserveAspectRatio="xMidYMid meet"
+      role="img"
+      aria-label="Évolution du mid-price pendant le scénario">
+
+      <line
+        x1="25" y1="25"
+        x2="775" y2="25"
+        stroke="currentColor"
+        stroke-opacity="0.12" />
+
+      <line
+        x1="25" y1="120"
+        x2="775" y2="120"
+        stroke="currentColor"
+        stroke-opacity="0.12" />
+
+      <line
+        x1="25" y1="215"
+        x2="775" y2="215"
+        stroke="currentColor"
+        stroke-opacity="0.12" />
+
+      <polyline
+        [attr.points]="priceChartPoints"
+        fill="none"
+        stroke="#38bdf8"
+        stroke-width="3"
+        stroke-linecap="round"
+        stroke-linejoin="round" />
+
+    </svg>
+  </div>
+
+  <div class="market-chart__legend">
+    <span>
+      Minimum :
+      {{ priceChartMin | number:'1.2-4' }}
+    </span>
+
+    <span>
+      Maximum :
+      {{ priceChartMax | number:'1.2-4' }}
+    </span>
+  </div>
+
+  <p class="report-note" *ngIf="priceChartCount === 1">
+    Une seule observation disponible : évolution non déterminable.
+  </p>
+
+</div>
+
+<div class="market-chart" *ngIf="liquidityChartCount >= 2">
+
+  <h3>Évolution de la liquidité</h3>
+
+  <p class="muted">
+    Profondeur pondérée des côtés acheteur (BID)
+    et vendeur (ASK).
+  </p>
+
+  <div class="market-chart__graph">
+    <svg
+      viewBox="0 0 800 240"
+      preserveAspectRatio="xMidYMid meet"
+      role="img"
+      aria-label="Évolution des profondeurs BID et ASK">
+
+      <line x1="25" y1="25" x2="775" y2="25"
+            stroke="currentColor" stroke-opacity="0.12" />
+
+      <line x1="25" y1="120" x2="775" y2="120"
+            stroke="currentColor" stroke-opacity="0.12" />
+
+      <line x1="25" y1="215" x2="775" y2="215"
+            stroke="currentColor" stroke-opacity="0.12" />
+
+      <polyline
+        [attr.points]="liquidityBidPoints"
+        fill="none"
+        stroke="#22c55e"
+        stroke-width="3"
+        stroke-linecap="round"
+        stroke-linejoin="round" />
+
+      <polyline
+        [attr.points]="liquidityAskPoints"
+        fill="none"
+        stroke="#ef4444"
+        stroke-width="3"
+        stroke-linecap="round"
+        stroke-linejoin="round" />
+
+    </svg>
+  </div>
+
+  <div class="liquidity-legend">
+    <span class="liquidity-legend__bid">● BID — Acheteurs</span>
+    <span class="liquidity-legend__ask">● ASK — Vendeurs</span>
+  </div>
+
+  <p class="report-note">
+    Ces courbes représentent la profondeur pondérée
+    observée dans le carnet d'ordres simulé.
+  </p>
+
+</div>
+
+  <h3>Observations pendant le scénario</h3>
+
+  <div class="table-scroll"
+       *ngIf="market.during.length > 0; else noMarketObservations">
+
+    <table>
+      <thead>
+        <tr>
+          <th>Heure</th>
+          <th>Mid-price</th>
+          <th>Spread</th>
+          <th>Volume BID</th>
+          <th>Volume ASK</th>
+        </tr>
+      </thead>
+
+      <tbody>
+        <tr *ngFor="let observation of market.during">
+          <td>
+            {{ observation.observedAt | date:'HH:mm:ss' }}
+          </td>
+          <td>
+            {{ (observation.midPrice | number:'1.2-4') ?? '—' }}
+          </td>
+          <td>
+            {{ (observation.spread | number:'1.2-4') ?? '—' }}
+          </td>
+          <td>
+            {{ (observation.totalBidVolume | number:'1.2-2') ?? '—' }}
+          </td>
+          <td>
+            {{ (observation.totalAskVolume | number:'1.2-2') ?? '—' }}
+          </td>
+        </tr>
+      </tbody>
+    </table>
+
+  </div>
+
+  <ng-template #noMarketObservations>
+    <p class="muted">
+      Aucune observation de marché exploitable
+      n'est disponible pour cette simulation.
+    </p>
+  </ng-template>
+
+</ng-container>
+
   </section>
 </section>

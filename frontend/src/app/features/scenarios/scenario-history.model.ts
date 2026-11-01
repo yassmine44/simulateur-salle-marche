@@ -36,3 +36,27 @@ export interface ScenarioReportResponse {
   actualDurationSeconds: number | null;
   completionPercent: number | null;
 }
+
+export interface ScenarioMarketObservation {
+  observedAt: string;
+  midPrice: number | null;
+  bestBid: number | null;
+  bestAsk: number | null;
+  spread: number | null;
+  totalBidVolume: number | null;
+  totalAskVolume: number | null;
+  weightedBidDepth: number | null;
+  weightedAskDepth: number | null;
+}
+
+export interface ScenarioMarketHistory {
+  executionId: number;
+  symbol: string;
+  startedAt: string;
+  observedUntil: string;
+  baseline: ScenarioMarketObservation | null;
+  during: ScenarioMarketObservation[];
+  lastDuring: ScenarioMarketObservation | null;
+  priceChangePercent: number | null;
+}
+

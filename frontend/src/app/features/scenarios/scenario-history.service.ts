@@ -3,7 +3,8 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import {
   ScenarioHistoryResponse,
-  ScenarioReportResponse
+  ScenarioReportResponse,
+  ScenarioMarketHistory
 } from './scenario-history.model';
 
 @Injectable({ providedIn: 'root' })
@@ -28,4 +29,12 @@ export class ScenarioHistoryService {
       { withCredentials: true }
     );
   }
+  
+getMarketHistory(id: number): Observable<ScenarioMarketHistory> {
+  return this.http.get<ScenarioMarketHistory>(
+    `${this.baseUrl}/${encodeURIComponent(String(id))}/market`,
+    { withCredentials: true }
+  );
+}
+
 }
