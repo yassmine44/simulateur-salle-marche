@@ -217,6 +217,22 @@ export const routes: Routes = [
 },
 
 
+      {
+        path: 'gamification',
+
+        loadComponent: () =>
+
+          import(
+            './features/gamification/pages/gamification/gamification.component'
+          )
+
+            .then(
+              module =>
+                module.GamificationComponent
+            )
+      },
+
+
       // =====================
       // ADMIN SECURITY CENTER
       // =====================
