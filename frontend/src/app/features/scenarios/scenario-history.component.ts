@@ -7,7 +7,8 @@ import {
   ScenarioExecutionStatus,
   ScenarioHistoryItem,
   ScenarioHistoryResponse,
-  ScenarioReportResponse
+  ScenarioReportResponse,
+  ScenarioMarketHistory
 } from './scenario-history.model';
 import { ScenarioHistoryService } from './scenario-history.service';
 
@@ -22,17 +23,81 @@ export class ScenarioHistoryComponent implements OnInit, OnDestroy {
   private readonly api = inject(ScenarioHistoryService);
   private listRequest?: Subscription;
   private detailRequest?: Subscription;
+  private marketRequest?: Subscription;
 
   readonly pageSize = 10;
   page = 0;
   history: ScenarioHistoryResponse | null = null;
   selected: ScenarioHistoryItem | null = null;
   report: ScenarioReportResponse | null = null;
-
+marketHistory: ScenarioMarketHistory | null = null;
+marketLoading = false;
+marketError = '';
   loading = false;
   reportLoading = false;
   listError = '';
   reportError = '';
+  priceChartPoints = '';
+priceChartMin: number | null = null;
+priceChartMax: number | null = null;
+priceChartCount = 0;
+liquidityBidPoints = '';
+liquidityAskPoints = '';
+liquidityChartCount = 0;
+liquidityChartMax = 0;
+  
+
+private buildPriceChart(market: ScenarioMarketHistory): void {
+  this.priceChartPoints = '';
+  this.priceChartMin = null;
+  this.priceChartMax = null;
+  this.priceChartCount = 0;
+
+  const observations = market.during
+    .filter(o =>
+      o.midPrice !== null &&
+      Number.isFinite(o.midPrice) &&
+      o.midPrice > 0 &&
+      Number.isFinite(Date.parse(o.observedAt))
+    );
+
+  if (observations.length === 0) {
+    return;
+  }
+
+  const prices = observations.map(o => o.midPrice as number);
+  const times = observations.map(o => Date.parse(o.observedAt));
+
+  const minimum = Math.min(...prices);
+  const maximum = Math.max(...prices);
+
+  this.priceChartMin = minimum;
+  this.priceChartMax = maximum;
+  this.priceChartCount = prices.length;
+
+  const padding = 25;
+  const width = 800;
+  const height = 240;
+
+  const range = maximum - minimum;
+  const verticalRange = range > 0 ? range : Math.max(maximum * 0.01, 0.01);
+
+  const startTime = Math.min(...times);
+  const endTime = Math.max(...times);
+  const timeRange = endTime - startTime;
+
+  this.priceChartPoints = prices.map((price, index) => {
+    const x = timeRange > 0
+      ? padding + ((times[index] - startTime) / timeRange) * (width - 2 * padding)
+      : width / 2;
+
+    const y = padding +
+      ((maximum - price) / verticalRange) * (height - 2 * padding);
+
+    return `${x.toFixed(2)},${y.toFixed(2)}`;
+  }).join(' ');
+}
+
 
   ngOnInit(): void {
     this.loadPage(0);
@@ -41,6 +106,7 @@ export class ScenarioHistoryComponent implements OnInit, OnDestroy {
   ngOnDestroy(): void {
     this.listRequest?.unsubscribe();
     this.detailRequest?.unsubscribe();
+    this.marketRequest?.unsubscribe();
   }
 
   loadPage(page: number): void {
@@ -49,11 +115,20 @@ export class ScenarioHistoryComponent implements OnInit, OnDestroy {
 
     this.listRequest?.unsubscribe();
     this.detailRequest?.unsubscribe();
+    this.marketRequest?.unsubscribe();
+this.marketHistory = null;
+this.marketError = '';
+this.marketLoading = false;
     this.selected = null;
     this.report = null;
     this.reportError = '';
     this.listError = '';
     this.loading = true;
+    this.liquidityBidPoints = '';
+this.liquidityAskPoints = '';
+this.liquidityChartCount = 0;
+this.liquidityChartMax = 0;
+    
 
     this.listRequest = this.api.getHistory(page, this.pageSize)
       .pipe(finalize(() => { this.loading = false; }))
@@ -69,22 +144,131 @@ export class ScenarioHistoryComponent implements OnInit, OnDestroy {
       });
   }
 
-  selectExecution(item: ScenarioHistoryItem): void {
-    this.detailRequest?.unsubscribe();
-    this.selected = item;
-    this.report = null;
-    this.reportError = '';
-    this.reportLoading = true;
 
-    this.detailRequest = this.api.getReport(item.id)
-      .pipe(finalize(() => { this.reportLoading = false; }))
-      .subscribe({
-        next: report => { this.report = report; },
-        error: error => {
-          this.reportError = this.describeError('Chargement du bilan', error);
-        }
-      });
-  }
+selectExecution(item: ScenarioHistoryItem): void {
+  this.detailRequest?.unsubscribe();
+  this.marketRequest?.unsubscribe();
+
+  this.selected = item;
+  this.report = null;
+  this.marketHistory = null;
+  this.priceChartPoints = '';
+this.priceChartCount = 0;
+this.priceChartMin = null;
+this.priceChartMax = null;
+this.liquidityBidPoints = '';
+this.liquidityAskPoints = '';
+this.liquidityChartCount = 0;
+this.liquidityChartMax = 0;
+
+
+  this.reportError = '';
+  this.marketError = '';
+
+  this.reportLoading = true;
+  this.marketLoading = true;
+
+  // Bilan d'exécution existant
+  this.detailRequest = this.api.getReport(item.id)
+    .pipe(finalize(() => {
+      this.reportLoading = false;
+    }))
+    .subscribe({
+      next: report => {
+        this.report = report;
+      },
+      error: error => {
+        this.reportError = this.describeError(
+          'Chargement du bilan',
+          error
+        );
+      }
+    });
+
+  // Observations financières historiques
+  this.marketRequest = this.api.getMarketHistory(item.id)
+    .pipe(finalize(() => {
+      this.marketLoading = false;
+    }))
+    .subscribe({
+next: market => {
+  this.marketHistory = market;
+  this.buildPriceChart(market);
+  this.buildLiquidityChart(market);
+},
+      error: error => {
+        this.marketError = this.describeError(
+          'Chargement des mesures de marché',
+          error
+        );
+      }
+    });
+}
+
+private buildLiquidityChart(market: ScenarioMarketHistory): void {
+  this.liquidityBidPoints = '';
+  this.liquidityAskPoints = '';
+  this.liquidityChartCount = 0;
+  this.liquidityChartMax = 0;
+
+  const observations = market.during
+    .map(o => ({
+      time: Date.parse(o.observedAt),
+      bid: o.weightedBidDepth,
+      ask: o.weightedAskDepth
+    }))
+    .filter(o =>
+      Number.isFinite(o.time) &&
+      (
+        (o.bid !== null && Number.isFinite(o.bid) && o.bid >= 0) ||
+        (o.ask !== null && Number.isFinite(o.ask) && o.ask >= 0)
+      )
+    )
+    .sort((a, b) => a.time - b.time);
+
+  if (observations.length < 2) return;
+
+  const depths = observations.flatMap(o => [
+    ...(o.bid !== null && Number.isFinite(o.bid) && o.bid >= 0 ? [o.bid] : []),
+    ...(o.ask !== null && Number.isFinite(o.ask) && o.ask >= 0 ? [o.ask] : [])
+  ]);
+
+  const maxDepth = Math.max(1, ...depths);
+  const start = observations[0].time;
+  const end = observations[observations.length - 1].time;
+
+  const width = 800;
+  const height = 240;
+  const padding = 25;
+
+  const x = (time: number): number =>
+    end > start
+      ? padding + ((time - start) / (end - start)) * (width - 2 * padding)
+      : width / 2;
+
+  const y = (depth: number): number =>
+    height - padding -
+    (depth / maxDepth) * (height - 2 * padding);
+
+  const toPoints = (side: 'bid' | 'ask'): string =>
+    observations
+      .filter(o =>
+        o[side] !== null &&
+        Number.isFinite(o[side]) &&
+        o[side]! >= 0
+      )
+      .map(o =>
+        `${x(o.time).toFixed(2)},${y(o[side]!).toFixed(2)}`
+      )
+      .join(' ');
+
+  this.liquidityBidPoints = toPoints('bid');
+  this.liquidityAskPoints = toPoints('ask');
+  this.liquidityChartCount = observations.length;
+  this.liquidityChartMax = maxDepth;
+}
+
+
 
   get hasPrevious(): boolean {
     return !this.loading && this.page > 0;
@@ -122,4 +306,5 @@ export class ScenarioHistoryComponent implements OnInit, OnDestroy {
     }
     return `${action} : erreur inconnue.`;
   }
+  
 }
