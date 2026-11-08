@@ -1,0 +1,574 @@
+<div class="admin-page">
+
+  <header class="page-header">
+
+    <div>
+
+      <span class="eyebrow">
+        ADMINISTRATION
+      </span>
+
+      <h1>
+        Gestion des formations
+      </h1>
+
+      <p>
+        Créez et modifiez les formations, leurs leçons, les vidéos
+        YouTube et les quiz. Les changements sont visibles tout de suite
+        par les traders.
+      </p>
+
+    </div>
+
+
+    <div class="header-actions">
+
+      <a
+        class="ghost-button"
+        routerLink="/app/formation"
+      >
+        Voir côté trader
+      </a>
+
+      @if (!editing) {
+
+        <button
+          type="button"
+          class="primary-button"
+          (click)="newCourse()"
+        >
+          + Nouvelle formation
+        </button>
+
+      }
+
+    </div>
+
+  </header>
+
+
+  @if (errorMessage) {
+
+    <div class="alert alert-error">
+      {{ errorMessage }}
+    </div>
+
+  }
+
+  @if (successMessage) {
+
+    <div class="alert alert-success">
+      {{ successMessage }}
+    </div>
+
+  }
+
+
+  <!-- ========================================= -->
+  <!-- LISTE DES FORMATIONS -->
+  <!-- ========================================= -->
+
+  @if (!editing) {
+
+    @if (loading) {
+
+      <div class="state-box">
+        Chargement…
+      </div>
+
+    } @else if (courses.length === 0) {
+
+      <div class="state-box">
+        Aucune formation. Cliquez sur « Nouvelle formation ».
+      </div>
+
+    } @else {
+
+      <section class="course-list">
+
+        @for (course of courses; track course.id) {
+
+          <article class="course-row">
+
+            <div class="course-main">
+
+              <div class="badges">
+
+                <span
+                  class="level-badge"
+                  [attr.data-level]="course.level"
+                >
+                  {{ levelLabels[course.level] }}
+                </span>
+
+                <span
+                  class="status-badge"
+                  [class.published]="course.published"
+                >
+                  {{ course.published ? 'Publiée' : 'Brouillon' }}
+                </span>
+
+              </div>
+
+              <strong>
+                {{ course.title }}
+              </strong>
+
+              <small>
+                {{ course.category }}
+                · {{ course.lessonCount }} leçons
+                · ordre {{ course.displayOrder }}
+              </small>
+
+            </div>
+
+            <div class="row-actions">
+
+              <button
+                type="button"
+                class="secondary-button"
+                [disabled]="busy"
+                (click)="editCourse(course)"
+              >
+                Modifier
+              </button>
+
+              <button
+                type="button"
+                class="danger-button"
+                [disabled]="busy"
+                (click)="deleteCourse(course)"
+              >
+                Supprimer
+              </button>
+
+            </div>
+
+          </article>
+
+        }
+
+      </section>
+
+    }
+
+  }
+
+
+  <!-- ========================================= -->
+  <!-- ÉDITION D'UNE FORMATION -->
+  <!-- ========================================= -->
+
+  @if (editing; as course) {
+
+    <button
+      type="button"
+      class="back-link"
+      (click)="backToList()"
+    >
+      ← Retour à la liste
+    </button>
+
+
+    <section class="panel">
+
+      <h2>
+        {{ course.id === null ? 'Nouvelle formation' : 'Informations de la formation' }}
+      </h2>
+
+      <div class="form-grid">
+
+        <label class="field full">
+          <span>Titre</span>
+          <input
+            type="text"
+            maxlength="150"
+            [(ngModel)]="course.title"
+          >
+        </label>
+
+        <label class="field full">
+          <span>Description</span>
+          <textarea
+            rows="3"
+            maxlength="1000"
+            [(ngModel)]="course.description"
+          ></textarea>
+        </label>
+
+        <label class="field">
+          <span>Niveau</span>
+          <select [(ngModel)]="course.level">
+            @for (level of levels; track level.key) {
+              <option [value]="level.key">
+                {{ level.label }}
+              </option>
+            }
+          </select>
+        </label>
+
+        <label class="field">
+          <span>Catégorie</span>
+          <input
+            type="text"
+            maxlength="60"
+            placeholder="Ex. Risque, Analyse…"
+            [(ngModel)]="course.category"
+          >
+        </label>
+
+        <label class="field">
+          <span>Ordre d'affichage</span>
+          <input
+            type="number"
+            min="0"
+            [(ngModel)]="course.displayOrder"
+          >
+        </label>
+
+        <label class="field checkbox">
+          <input
+            type="checkbox"
+            [(ngModel)]="course.published"
+          >
+          <span>Publiée (visible par les traders)</span>
+        </label>
+
+      </div>
+
+      <button
+        type="button"
+        class="primary-button"
+        [disabled]="busy"
+        (click)="saveCourse()"
+      >
+        {{ busy ? 'Enregistrement…' : 'Enregistrer la formation' }}
+      </button>
+
+    </section>
+
+
+    <!-- ========================================= -->
+    <!-- LEÇONS -->
+    <!-- ========================================= -->
+
+    @if (course.id === null) {
+
+      <div class="state-box">
+        Enregistrez la formation pour pouvoir ajouter des leçons.
+      </div>
+
+    } @else {
+
+      <section class="panel">
+
+        <div class="panel-heading">
+
+          <h2>
+            Leçons ({{ course.lessons.length }})
+          </h2>
+
+          @if (!lessonForm) {
+
+            <button
+              type="button"
+              class="primary-button small"
+              (click)="newLesson()"
+            >
+              + Ajouter une leçon
+            </button>
+
+          }
+
+        </div>
+
+
+        @if (course.lessons.length === 0 && !lessonForm) {
+
+          <p class="muted">
+            Aucune leçon pour le moment.
+          </p>
+
+        }
+
+
+        <ol class="lesson-list">
+
+          @for (lesson of course.lessons; track lesson.id) {
+
+            <li class="lesson-row">
+
+              <div class="lesson-main">
+
+                <strong>
+                  {{ lesson.displayOrder }}. {{ lesson.title }}
+                </strong>
+
+                <small>
+                  {{ lesson.durationMinutes }} min
+                  · {{ lesson.quiz.length }} question(s)
+                  @if (lesson.videoUrl) {
+                    · vidéo
+                  }
+                </small>
+
+              </div>
+
+              <div class="row-actions">
+
+                <button
+                  type="button"
+                  class="secondary-button"
+                  [disabled]="busy"
+                  (click)="editLesson(lesson)"
+                >
+                  Modifier
+                </button>
+
+                <button
+                  type="button"
+                  class="danger-button"
+                  [disabled]="busy"
+                  (click)="deleteLesson(lesson)"
+                >
+                  Supprimer
+                </button>
+
+              </div>
+
+            </li>
+
+          }
+
+        </ol>
+
+      </section>
+
+
+      <!-- ===================================== -->
+      <!-- FORMULAIRE DE LEÇON -->
+      <!-- ===================================== -->
+
+      @if (lessonForm; as lesson) {
+
+        <section class="panel lesson-editor">
+
+          <h2>
+            {{ lesson.id === null ? 'Nouvelle leçon' : 'Modifier la leçon' }}
+          </h2>
+
+          <div class="form-grid">
+
+            <label class="field full">
+              <span>Titre</span>
+              <input
+                type="text"
+                maxlength="200"
+                [(ngModel)]="lesson.title"
+              >
+            </label>
+
+            <label class="field">
+              <span>Durée (minutes)</span>
+              <input
+                type="number"
+                min="1"
+                max="240"
+                [(ngModel)]="lesson.durationMinutes"
+              >
+            </label>
+
+            <label class="field">
+              <span>Ordre dans la formation</span>
+              <input
+                type="number"
+                min="0"
+                [(ngModel)]="lesson.displayOrder"
+              >
+            </label>
+
+            <label class="field full">
+              <span>Lien vidéo YouTube (facultatif)</span>
+              <input
+                type="url"
+                maxlength="500"
+                placeholder="https://www.youtube.com/watch?v=XXXXXXXXXXX"
+                [(ngModel)]="lesson.videoUrl"
+              >
+            </label>
+
+            <label class="field full">
+              <span>Contenu</span>
+              <textarea
+                rows="14"
+                [(ngModel)]="lesson.content"
+              ></textarea>
+              <small class="hint">
+                Mise en forme : <code>## Titre</code> pour un sous-titre,
+                <code>- texte</code> pour une puce, une ligne vide pour
+                un nouveau paragraphe.
+              </small>
+            </label>
+
+          </div>
+
+
+          <!-- QUIZ -->
+
+          <div class="quiz-editor">
+
+            <div class="panel-heading">
+
+              <h3>
+                Quiz ({{ lesson.quiz.length }})
+              </h3>
+
+              <button
+                type="button"
+                class="secondary-button"
+                (click)="addQuestion()"
+              >
+                + Ajouter une question
+              </button>
+
+            </div>
+
+            @if (lesson.quiz.length === 0) {
+
+              <p class="muted">
+                Sans quiz, le trader valide la leçon avec un simple
+                bouton « Marquer comme terminée ».
+              </p>
+
+            }
+
+            @for (question of lesson.quiz; track $index; let qi = $index) {
+
+              <div class="question-card">
+
+                <div class="question-head">
+
+                  <strong>
+                    Question {{ qi + 1 }}
+                  </strong>
+
+                  <button
+                    type="button"
+                    class="danger-button small"
+                    (click)="removeQuestion(qi)"
+                  >
+                    Retirer
+                  </button>
+
+                </div>
+
+                <label class="field full">
+                  <span>Énoncé</span>
+                  <input
+                    type="text"
+                    maxlength="500"
+                    [(ngModel)]="question.question"
+                  >
+                </label>
+
+                <div class="options">
+
+                  <span class="options-label">
+                    Options (cochez la bonne réponse)
+                  </span>
+
+                  @for (option of question.options; track $index; let oi = $index) {
+
+                    <div class="option-row">
+
+                      <input
+                        type="radio"
+                        class="correct-radio"
+                        [name]="'correct-' + qi"
+                        [checked]="question.correctIndex === oi"
+                        (change)="question.correctIndex = oi"
+                        title="Bonne réponse"
+                      >
+
+                      <input
+                        type="text"
+                        maxlength="300"
+                        [placeholder]="'Option ' + (oi + 1)"
+                        [(ngModel)]="question.options[oi]"
+                      >
+
+                      <button
+                        type="button"
+                        class="icon-button"
+                        title="Retirer l'option"
+                        [disabled]="!canRemoveOption(question)"
+                        (click)="removeOption(question, oi)"
+                      >
+                        ✕
+                      </button>
+
+                    </div>
+
+                  }
+
+                  @if (canAddOption(question)) {
+
+                    <button
+                      type="button"
+                      class="link-button"
+                      (click)="addOption(question)"
+                    >
+                      + Ajouter une option
+                    </button>
+
+                  }
+
+                </div>
+
+                <label class="field full">
+                  <span>Explication (affichée après correction)</span>
+                  <input
+                    type="text"
+                    maxlength="600"
+                    [(ngModel)]="question.explanation"
+                  >
+                </label>
+
+              </div>
+
+            }
+
+          </div>
+
+
+          <div class="editor-actions">
+
+            <button
+              type="button"
+              class="primary-button"
+              [disabled]="busy"
+              (click)="saveLesson()"
+            >
+              {{ busy ? 'Enregistrement…' : 'Enregistrer la leçon' }}
+            </button>
+
+            <button
+              type="button"
+              class="secondary-button"
+              [disabled]="busy"
+              (click)="cancelLesson()"
+            >
+              Annuler
+            </button>
+
+          </div>
+
+        </section>
+
+      }
+
+    }
+
+  }
+
+</div>

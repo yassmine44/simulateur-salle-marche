@@ -1,0 +1,155 @@
+<div class="formation-page">
+
+  <header class="page-header">
+
+    <div>
+
+      <span class="eyebrow">
+        ACADÉMIE SIX7
+      </span>
+
+      <h1>
+        Formation
+      </h1>
+
+      <p>
+        Apprenez le trading pas à pas : fondamentaux, gestion du risque,
+        analyse technique et leçons des grandes crises. Chaque leçon se
+        termine par un quiz pour valider vos acquis.
+      </p>
+
+    </div>
+
+
+    @if (!loading && courses.length > 0) {
+
+      <div class="overall-card">
+
+        <strong>
+          {{ overallPercent }} %
+        </strong>
+
+        <span>
+          {{ completedLessons }} / {{ totalLessons }}
+          leçons terminées
+        </span>
+
+        <div class="bar">
+          <span [style.width.%]="overallPercent"></span>
+        </div>
+
+      </div>
+
+    }
+
+  </header>
+
+
+  <div class="filters">
+
+    @for (filter of filters; track filter.key) {
+
+      <button
+        type="button"
+        class="filter-chip"
+        [class.active]="selectedFilter === filter.key"
+        (click)="selectFilter(filter.key)"
+      >
+        {{ filter.label }}
+      </button>
+
+    }
+
+  </div>
+
+
+  @if (loading) {
+
+    <div class="state-box">
+      Chargement des formations…
+    </div>
+
+  } @else if (errorMessage) {
+
+    <div class="state-box error">
+      {{ errorMessage }}
+    </div>
+
+  } @else if (filteredCourses.length === 0) {
+
+    <div class="state-box">
+      Aucune formation pour ce niveau.
+    </div>
+
+  } @else {
+
+    <section class="course-grid">
+
+      @for (course of filteredCourses; track course.id) {
+
+        <a
+          class="course-card"
+          [routerLink]="['/app/formation/course', course.id]"
+        >
+
+          <div class="card-top">
+
+            <span
+              class="level-badge"
+              [attr.data-level]="course.level"
+            >
+              {{ levelLabels[course.level] }}
+            </span>
+
+            <span class="category">
+              {{ course.category }}
+            </span>
+
+          </div>
+
+          <h2>
+            {{ course.title }}
+          </h2>
+
+          <p>
+            {{ course.description }}
+          </p>
+
+          <div class="meta">
+
+            <span>
+              {{ course.lessonCount }} leçons
+            </span>
+
+            <span>
+              {{ course.totalMinutes }} min
+            </span>
+
+          </div>
+
+          <div class="progress">
+
+            <div class="bar">
+              <span [style.width.%]="course.progressPercent"></span>
+            </div>
+
+            <small>
+              {{ course.completedLessons }} / {{ course.lessonCount }}
+              terminées
+            </small>
+
+          </div>
+
+          <span class="cta">
+            {{ actionLabel(course) }} →
+          </span>
+
+        </a>
+
+      }
+
+    </section>
+
+  }
+
+</div>

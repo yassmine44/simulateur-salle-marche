@@ -1,0 +1,126 @@
+<div class="course-page">
+
+  <a
+    class="back-link"
+    routerLink="/app/formation"
+  >
+    ← Toutes les formations
+  </a>
+
+
+  @if (loading) {
+
+    <div class="state-box">
+      Chargement…
+    </div>
+
+  } @else if (errorMessage) {
+
+    <div class="state-box error">
+      {{ errorMessage }}
+    </div>
+
+  } @else if (course) {
+
+    <header class="course-header">
+
+      <div class="badges">
+
+        <span
+          class="level-badge"
+          [attr.data-level]="course.level"
+        >
+          {{ levelLabels[course.level] }}
+        </span>
+
+        <span class="category">
+          {{ course.category }}
+        </span>
+
+      </div>
+
+      <h1>
+        {{ course.title }}
+      </h1>
+
+      <p>
+        {{ course.description }}
+      </p>
+
+      <div class="progress-row">
+
+        <div class="bar">
+          <span [style.width.%]="course.progressPercent"></span>
+        </div>
+
+        <small>
+          {{ course.completedLessons }} / {{ course.lessons.length }}
+          leçons · {{ course.totalMinutes }} min
+        </small>
+
+      </div>
+
+      @if (nextLesson) {
+
+        <a
+          class="primary-button"
+          [routerLink]="['/app/formation/lesson', nextLesson.id]"
+        >
+          {{ startLabel }}
+        </a>
+
+      }
+
+    </header>
+
+
+    <ol class="lesson-list">
+
+      @for (lesson of course.lessons; track lesson.id; let i = $index) {
+
+        <li>
+
+          <a
+            class="lesson-row"
+            [class.done]="lesson.completed"
+            [routerLink]="['/app/formation/lesson', lesson.id]"
+          >
+
+            <span class="lesson-index">
+              @if (lesson.completed) {
+                ✓
+              } @else {
+                {{ i + 1 }}
+              }
+            </span>
+
+            <span class="lesson-info">
+
+              <strong>
+                {{ lesson.title }}
+              </strong>
+
+              <small>
+                {{ lesson.durationMinutes }} min
+                @if (lesson.hasQuiz) {
+                  · Quiz
+                }
+              </small>
+
+            </span>
+
+            <span class="lesson-arrow">
+              →
+            </span>
+
+          </a>
+
+        </li>
+
+      }
+
+    </ol>
+
+  }
+
+</div>
