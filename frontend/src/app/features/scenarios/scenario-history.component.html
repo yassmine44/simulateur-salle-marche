@@ -330,7 +330,72 @@
 
 </div>
 
+<!-- INDICATEURS DE RISQUE HISTORIQUES -->
+<section class="risk-metrics-section"
+         *ngIf="market.riskMetrics as risk">
+
+  <h3>Indicateurs de risque historiques</h3>
+
+  <div class="risk-metrics-grid">
+
+    <div class="risk-metric-card">
+      <span>Prix minimum</span>
+      <strong>
+        {{ risk.minMidPrice != null
+          ? (risk.minMidPrice | number:'1.2-4')
+          : '—' }}
+      </strong>
+    </div>
+
+    <div class="risk-metric-card">
+      <span>Prix maximum</span>
+      <strong>
+        {{ risk.maxMidPrice != null
+          ? (risk.maxMidPrice | number:'1.2-4')
+          : '—' }}
+      </strong>
+    </div>
+
+    <div class="risk-metric-card">
+      <span>Maximum drawdown du prix</span>
+      <strong>
+        {{ risk.maxPriceDrawdownPercent != null
+          ? (risk.maxPriceDrawdownPercent | number:'1.2-2') + ' %'
+          : '—' }}
+      </strong>
+    </div>
+
+    <div class="risk-metric-card">
+      <span>Spread maximal</span>
+      <strong>
+        {{ risk.maxSpread != null
+          ? (risk.maxSpread | number:'1.2-4')
+          : '—' }}
+      </strong>
+    </div>
+
+    <div class="risk-metric-card">
+      <span>Contraction maximale de liquidité BID</span>
+      <strong>
+        {{ risk.maxBidDepthContractionPercent != null
+          ? (risk.maxBidDepthContractionPercent | number:'1.2-2') + ' %'
+          : '—' }}
+      </strong>
+    </div>
+
+  </div>
+
+  <p class="report-note">
+    Mesures calculées à partir des snapshots disponibles.
+    Le drawdown représente une baisse du prix de marché,
+    et non une perte du portefeuille.
+  </p>
+
+</section>
+
+
   <h3>Observations pendant le scénario</h3>
+  
 
   <div class="table-scroll"
        *ngIf="market.during.length > 0; else noMarketObservations">

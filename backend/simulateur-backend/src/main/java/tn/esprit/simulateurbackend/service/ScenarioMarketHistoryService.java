@@ -45,6 +45,16 @@ public class ScenarioMarketHistoryService {
             BigDecimal weightedAskDepth
     ) {}
 
+    public record MarketRiskMetrics(
+            BigDecimal minMidPrice,
+            BigDecimal maxMidPrice,
+            BigDecimal maxPriceDrawdownPercent,
+            BigDecimal maxSpread,
+            BigDecimal maxBidDepthContractionPercent
+    ) {}
+
+
+
     public record MarketHistory(
             Long executionId,
             String symbol,
@@ -53,7 +63,8 @@ public class ScenarioMarketHistoryService {
             MarketObservation baseline,
             List<MarketObservation> during,
             MarketObservation lastDuring,
-            BigDecimal priceChangePercent
+            BigDecimal priceChangePercent,
+            MarketRiskMetrics riskMetrics
     ) {}
 
     @Transactional(readOnly = true)
@@ -122,6 +133,10 @@ public class ScenarioMarketHistoryService {
                     );
         }
 
+
+        MarketRiskMetrics riskMetrics =
+                calculateRiskMetrics(baseline, observations);
+
         return new MarketHistory(
                 executionId,
                 symbol,
@@ -130,7 +145,107 @@ public class ScenarioMarketHistoryService {
                 baseline,
                 observations,
                 lastDuring,
-                priceChangePercent
+                priceChangePercent,
+                riskMetrics
+        );
+
+    }
+
+    private MarketRiskMetrics calculateRiskMetrics(
+            MarketObservation baseline,
+            List<MarketObservation> observations
+    ) {
+        BigDecimal minPrice = null;
+        BigDecimal maxPrice = null;
+        BigDecimal runningPeak = null;
+        BigDecimal maxDrawdown = null;
+        BigDecimal maxSpread = null;
+        BigDecimal minBidDepth = null;
+
+        List<MarketObservation> series =
+                new java.util.ArrayList<>();
+
+        if (baseline != null) {
+            series.add(baseline);
+        }
+
+        series.addAll(observations);
+
+        int validPrices = 0;
+
+        for (MarketObservation observation : series) {
+            BigDecimal price = observation.midPrice();
+
+            if (price != null && price.signum() > 0) {
+                validPrices++;
+
+                minPrice = minPrice == null
+                        ? price : minPrice.min(price);
+
+                maxPrice = maxPrice == null
+                        ? price : maxPrice.max(price);
+
+                runningPeak = runningPeak == null
+                        ? price : runningPeak.max(price);
+
+                BigDecimal drawdown = runningPeak
+                        .subtract(price)
+                        .multiply(BigDecimal.valueOf(100))
+                        .divide(
+                                runningPeak,
+                                4,
+                                RoundingMode.HALF_UP
+                        );
+
+                maxDrawdown = maxDrawdown == null
+                        ? drawdown : maxDrawdown.max(drawdown);
+            }
+
+            if (observation != baseline) {
+                BigDecimal spread = observation.spread();
+
+                if (spread != null && spread.signum() >= 0) {
+                    maxSpread = maxSpread == null
+                            ? spread : maxSpread.max(spread);
+                }
+
+                BigDecimal depth = observation.weightedBidDepth();
+
+                if (depth != null && depth.signum() >= 0) {
+                    minBidDepth = minBidDepth == null
+                            ? depth : minBidDepth.min(depth);
+                }
+            }
+        }
+
+        if (validPrices < 2) {
+            maxDrawdown = null;
+        }
+
+        BigDecimal liquidityContraction = null;
+
+        if (baseline != null
+                && baseline.weightedBidDepth() != null
+                && baseline.weightedBidDepth().signum() > 0
+                && minBidDepth != null) {
+
+            liquidityContraction = baseline.weightedBidDepth()
+                    .subtract(minBidDepth)
+                    .max(BigDecimal.ZERO)
+                    .multiply(BigDecimal.valueOf(100))
+                    .divide(
+                            baseline.weightedBidDepth(),
+                            4,
+                            RoundingMode.HALF_UP
+                    );
+        }
+
+        return new MarketRiskMetrics(
+                minPrice,
+                maxPrice,
+                maxDrawdown,
+                maxSpread,
+                liquidityContraction
         );
     }
 
