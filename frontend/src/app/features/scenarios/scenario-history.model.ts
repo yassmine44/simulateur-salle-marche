@@ -15,6 +15,17 @@ export interface ScenarioHistoryItem {
   actualEndedAt: string | null;
 }
 
+export interface ScenarioMarketRiskMetrics {
+  minMidPrice: number | null;
+  maxMidPrice: number | null;
+  maxPriceDrawdownPercent: number | null;
+  maxSpread: number | null;
+  maxBidDepthContractionPercent: number | null;
+}
+
+
+
+
 export interface ScenarioHistoryResponse {
   content: ScenarioHistoryItem[];
   page: number;
@@ -49,6 +60,7 @@ export interface ScenarioMarketObservation {
   weightedAskDepth: number | null;
 }
 
+
 export interface ScenarioMarketHistory {
   executionId: number;
   symbol: string;
@@ -58,5 +70,7 @@ export interface ScenarioMarketHistory {
   during: ScenarioMarketObservation[];
   lastDuring: ScenarioMarketObservation | null;
   priceChangePercent: number | null;
+  riskMetrics: ScenarioMarketRiskMetrics | null;
 }
+
 
