@@ -84,6 +84,16 @@
         Gamification
       </a>
 
+      <!-- FORMATION -->
+
+      <a
+        routerLink="/app/formation"
+        routerLinkActive="active"
+      >
+        Formation
+      </a>
+
+
 
       <!-- ANALYTICS - FUTURE MODULE -->
 
@@ -212,6 +222,33 @@
 
                 <small>
                   Audit et supervision
+                </small>
+
+              </div>
+
+            </a>
+
+
+            <!-- FORMATIONS -->
+
+            <a
+              routerLink="/app/admin/formation"
+              routerLinkActive="active"
+              (click)="closeAdminMenu()"
+            >
+
+              <span class="admin-item-icon">
+                ✎
+              </span>
+
+              <div class="admin-item-content">
+
+                <strong>
+                  Formations
+                </strong>
+
+                <small>
+                  Cours, leçons, vidéos et quiz
                 </small>
 
               </div>

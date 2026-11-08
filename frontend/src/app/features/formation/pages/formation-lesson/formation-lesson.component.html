@@ -1,0 +1,315 @@
+<div class="lesson-page">
+
+  @if (loading) {
+
+    <div class="state-box">
+      Chargement…
+    </div>
+
+  } @else if (errorMessage && !lesson) {
+
+    <a
+      class="back-link"
+      routerLink="/app/formation"
+    >
+      ← Toutes les formations
+    </a>
+
+    <div class="state-box error">
+      {{ errorMessage }}
+    </div>
+
+  } @else if (lesson) {
+
+    <a
+      class="back-link"
+      [routerLink]="['/app/formation/course', lesson.courseId]"
+    >
+      ← {{ lesson.courseTitle }}
+    </a>
+
+
+    <article class="lesson-card">
+
+      <header>
+
+        <div class="badges">
+
+          <span class="duration">
+            {{ lesson.durationMinutes }} min de lecture
+          </span>
+
+          @if (lesson.completed) {
+
+            <span class="done-badge">
+              ✓ Terminée
+            </span>
+
+          }
+
+        </div>
+
+        <h1>
+          {{ lesson.title }}
+        </h1>
+
+      </header>
+
+
+      @if (videoUrl) {
+
+        <div class="video-frame">
+
+          <iframe
+            [src]="videoUrl"
+            title="Vidéo de la leçon"
+            loading="lazy"
+            referrerpolicy="strict-origin-when-cross-origin"
+            allow="encrypted-media; picture-in-picture"
+            allowfullscreen
+          ></iframe>
+
+        </div>
+
+      }
+
+
+      <div class="lesson-content">
+
+        @for (block of blocks; track $index) {
+
+          @if (block.type === 'heading') {
+
+            <h2>{{ block.text }}</h2>
+
+          } @else if (block.type === 'paragraph') {
+
+            <p>{{ block.text }}</p>
+
+          } @else {
+
+            <ul>
+              @for (item of block.items; track $index) {
+                <li>{{ item }}</li>
+              }
+            </ul>
+
+          }
+
+        }
+
+      </div>
+
+    </article>
+
+
+    <!-- ========================= -->
+    <!-- QUIZ -->
+    <!-- ========================= -->
+
+    @if (hasQuiz) {
+
+      <section class="quiz-card">
+
+        <header class="quiz-header">
+
+          <div>
+
+            <span class="eyebrow">
+              QUIZ
+            </span>
+
+            <h2>
+              Testez vos connaissances
+            </h2>
+
+          </div>
+
+          @if (lesson.bestScorePercent !== null) {
+
+            <span class="best-score">
+              Meilleur score : {{ lesson.bestScorePercent }} %
+            </span>
+
+          }
+
+        </header>
+
+
+        @for (question of lesson.quiz; track question.id; let qi = $index) {
+
+          <fieldset class="question">
+
+            <legend>
+              {{ qi + 1 }}. {{ question.question }}
+            </legend>
+
+            @for (option of question.options; track $index; let oi = $index) {
+
+              <label
+                class="option"
+                [class.selected]="answers[qi] === oi"
+                [class.correct]="isCorrectOption(qi, oi)"
+                [class.wrong]="isWrongOption(qi, oi)"
+              >
+
+                <input
+                  type="radio"
+                  [name]="'question-' + question.id"
+                  [checked]="answers[qi] === oi"
+                  [disabled]="!!result || busy"
+                  (change)="select(qi, oi)"
+                >
+
+                <span>
+                  {{ option }}
+                </span>
+
+              </label>
+
+            }
+
+            @if (result && result.results[qi]?.explanation) {
+
+              <p
+                class="explanation"
+                [class.ok]="result.results[qi].correct"
+              >
+                {{ result.results[qi].explanation }}
+              </p>
+
+            }
+
+          </fieldset>
+
+        }
+
+
+        @if (errorMessage) {
+
+          <div class="alert">
+            {{ errorMessage }}
+          </div>
+
+        }
+
+
+        @if (result) {
+
+          <div
+            class="result"
+            [class.passed]="result.passed"
+          >
+
+            <strong>
+              {{ result.correctCount }} / {{ result.totalQuestions }}
+              ({{ result.scorePercent }} %)
+            </strong>
+
+            <span>
+              @if (result.passed) {
+                Bravo, leçon validée !
+              } @else {
+                Il faut au moins 60 % pour valider la leçon. Relisez la
+                leçon puis réessayez.
+              }
+            </span>
+
+          </div>
+
+          @if (!result.passed) {
+
+            <button
+              type="button"
+              class="secondary-button"
+              (click)="retryQuiz()"
+            >
+              Réessayer le quiz
+            </button>
+
+          }
+
+        } @else {
+
+          <button
+            type="button"
+            class="primary-button"
+            [disabled]="!allAnswered || busy"
+            (click)="submitQuiz()"
+          >
+            {{ busy ? 'Correction…' : 'Valider mes réponses' }}
+          </button>
+
+        }
+
+      </section>
+
+    } @else if (!lesson.completed) {
+
+      @if (errorMessage) {
+
+        <div class="alert">
+          {{ errorMessage }}
+        </div>
+
+      }
+
+      <button
+        type="button"
+        class="primary-button"
+        [disabled]="busy"
+        (click)="completeLesson()"
+      >
+        Marquer comme terminée
+      </button>
+
+    }
+
+
+    <!-- ========================= -->
+    <!-- NAVIGATION -->
+    <!-- ========================= -->
+
+    <nav class="lesson-nav">
+
+      @if (lesson.previousLessonId) {
+
+        <a
+          class="nav-button"
+          [routerLink]="['/app/formation/lesson', lesson.previousLessonId]"
+        >
+          ← Leçon précédente
+        </a>
+
+      } @else {
+
+        <span></span>
+
+      }
+
+      @if (lesson.nextLessonId) {
+
+        <a
+          class="nav-button next"
+          [class.highlight]="lesson.completed"
+          [routerLink]="['/app/formation/lesson', lesson.nextLessonId]"
+        >
+          Leçon suivante →
+        </a>
+
+      } @else if (lesson.completed) {
+
+        <a
+          class="nav-button next highlight"
+          [routerLink]="['/app/formation/course', lesson.courseId]"
+        >
+          Retour à la formation ✓
+        </a>
+
+      }
+
+    </nav>
+
+  }
+
+</div>

@@ -1,0 +1,443 @@
+:host {
+  display: block;
+}
+
+.admin-page {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  max-width: 980px;
+  min-height: 100%;
+  margin: 0 auto;
+  padding: 24px;
+  color: var(--text-primary);
+}
+
+.page-header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.eyebrow {
+  display: block;
+  margin-bottom: 6px;
+  color: var(--text-secondary);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+}
+
+.page-header h1 {
+  margin: 0;
+  font-size: 28px;
+  font-weight: 800;
+}
+
+.page-header p {
+  max-width: 620px;
+  margin: 8px 0 0;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+.header-actions {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 10px;
+}
+
+/* ---------- Boutons ---------- */
+
+.primary-button,
+.secondary-button,
+.danger-button,
+.ghost-button {
+  padding: 10px 16px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 800;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.primary-button {
+  align-self: flex-start;
+  border: 0;
+  background: var(--primary);
+  color: #fff;
+}
+
+.primary-button:hover:not(:disabled) {
+  background: var(--primary-hover);
+}
+
+.secondary-button,
+.ghost-button {
+  border: 1px solid var(--border-strong);
+  background: var(--bg-card);
+  color: var(--text-primary);
+}
+
+.secondary-button:hover:not(:disabled),
+.ghost-button:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+.danger-button {
+  border: 1px solid var(--danger);
+  background: var(--danger-soft);
+  color: var(--danger);
+}
+
+.small {
+  padding: 7px 12px;
+}
+
+button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.back-link {
+  align-self: flex-start;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.back-link:hover {
+  color: var(--primary);
+}
+
+/* ---------- Messages ---------- */
+
+.alert {
+  padding: 12px 14px;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.alert-error {
+  border: 1px solid var(--danger);
+  background: var(--danger-soft);
+  color: var(--danger);
+}
+
+.alert-success {
+  border: 1px solid var(--success);
+  background: var(--success-soft);
+  color: var(--success);
+}
+
+.state-box {
+  padding: 32px 24px;
+  border: 1px dashed var(--border-strong);
+  border-radius: 16px;
+  background: var(--bg-card);
+  color: var(--text-secondary);
+  text-align: center;
+}
+
+.muted {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+
+/* ---------- Liste ---------- */
+
+.course-list,
+.lesson-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.course-row,
+.lesson-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 14px 16px;
+  border: 1px solid var(--border-color);
+  border-radius: 14px;
+  background: var(--bg-card);
+}
+
+.course-main,
+.lesson-main {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.course-main small,
+.lesson-main small {
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+.row-actions {
+  display: flex;
+  flex-shrink: 0;
+  gap: 8px;
+}
+
+.badges {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.level-badge,
+.status-badge {
+  padding: 3px 8px;
+  border-radius: 8px;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.level-badge[data-level='BEGINNER'] {
+  background: var(--success-soft);
+  color: var(--success);
+}
+
+.level-badge[data-level='INTERMEDIATE'] {
+  background: var(--warning-soft);
+  color: var(--warning);
+}
+
+.level-badge[data-level='ADVANCED'] {
+  background: var(--danger-soft);
+  color: var(--danger);
+}
+
+.status-badge {
+  background: var(--bg-hover);
+  color: var(--text-secondary);
+}
+
+.status-badge.published {
+  background: var(--primary-soft);
+  color: var(--primary);
+}
+
+/* ---------- Panneaux et formulaires ---------- */
+
+.panel {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 22px;
+  border: 1px solid var(--border-color);
+  border-radius: 16px;
+  background: var(--bg-card);
+  box-shadow: var(--shadow-sm);
+}
+
+.panel h2,
+.panel h3 {
+  margin: 0;
+  font-weight: 800;
+}
+
+.panel h2 {
+  font-size: 19px;
+}
+
+.panel h3 {
+  font-size: 16px;
+}
+
+.panel-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.field.full {
+  grid-column: 1 / -1;
+}
+
+.field > span {
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.field input[type='text'],
+.field input[type='number'],
+.field input[type='url'],
+.field select,
+.field textarea,
+.option-row input[type='text'] {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--border-strong);
+  border-radius: 10px;
+  background: var(--bg-muted);
+  color: var(--text-primary);
+  font: inherit;
+  font-size: 14px;
+}
+
+.field textarea {
+  resize: vertical;
+  line-height: 1.55;
+}
+
+.field input:focus,
+.field select:focus,
+.field textarea:focus,
+.option-row input[type='text']:focus {
+  border-color: var(--primary);
+  outline: none;
+}
+
+.field.checkbox {
+  flex-direction: row;
+  align-items: center;
+  gap: 10px;
+  align-self: end;
+  padding-bottom: 10px;
+}
+
+.field.checkbox > span {
+  color: var(--text-primary);
+  font-size: 14px;
+}
+
+.hint {
+  color: var(--text-muted);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.hint code {
+  padding: 1px 5px;
+  border-radius: 5px;
+  background: var(--bg-hover);
+  font-size: 12px;
+}
+
+/* ---------- Quiz ---------- */
+
+.quiz-editor {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border-color);
+}
+
+.question-card {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  background: var(--bg-muted);
+}
+
+.question-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.options {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.options-label {
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.option-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.correct-radio {
+  flex-shrink: 0;
+  accent-color: var(--success);
+}
+
+.icon-button {
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--border-strong);
+  border-radius: 8px;
+  background: var(--bg-card);
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+
+.link-button {
+  align-self: flex-start;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--primary);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.editor-actions {
+  display: flex;
+  gap: 10px;
+}
+
+@media (max-width: 760px) {
+
+  .admin-page {
+    padding: 16px;
+  }
+
+  .page-header,
+  .course-row,
+  .lesson-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+}

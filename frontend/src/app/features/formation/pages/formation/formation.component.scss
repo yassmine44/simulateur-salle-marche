@@ -1,0 +1,244 @@
+:host {
+  display: block;
+}
+
+.formation-page {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  min-height: 100%;
+  padding: 24px;
+  color: var(--text-primary);
+  background:
+    radial-gradient(
+      circle at 12% 0%,
+      rgba(2, 132, 199, 0.08),
+      transparent 30%
+    ),
+    var(--bg-page);
+}
+
+.page-header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.eyebrow {
+  display: block;
+  margin-bottom: 6px;
+  color: var(--text-secondary);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+}
+
+.page-header h1 {
+  margin: 0;
+  font-size: 30px;
+  font-weight: 800;
+}
+
+.page-header p {
+  max-width: 640px;
+  margin: 8px 0 0;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+.overall-card {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 220px;
+  padding: 14px 16px;
+  border: 1px solid var(--border-color);
+  border-radius: 14px;
+  background: var(--bg-card);
+  box-shadow: var(--shadow-sm);
+}
+
+.overall-card strong {
+  font-size: 26px;
+  font-weight: 800;
+}
+
+.overall-card span {
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+
+.bar {
+  height: 8px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--bg-hover);
+}
+
+.bar > span {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: var(--six7-gradient, var(--primary));
+  transition: width 0.3s ease;
+}
+
+.filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.filter-chip {
+  padding: 7px 14px;
+  border: 1px solid var(--border-color);
+  border-radius: 999px;
+  background: var(--bg-card);
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.filter-chip:hover {
+  border-color: var(--border-strong);
+  color: var(--text-primary);
+}
+
+.filter-chip.active {
+  border-color: var(--primary);
+  background: var(--primary-soft);
+  color: var(--primary);
+}
+
+.state-box {
+  padding: 36px 24px;
+  border: 1px dashed var(--border-strong);
+  border-radius: 16px;
+  background: var(--bg-card);
+  color: var(--text-secondary);
+  text-align: center;
+}
+
+.state-box.error {
+  border-color: var(--danger);
+  background: var(--danger-soft);
+  color: var(--danger);
+}
+
+.course-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
+  gap: 16px;
+}
+
+.course-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 18px;
+  border: 1px solid var(--border-color);
+  border-radius: 16px;
+  background: var(--bg-card);
+  box-shadow: var(--shadow-sm);
+  color: inherit;
+  text-decoration: none;
+  transition:
+    transform 0.15s ease,
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.course-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--primary);
+  box-shadow: var(--shadow-md);
+}
+
+.card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.level-badge {
+  padding: 4px 9px;
+  border-radius: 8px;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+}
+
+.level-badge[data-level='BEGINNER'] {
+  background: var(--success-soft);
+  color: var(--success);
+}
+
+.level-badge[data-level='INTERMEDIATE'] {
+  background: var(--warning-soft);
+  color: var(--warning);
+}
+
+.level-badge[data-level='ADVANCED'] {
+  background: var(--danger-soft);
+  color: var(--danger);
+}
+
+.category {
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.course-card h2 {
+  margin: 0;
+  font-size: 19px;
+  font-weight: 800;
+}
+
+.course-card p {
+  flex: 1;
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.meta {
+  display: flex;
+  gap: 14px;
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.progress {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.progress small {
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+.cta {
+  color: var(--primary);
+  font-size: 14px;
+  font-weight: 800;
+}
+
+@media (max-width: 760px) {
+
+  .page-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .formation-page {
+    padding: 16px;
+  }
+}

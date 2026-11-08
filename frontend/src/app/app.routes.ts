@@ -232,6 +232,78 @@ export const routes: Routes = [
             )
       },
 
+      // =====================
+      // FORMATION
+      // =====================
+
+      {
+        path: 'formation',
+
+        loadComponent: () =>
+
+          import(
+            './features/formation/pages/formation/formation.component'
+          )
+
+            .then(
+              module =>
+                module.FormationComponent
+            )
+      },
+
+      {
+        path: 'formation/course/:id',
+
+        loadComponent: () =>
+
+          import(
+            './features/formation/pages/formation-course/formation-course.component'
+          )
+
+            .then(
+              module =>
+                module.FormationCourseComponent
+            )
+      },
+
+      {
+        path: 'formation/lesson/:id',
+
+        loadComponent: () =>
+
+          import(
+            './features/formation/pages/formation-lesson/formation-lesson.component'
+          )
+
+            .then(
+              module =>
+                module.FormationLessonComponent
+            )
+      },
+
+            // =====================
+      // ADMIN FORMATION
+      // =====================
+
+      {
+        path: 'admin/formation',
+
+        canActivate: [
+          adminGuard
+        ],
+
+        loadComponent: () =>
+
+          import(
+            './features/formation/pages/admin-formation/admin-formation.component'
+          )
+
+            .then(
+              module =>
+                module.AdminFormationComponent
+            )
+      },
+
 
       // =====================
       // ADMIN SECURITY CENTER
