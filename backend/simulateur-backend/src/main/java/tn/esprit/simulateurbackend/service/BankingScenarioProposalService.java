@@ -13,6 +13,7 @@ import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.server.ResponseStatusException;
 
+import tools.jackson.databind.DeserializationFeature;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.json.JsonMapper;
 
@@ -85,8 +86,20 @@ public class BankingScenarioProposalService {
             @Value("${app.banking-stress.ai.connect-timeout:2s}") Duration connectTimeout,
             @Value("${app.banking-stress.ai.read-timeout:60s}") Duration readTimeout
     ) {
+        this(createRestClient(builder, connectTimeout, readTimeout), enabled, model);
+    }
+
+    BankingScenarioProposalService(RestClient restClient, boolean enabled, String model) {
         this.enabled = enabled;
         this.model = model == null ? "" : model.trim();
+        this.restClient = restClient;
+    }
+
+    private static RestClient createRestClient(
+            RestClient.Builder builder,
+            Duration connectTimeout,
+            Duration readTimeout
+    ) {
         if (connectTimeout.isNegative() || connectTimeout.isZero()
                 || readTimeout.isNegative() || readTimeout.isZero()) {
             throw new IllegalArgumentException("Les timeouts Ollama doivent être positifs.");
@@ -95,7 +108,7 @@ public class BankingScenarioProposalService {
                 new SimpleClientHttpRequestFactory();
         requestFactory.setConnectTimeout(connectTimeout);
         requestFactory.setReadTimeout(readTimeout);
-        this.restClient = builder
+        return builder
                 .baseUrl("http://127.0.0.1:11434")
                 .requestFactory(requestFactory)
                 .build();
@@ -112,14 +125,14 @@ public class BankingScenarioProposalService {
         }
 
         try {
-            String stream = restClient.post()
+            String response = restClient.post()
                     .uri("/api/chat")
                     .contentType(MediaType.APPLICATION_JSON)
-                    .accept(MediaType.APPLICATION_NDJSON)
+                    .accept(MediaType.APPLICATION_JSON)
                     .body(requestBody(request))
                     .retrieve()
                     .body(String.class);
-            BankingScenarioProposal proposal = parseStream(stream);
+            BankingScenarioProposal proposal = parseResponse(response);
             return BankingScenarioProposalValidator.validate(
                     proposal,
                     request.severity(),
@@ -141,7 +154,7 @@ public class BankingScenarioProposalService {
     private Map<String, Object> requestBody(BankingScenarioProposalRequest request) {
         Map<String, Object> payload = new LinkedHashMap<>();
         payload.put("model", model);
-        payload.put("stream", true);
+        payload.put("stream", false);
         payload.put("format", jsonMapper.readTree(SCHEMA));
         payload.put("messages", new Object[]{
                 Map.of(
@@ -176,45 +189,36 @@ public class BankingScenarioProposalService {
         return payload;
     }
 
-    private BankingScenarioProposal parseStream(String stream) {
-        if (stream == null || stream.isBlank()) {
-            throw new IllegalArgumentException("Flux Ollama vide.");
+    private BankingScenarioProposal parseResponse(String responseBody) {
+        if (responseBody == null || responseBody.isBlank()) {
+            throw new IllegalArgumentException("Réponse Ollama vide.");
         }
-        StringBuilder content = new StringBuilder();
-        boolean completed = false;
-        for (String line : stream.split("\\R")) {
-            if (line.isBlank()) {
-                continue;
-            }
-            JsonNode chunk = jsonMapper.readTree(line);
-            if (chunk.has("error")) {
-                throw new IllegalArgumentException("Flux Ollama en erreur.");
-            }
-            JsonNode message = chunk.path("message");
-            JsonNode text = message.path("content");
-            if (text.isString()) {
-                content.append(text.stringValue());
-            }
-            if (chunk.path("done").asBoolean(false)) {
-                completed = true;
-            }
+        JsonNode envelope = jsonMapper.reader()
+                .with(DeserializationFeature.FAIL_ON_TRAILING_TOKENS)
+                .readTree(responseBody);
+        if (!envelope.isObject() || !envelope.path("done").asBoolean(false)) {
+            throw new IllegalArgumentException("Réponse Ollama absente ou incomplète.");
         }
-        if (!completed || content.isEmpty()) {
-            throw new IllegalArgumentException("Flux Ollama incomplet.");
+        JsonNode content = envelope.path("message").path("content");
+        if (!content.isString() || content.stringValue().isBlank()) {
+            throw new IllegalArgumentException("Contenu JSON de proposition absent.");
         }
 
-        JsonNode response = jsonMapper.readTree(content.toString());
-        requireExactFields(response, RESPONSE_FIELDS);
-        JsonNode factors = response.path("factors");
+        String proposalJson = content.stringValue();
+        JsonNode proposalNode = jsonMapper.reader()
+                .with(DeserializationFeature.FAIL_ON_TRAILING_TOKENS)
+                .readTree(proposalJson);
+        requireExactFields(proposalNode, RESPONSE_FIELDS);
+        JsonNode factors = proposalNode.path("factors");
         if (!factors.isArray()) {
             throw new IllegalArgumentException("La liste des facteurs est invalide.");
         }
         for (JsonNode factor : factors) {
             requireExactFields(factor, FACTOR_FIELDS);
         }
-        JsonNode engineParameters = response.path("engineParameters");
+        JsonNode engineParameters = proposalNode.path("engineParameters");
         requireExactFields(engineParameters, ENGINE_PARAMETER_FIELDS);
-        return jsonMapper.readValue(content.toString(), BankingScenarioProposal.class);
+        return jsonMapper.readValue(proposalJson, BankingScenarioProposal.class);
     }
 
     private static void requireExactFields(JsonNode node, Set<String> expected) {
