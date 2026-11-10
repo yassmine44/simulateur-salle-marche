@@ -73,6 +73,30 @@ describe('BankingStressComponent', () => {
     expect(service.analyze).not.toHaveBeenCalled();
   });
 
+  it('shows normalized fictional ratios side by side without ranking the banks', () => {
+    const component = fixture.componentInstance;
+    component.loadDemoComparison();
+    component.runDemo();
+    fixture.detectChanges();
+
+    const text = fixture.nativeElement.textContent as string;
+    expect(text).toContain('Comparaison normalisée');
+    expect(text).toContain('BIAT');
+    expect(text).toContain('Banque Zitouna');
+    expect(text).toContain('Sévérité globale du choc / capital initial');
+    expect(text).toContain('Impact supporté par la banque / capital initial');
+    expect(text).toContain('Les deux parts sont additionnées une seule fois');
+    expect(text).toContain('ce n’est pas une perte intégralement supportée par la banque');
+    expect(text).toContain('positif = perte, négatif = gain');
+    expect(text).toContain('En DEMO, les pertes proviennent de fixtures fictives fixes');
+    expect(text).toContain('Ratios indicatifs non réglementaires');
+    expect(text).not.toContain('classement officiel');
+    expect(component.normalizedComparisons[0].banks[0]?.shockSeverityToInitialCapitalPercent)
+      .toBeCloseTo(60_500 / 320_000 * 100, 8);
+    expect(component.normalizedComparisons[0].banks[0]?.bankCapitalImpactPercent)
+      .toBeCloseTo(39_325 / 320_000 * 100, 8);
+  });
+
   it('clears demo results when the user changes a form value', () => {
     const component = fixture.componentInstance;
     component.loadDemoComparison();
@@ -95,12 +119,14 @@ describe('BankingStressComponent', () => {
     const component = fixture.componentInstance;
     component.loadDemoComparison();
     component.submit();
+    fixture.detectChanges();
 
     expect(service.analyze).toHaveBeenCalledTimes(1);
     expect(service.analyze).toHaveBeenCalledWith(
       createDemoComparisonRequest()
     );
     expect(component.isDemoResult).toBeFalse();
+    expect(fixture.nativeElement.textContent).toContain('Comparaison normalisée');
   });
 
   it('keeps validation active for the demo path', () => {

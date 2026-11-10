@@ -14,6 +14,10 @@ import {
   createDemoResponse
 } from './banking-stress.demo';
 import {
+  createNormalizedComparisons,
+  NormalizedScenarioComparison
+} from './banking-stress-comparison';
+import {
   BankingModel,
   BankingStressScenarioType,
   BankingStressTestRequest,
@@ -179,6 +183,7 @@ export class BankingStressComponent {
   loading = false;
   errorMessage = '';
   response: BankingStressTestResponse | null = null;
+  analysisRequest: BankingStressTestRequest | null = null;
   isDemoResult = false;
 
   addBank(): void {
@@ -457,9 +462,12 @@ export class BankingStressComponent {
 
     this.errorMessage = '';
     this.response = null;
+    this.analysisRequest = null;
     this.isDemoResult = false;
     try {
-      this.response = createDemoResponse(this.buildRequest());
+      const request = this.buildRequest();
+      this.response = createDemoResponse(request);
+      this.analysisRequest = request;
       this.isDemoResult = true;
     } catch (error: unknown) {
       this.errorMessage = error instanceof Error
@@ -471,10 +479,12 @@ export class BankingStressComponent {
   submit(): void {
     this.errorMessage = '';
     this.response = null;
+    this.analysisRequest = null;
     this.isDemoResult = false;
 
     try {
       const request = this.buildRequest();
+      this.analysisRequest = request;
       this.loading = true;
       this.bankingStressService.analyze(request).subscribe({
         next: response => {
@@ -483,6 +493,7 @@ export class BankingStressComponent {
         },
         error: (error: HttpErrorResponse) => {
           this.errorMessage = this.describeHttpError(error);
+          this.analysisRequest = null;
           this.loading = false;
         }
       });
@@ -497,8 +508,26 @@ export class BankingStressComponent {
     return this.response?.results.length ?? 0;
   }
 
+  get normalizedComparisons(): NormalizedScenarioComparison[] {
+    return this.response && this.analysisRequest
+      ? createNormalizedComparisons(this.response, this.analysisRequest)
+      : [];
+  }
+
+  get comparisonBankNames(): string[] {
+    return this.analysisRequest?.banks.length === 2
+      ? this.analysisRequest.banks.map(bank => bank.bankName)
+      : [];
+  }
+
   scenarioLabel(type: BankingStressScenarioType): string {
     return this.scenarioTypes.find(item => item.value === type)?.label ?? type;
+  }
+
+  normalizedPercent(value: number | null | undefined): string {
+    return typeof value === 'number' && Number.isFinite(value)
+      ? `${value.toFixed(2)} %`
+      : '—';
   }
 
   private buildRequest(): BankingStressTestRequest {
@@ -739,6 +768,7 @@ export class BankingStressComponent {
 
   private clearResponse(): void {
     this.response = null;
+    this.analysisRequest = null;
     this.errorMessage = '';
     this.isDemoResult = false;
   }

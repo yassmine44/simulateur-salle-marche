@@ -831,6 +831,96 @@ button:disabled {
   background: var(--bg-hover);
 }
 
+.normalized-comparison {
+  margin: 20px 0 24px;
+  padding: 18px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  background: var(--bg-card);
+}
+
+.normalized-comparison-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 12px;
+}
+
+.normalized-comparison-heading h3 {
+  margin: 0;
+  color: var(--text-primary);
+  font-size: 15px;
+}
+
+.normalized-comparison-heading p,
+.comparison-formula-note,
+.comparison-unavailable-note {
+  margin: 7px 0 0;
+  color: var(--text-secondary);
+  font-size: 11px;
+  line-height: 1.55;
+}
+
+.comparison-formula-note {
+  margin: 12px 0;
+  padding: 10px 12px;
+  border-left: 3px solid var(--primary);
+  background: var(--bg-muted);
+}
+
+.comparison-table-wrapper {
+  margin-top: 12px;
+  overflow-x: auto;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+}
+
+.comparison-table {
+  width: 100%;
+  min-width: 620px;
+  border-collapse: collapse;
+  text-align: left;
+}
+
+.comparison-table caption {
+  padding: 10px 12px;
+  color: var(--text-primary);
+  background: var(--bg-muted);
+  font-size: 12px;
+  font-weight: 700;
+  text-align: left;
+}
+
+.comparison-table th,
+.comparison-table td {
+  padding: 11px 12px;
+  border-top: 1px solid var(--border-color);
+  font-size: 11px;
+}
+
+.comparison-table thead th {
+  color: var(--text-primary);
+  background: var(--bg-hover);
+  font-weight: 700;
+}
+
+.comparison-table tbody th {
+  width: 52%;
+  color: var(--text-secondary);
+  font-weight: 600;
+}
+
+.comparison-table td {
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+}
+
+.comparison-unavailable-note {
+  margin-top: 10px;
+}
+
 .result-metrics {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -940,5 +1030,13 @@ button:disabled {
 
   .result-card-heading {
     align-items: flex-start;
+  }
+
+  .normalized-comparison {
+    padding: 14px 10px;
+  }
+
+  .normalized-comparison-heading {
+    flex-direction: column;
   }
 }
