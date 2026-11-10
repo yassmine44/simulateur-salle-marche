@@ -18,6 +18,11 @@ import {
 } from 'lightweight-charts';
 
 import {
+  Subscription,
+  interval
+} from 'rxjs';
+
+import {
   AiAnalysisReport,
   GamificationCandle,
   GamificationChallenge,
@@ -65,6 +70,8 @@ export class GamificationComponent
 
   private resizeObserver?: ResizeObserver;
 
+  private autoPlaySubscription?: Subscription;
+
 
   readonly startingCapital = 100_000;
 
@@ -72,8 +79,13 @@ export class GamificationComponent
 
   readonly victoryEquity = 110_000;
 
+  readonly autoPlayIntervalMs = 10_000;
+
 
   gameStatus: GameStatus = 'PLAYING';
+
+  /** True when the chart is auto-advancing one week every 10s. */
+  isPlaying = false;
 
   endGameMessage = '';
 
@@ -121,13 +133,8 @@ export class GamificationComponent
 
   ngOnDestroy(): void {
 
+    this.pauseAutoPlay();
     this.destroyChart();
-  }
-
-
-  get isPlaying(): boolean {
-
-    return this.gameStatus === 'PLAYING';
   }
 
 
@@ -147,7 +154,7 @@ export class GamificationComponent
       (
         key === this.selectedEvent
         &&
-        this.isPlaying
+        this.gameStatus === 'PLAYING'
       )
     ) {
       return;
@@ -161,6 +168,7 @@ export class GamificationComponent
     key: GamificationEventKey
   ): void {
 
+    this.pauseAutoPlay();
     this.busy = true;
     this.loading = true;
     this.clearMessages();
@@ -187,7 +195,8 @@ export class GamificationComponent
 
                 this.successMessage =
                   `Défi démarré : ${portfolio.eventLabel}. `
-                  + 'Capital virtuel 100 000 $. Objectif +10%, stop-out -10%.';
+                  + 'Capital virtuel 100 000 $. Objectif +10%, stop-out -10%. '
+                  + 'Appuyez sur Lecture pour avancer automatiquement.';
 
                 this.busy = false;
                 this.loading = false;
@@ -222,6 +231,48 @@ export class GamificationComponent
   }
 
 
+  togglePlayPause(): void {
+
+    if (this.isPlaying) {
+      this.pauseAutoPlay();
+      return;
+    }
+
+    this.startAutoPlay();
+  }
+
+
+  startAutoPlay(): void {
+
+    if (
+      this.gameStatus !== 'PLAYING'
+      ||
+      !this.selectedEvent
+      ||
+      this.portfolio?.completed
+    ) {
+      return;
+    }
+
+    this.pauseAutoPlay();
+    this.isPlaying = true;
+
+    this.autoPlaySubscription =
+      interval(this.autoPlayIntervalMs)
+        .subscribe(() => {
+          this.advanceWeek();
+        });
+  }
+
+
+  pauseAutoPlay(): void {
+
+    this.isPlaying = false;
+    this.autoPlaySubscription?.unsubscribe();
+    this.autoPlaySubscription = undefined;
+  }
+
+
   advanceWeek(): void {
 
     if (
@@ -229,10 +280,11 @@ export class GamificationComponent
       ||
       this.busy
       ||
-      !this.isPlaying
+      this.gameStatus !== 'PLAYING'
       ||
       this.portfolio?.completed
     ) {
+      this.pauseAutoPlay();
       return;
     }
 
@@ -249,12 +301,20 @@ export class GamificationComponent
           this.queueChartRefresh();
           this.checkGameConditions();
 
-          if (this.isPlaying) {
+          if (this.gameStatus === 'PLAYING') {
 
             this.successMessage =
               portfolio.completed
                 ? 'Dernière semaine atteinte.'
-                : `Semaine suivante. Prix courant : ${this.formatMoney(portfolio.currentPrice)} $`;
+                : `Nouvelle bougie. Prix courant : ${this.formatMoney(portfolio.currentPrice)} $`;
+          }
+
+          if (
+            portfolio.completed
+            ||
+            this.gameStatus !== 'PLAYING'
+          ) {
+            this.pauseAutoPlay();
           }
 
           this.busy = false;
@@ -268,6 +328,7 @@ export class GamificationComponent
               'Impossible d’avancer d’une période.'
             );
 
+          this.pauseAutoPlay();
           this.busy = false;
         }
       });
@@ -283,7 +344,7 @@ export class GamificationComponent
       ||
       this.busy
       ||
-      !this.isPlaying
+      this.gameStatus !== 'PLAYING'
     ) {
       return;
     }
@@ -318,7 +379,7 @@ export class GamificationComponent
           this.applyPortfolio(portfolio);
           this.checkGameConditions();
 
-          if (this.isPlaying) {
+          if (this.gameStatus === 'PLAYING') {
 
             this.successMessage =
               side === 'BUY'
@@ -359,6 +420,7 @@ export class GamificationComponent
 
   chooseAnotherChallenge(): void {
 
+    this.pauseAutoPlay();
     this.destroyChart();
     this.selectedEvent = null;
     this.portfolio = null;
@@ -375,7 +437,8 @@ export class GamificationComponent
     }
 
     // Ne pas réécrire un résultat déjà figé.
-    if (!this.isPlaying) {
+    if (this.gameStatus !== 'PLAYING') {
+      this.pauseAutoPlay();
       return;
     }
 
@@ -624,6 +687,7 @@ export class GamificationComponent
     equity: number
   ): void {
 
+    this.pauseAutoPlay();
     this.gameStatus = status;
     this.endGameMessage = message;
     this.finalEquity = equity;
