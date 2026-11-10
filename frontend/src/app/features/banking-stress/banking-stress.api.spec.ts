@@ -9,8 +9,14 @@ import {
   createDemoComparisonRequest,
   createDemoResponse
 } from './banking-stress.demo';
+import {
+  BankingScenarioProposal,
+  BankingScenarioProposalRequest
+} from './banking-scenario-proposal.model';
 
 const ANALYZE_ENDPOINT = 'http://localhost:8081/api/banking-stress-tests/analyze';
+const PROPOSAL_ENDPOINT =
+  'http://localhost:8081/api/banking-stress-tests/scenario-proposals';
 
 describe('BankingStressComponent API integration', () => {
   let fixture: ComponentFixture<BankingStressComponent>;
@@ -107,8 +113,83 @@ describe('BankingStressComponent API integration', () => {
     component.runDemo();
 
     httpMock.expectNone(ANALYZE_ENDPOINT);
+    httpMock.expectNone(PROPOSAL_ENDPOINT);
     expect(component.isDemoResult).toBeTrue();
     expect(component.response?.assumptionsAndLimitations.join(' '))
       .toContain('démonstration');
   });
+
+  it('sends proposal generation to the authenticated Spring API and displays the structured result', () => {
+    const component = fixture.componentInstance;
+    component.proposalSeverity = 'SEVERE';
+    component.proposalHorizonDays = 540;
+    component.proposalContext = 'Contexte fictif de validation';
+    component.generateScenarioProposal();
+
+    const request = httpMock.expectOne(PROPOSAL_ENDPOINT);
+    expect(request.request.method).toBe('POST');
+    expect(request.request.withCredentials).toBeTrue();
+    expect(request.request.body).toEqual({
+      severity: 'SEVERE',
+      horizonDays: 540,
+      context: 'Contexte fictif de validation'
+    } satisfies BankingScenarioProposalRequest);
+
+    request.flush(createProposal());
+    fixture.detectChanges();
+
+    expect(component.scenarioProposal?.scenarioName)
+      .toBe('Proposition locale structurée');
+    expect(fixture.nativeElement.textContent)
+      .toContain('Proposition IA — à vérifier');
+    expect(component.scenarios).toHaveSize(0);
+  });
+
+  function createProposal(): BankingScenarioProposal {
+    return {
+      scenarioName: 'Proposition locale structurée',
+      severity: 'SEVERE',
+      horizonDays: 540,
+      factors: [
+        {
+          type: 'UNEMPLOYMENT_INCREASE',
+          value: 1.5,
+          unit: 'PERCENTAGE_POINTS',
+          rationale: 'Valeur de test, non économique.'
+        },
+        {
+          type: 'GDP_CONTRACTION',
+          value: 2,
+          unit: 'PERCENT',
+          rationale: 'Valeur de test, non économique.'
+        },
+        {
+          type: 'BANK_REVENUE_DECLINE',
+          value: 3,
+          unit: 'PERCENT',
+          rationale: 'Valeur de test, non économique.'
+        },
+        {
+          type: 'ASSET_QUALITY_DETERIORATION',
+          value: 4,
+          unit: 'PERCENT',
+          rationale: 'Valeur de test, non économique.'
+        },
+        {
+          type: 'DEFAULT_PROBABILITY_INCREASE',
+          value: 1,
+          unit: 'PERCENTAGE_POINTS',
+          rationale: 'Valeur de test, non économique.'
+        }
+      ],
+      engineParameters: {
+        rateShock: null,
+        recessionProbabilityMultiplier: null,
+        recessionLossGivenDefaultAddOn: null,
+        equityReturnShock: null
+      },
+      justifications: ['Proposition de fixture.'],
+      assumptions: ['Les valeurs sont exclusivement des données de test.']
+    };
+  }
 });

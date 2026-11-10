@@ -582,6 +582,152 @@
     </div>
   </section>
 
+  <section class="panel ai-proposal-panel" aria-labelledby="ai-proposal-title">
+    <div class="section-heading">
+      <div>
+        <span class="step-label">PROPOSITION OPTIONNELLE</span>
+        <h2 id="ai-proposal-title">Génération d’un scénario économique</h2>
+      </div>
+      <span class="proposal-pill">Proposition IA — non appliquée</span>
+    </div>
+    <p class="scenario-hint">
+      La génération passe par le backend vers Ollama local. Les facteurs macroéconomiques
+      restent contextuels : aucune transmission chômage/PIB/revenus/qualité des actifs vers
+      les pertes n’est inventée. Sans Ollama, ajoutez et configurez vos chocs manuellement.
+    </p>
+    <div class="form-grid proposal-request-fields">
+      <label class="field">
+        <span>Sévérité demandée</span>
+        <select name="proposalSeverity" [(ngModel)]="proposalSeverity"
+          [disabled]="proposalLoading || loading">
+          @for (severity of scenarioSeverities; track severity.value) {
+            <option [ngValue]="severity.value">{{ severity.label }}</option>
+          }
+        </select>
+      </label>
+      <label class="field">
+        <span>Horizon du scénario (jours)</span>
+        <input name="proposalHorizonDays" type="number" min="1" max="3650" step="1"
+          [(ngModel)]="proposalHorizonDays" [disabled]="proposalLoading || loading" />
+      </label>
+      <label class="field proposal-context">
+        <span>Contexte facultatif (max. 500 caractères)</span>
+        <textarea name="proposalContext" maxlength="500" rows="2"
+          [(ngModel)]="proposalContext" [disabled]="proposalLoading || loading"></textarea>
+      </label>
+    </div>
+    <button class="button button-secondary" type="button"
+      (click)="generateScenarioProposal()"
+      [disabled]="proposalLoading || loading || isDemoResult">
+      @if (proposalLoading) {
+        <span class="spinner" aria-hidden="true"></span> Génération…
+      } @else {
+        Générer un scénario avec IA
+      }
+    </button>
+    @if (isDemoResult) {
+      <p class="proposal-limit-note">
+        La génération IA est suspendue tant que des résultats DEMO fictifs sont affichés.
+      </p>
+    }
+    @if (proposalError) {
+      <div class="feedback error-feedback" role="alert">
+        <strong>Proposition indisponible</strong>
+        <span>{{ proposalError }}</span>
+      </div>
+    }
+
+    @if (scenarioProposal; as proposal) {
+      <section class="proposal-review" aria-label="Revue de la proposition de scénario IA">
+        <div class="proposal-review-heading">
+          <div>
+            <span class="proposal-pill">Proposition IA — à vérifier</span>
+            <h3>{{ proposal.scenarioName }}</h3>
+          </div>
+          <span>{{ proposal.severity }} · {{ proposal.horizonDays }} jours</span>
+        </div>
+        <div class="proposal-factor-grid">
+          @for (factor of proposal.factors; track factor.type; let i = $index) {
+            <label class="field proposal-factor">
+              <span>{{ factorLabel(factor.type) }}</span>
+              <div class="proposal-value">
+                <input [name]="'proposal-factor-' + i" type="number" min="0" max="100"
+                  step="0.00000001" [(ngModel)]="factor.value"
+                  [disabled]="proposalLoading || proposalConfirmed" />
+                <strong>{{ factor.unit === 'PERCENTAGE_POINTS' ? 'points de %' : '%' }}</strong>
+              </div>
+              <small>{{ factor.rationale }}</small>
+            </label>
+          }
+        </div>
+        <p class="proposal-limit-note">
+          Les propositions ne sont jamais appliquées automatiquement. Aucun coefficient
+          chômage/PIB/revenus/actifs vers une perte n’est calculé. Les paramètres ci-dessous
+          sont des chocs moteurs indépendants, modifiables avant confirmation.
+        </p>
+        <div class="form-grid proposal-engine-grid">
+          <label class="field">
+            <span>Choc taux proposé (fraction, −1 à 1)</span>
+            <input name="proposal-rate-shock" type="number" min="-1" max="1"
+              step="0.00000001" [(ngModel)]="proposal.engineParameters.rateShock"
+              [disabled]="proposalLoading || proposalConfirmed" />
+          </label>
+          <label class="field">
+            <span>Multiplicateur PD récession (1 à 100)</span>
+            <input name="proposal-recession-multiplier" type="number" min="1" max="100"
+              step="0.00000001"
+              [(ngModel)]="proposal.engineParameters.recessionProbabilityMultiplier"
+              [disabled]="proposalLoading || proposalConfirmed" />
+          </label>
+          <label class="field">
+            <span>Supplément LGD récession (fraction, 0 à 1)</span>
+            <input name="proposal-recession-lgd" type="number" min="0" max="1"
+              step="0.00000001"
+              [(ngModel)]="proposal.engineParameters.recessionLossGivenDefaultAddOn"
+              [disabled]="proposalLoading || proposalConfirmed" />
+          </label>
+          <label class="field">
+            <span>Choc actions proposé (fraction, −1 à 1)</span>
+            <input name="proposal-equity-shock" type="number" min="-1" max="1"
+              step="0.00000001" [(ngModel)]="proposal.engineParameters.equityReturnShock"
+              [disabled]="proposalLoading || proposalConfirmed" />
+          </label>
+        </div>
+        @if (proposal.justifications.length > 0) {
+          <details class="assumptions">
+            <summary>Justifications de la proposition</summary>
+            <ul>
+              @for (justification of proposal.justifications; track justification) {
+                <li>{{ justification }}</li>
+              }
+            </ul>
+          </details>
+        }
+        @if (proposal.assumptions.length > 0) {
+          <details class="assumptions">
+            <summary>Hypothèses et limites</summary>
+            <ul>
+              @for (assumption of proposal.assumptions; track assumption) {
+                <li>{{ assumption }}</li>
+              }
+            </ul>
+          </details>
+        }
+        <p class="proposal-limit-note">
+          À la confirmation, l’augmentation PD en points de pourcentage est convertie en
+          fraction PD (points ÷ 100, arrondie à 8 décimales) et les chocs moteurs sont copiés
+          dans un scénario combiné modifiable. Les facteurs contextuels restent informatifs.
+        </p>
+        <button class="button button-primary" type="button"
+          (click)="confirmScenarioProposal()"
+          [disabled]="proposalConfirmed || proposalLoading">
+          {{ proposalConfirmed ? 'Scénario confirmé — modifiable ci-dessous' :
+            'Confirmer et ajouter aux scénarios' }}
+        </button>
+      </section>
+    }
+  </section>
+
   <section class="panel" aria-labelledby="scenarios-title">
     <div class="section-heading">
       <div>

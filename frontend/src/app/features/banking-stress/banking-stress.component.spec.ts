@@ -8,6 +8,7 @@ import {
   createDemoComparisonRequest,
   createDemoResponse
 } from './banking-stress.demo';
+import { BankingScenarioProposal } from './banking-scenario-proposal.model';
 
 describe('BankingStressComponent', () => {
   let fixture: ComponentFixture<BankingStressComponent>;
@@ -16,7 +17,7 @@ describe('BankingStressComponent', () => {
   beforeEach(async () => {
     service = jasmine.createSpyObj<BankingStressService>(
       'BankingStressService',
-      ['analyze']
+      ['analyze', 'proposeScenario']
     );
     service.analyze.and.returnValue(
       of(createDemoResponse(createDemoComparisonRequest()))
@@ -139,4 +140,108 @@ describe('BankingStressComponent', () => {
     expect(component.errorMessage).toContain('totaliser exactement 100 %');
     expect(service.analyze).not.toHaveBeenCalled();
   });
+
+  it('requests a scenario proposal from the backend and requires explicit confirmation', () => {
+    const component = fixture.componentInstance;
+    const proposal = createScenarioProposal();
+    service.proposeScenario.and.returnValue(of(proposal));
+    component.proposalSeverity = 'HIGH';
+    component.proposalHorizonDays = 180;
+
+    component.generateScenarioProposal();
+    fixture.detectChanges();
+
+    expect(service.proposeScenario).toHaveBeenCalledWith({
+      severity: 'HIGH',
+      horizonDays: 180,
+      context: null
+    });
+    expect(component.scenarioProposal).toEqual(proposal);
+    expect(component.scenarios).toHaveSize(0);
+    expect(fixture.nativeElement.textContent).toContain('Proposition IA — à vérifier');
+
+    component.confirmScenarioProposal();
+
+    expect(component.scenarios).toHaveSize(1);
+    expect(component.scenarios[0].type).toBe('COMBINED');
+    expect(component.scenarios[0].defaultProbabilityAddOn).toBe(0.02);
+    expect(component.proposalConfirmed).toBeTrue();
+  });
+
+  it('rejects invalid proposal values before confirmation', () => {
+    const component = fixture.componentInstance;
+    const proposal = createScenarioProposal();
+    proposal.factors[0].value = 101;
+    component.proposalSeverity = proposal.severity;
+    component.proposalHorizonDays = proposal.horizonDays;
+    service.proposeScenario.and.returnValue(of(proposal));
+
+    component.generateScenarioProposal();
+
+    expect(component.scenarioProposal).toBeNull();
+    expect(component.proposalError).toContain('hors limites');
+    expect(component.scenarios).toHaveSize(0);
+  });
+
+  it('does not request AI proposals for displayed demo results and keeps manual scenarios available', () => {
+    const component = fixture.componentInstance;
+    component.loadDemoComparison();
+    component.runDemo();
+
+    component.generateScenarioProposal();
+    component.addScenario();
+
+    expect(service.proposeScenario).not.toHaveBeenCalled();
+    expect(component.scenarios).toHaveSize(2);
+    expect(component.scenarios[1].type).toBe('COMBINED');
+    expect(component.proposalError).toContain('désactivée pendant');
+  });
+
+  function createScenarioProposal(): BankingScenarioProposal {
+    return {
+      scenarioName: 'Proposition fictive de test',
+      severity: 'HIGH',
+      horizonDays: 180,
+      factors: [
+        {
+          type: 'UNEMPLOYMENT_INCREASE',
+          value: 2,
+          unit: 'PERCENTAGE_POINTS',
+          rationale: 'Facteur contextuel de test.'
+        },
+        {
+          type: 'GDP_CONTRACTION',
+          value: 3,
+          unit: 'PERCENT',
+          rationale: 'Facteur contextuel de test.'
+        },
+        {
+          type: 'BANK_REVENUE_DECLINE',
+          value: 4,
+          unit: 'PERCENT',
+          rationale: 'Facteur contextuel de test.'
+        },
+        {
+          type: 'ASSET_QUALITY_DETERIORATION',
+          value: 5,
+          unit: 'PERCENT',
+          rationale: 'Facteur contextuel de test.'
+        },
+        {
+          type: 'DEFAULT_PROBABILITY_INCREASE',
+          value: 2,
+          unit: 'PERCENTAGE_POINTS',
+          rationale: 'Incrément PD explicite de test.'
+        }
+      ],
+      engineParameters: {
+        rateShock: 0.01,
+        recessionProbabilityMultiplier: 1.5,
+        recessionLossGivenDefaultAddOn: 0.05,
+        equityReturnShock: -0.1
+      },
+      justifications: ['Justification fictive de test.'],
+      assumptions: ['Hypothèse fictive de test.']
+    };
+  }
 });

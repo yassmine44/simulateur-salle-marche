@@ -18,6 +18,14 @@ import {
   NormalizedScenarioComparison
 } from './banking-stress-comparison';
 import {
+  BankingScenarioProposal,
+  EconomicStressFactorType,
+  BankingScenarioProposalRequest,
+  BankingScenarioSeverity,
+  percentagePointsToFraction,
+  validateBankingScenarioProposal
+} from './banking-scenario-proposal.model';
+import {
   BankingModel,
   BankingStressScenarioType,
   BankingStressTestRequest,
@@ -119,6 +127,12 @@ export class BankingStressComponent {
     { value: 'EQUITY_SHOCK', label: 'Choc actions' },
     { value: 'COMBINED', label: 'Scénario combiné' }
   ];
+  readonly scenarioSeverities: { value: BankingScenarioSeverity; label: string }[] = [
+    { value: 'LOW', label: 'Faible' },
+    { value: 'MODERATE', label: 'Modérée' },
+    { value: 'HIGH', label: 'Élevée' },
+    { value: 'SEVERE', label: 'Sévère' }
+  ];
 
   readonly contracts: { value: FinancialContractType; label: string }[] = [
     { value: 'LOAN', label: 'Prêt' },
@@ -185,6 +199,13 @@ export class BankingStressComponent {
   response: BankingStressTestResponse | null = null;
   analysisRequest: BankingStressTestRequest | null = null;
   isDemoResult = false;
+  proposalSeverity: BankingScenarioSeverity = 'MODERATE';
+  proposalHorizonDays = 365;
+  proposalContext = '';
+  scenarioProposal: BankingScenarioProposal | null = null;
+  proposalLoading = false;
+  proposalConfirmed = false;
+  proposalError = '';
 
   addBank(): void {
     this.bankSearch = '';
@@ -405,6 +426,91 @@ export class BankingStressComponent {
     this.clearResponse();
   }
 
+  generateScenarioProposal(): void {
+    if (this.proposalLoading) {
+      return;
+    }
+    if (this.isDemoResult) {
+      this.proposalError =
+        'La génération IA est désactivée pendant l’affichage des résultats DEMO.';
+      return;
+    }
+    if (!Number.isInteger(this.proposalHorizonDays)
+        || this.proposalHorizonDays < 1 || this.proposalHorizonDays > 3650
+        || this.proposalContext.length > 500) {
+      this.proposalError =
+        'L’horizon doit être compris entre 1 et 3650 jours et le contexte limité à 500 caractères.';
+      return;
+    }
+
+    const request: BankingScenarioProposalRequest = {
+      severity: this.proposalSeverity,
+      horizonDays: this.proposalHorizonDays,
+      context: this.proposalContext.trim() || null
+    };
+    this.proposalError = '';
+    this.scenarioProposal = null;
+    this.proposalConfirmed = false;
+    this.proposalLoading = true;
+    this.bankingStressService.proposeScenario(request).subscribe({
+      next: proposal => {
+        try {
+          validateBankingScenarioProposal(proposal, request);
+          this.scenarioProposal = proposal;
+        } catch (error: unknown) {
+          this.proposalError = error instanceof Error
+            ? error.message
+            : 'La proposition reçue ne respecte pas le contrat attendu.';
+        } finally {
+          this.proposalLoading = false;
+        }
+      },
+      error: (error: HttpErrorResponse) => {
+        this.proposalError = this.describeProposalError(error);
+        this.proposalLoading = false;
+      }
+    });
+  }
+
+  confirmScenarioProposal(): void {
+    if (!this.scenarioProposal || this.proposalLoading) {
+      return;
+    }
+    const request: BankingScenarioProposalRequest = {
+      severity: this.proposalSeverity,
+      horizonDays: this.proposalHorizonDays,
+      context: this.proposalContext.trim() || null
+    };
+    try {
+      validateBankingScenarioProposal(this.scenarioProposal, request);
+      const defaultProbabilityIncrease = this.scenarioProposal.factors.find(
+        factor => factor.type === 'DEFAULT_PROBABILITY_INCREASE'
+      );
+      if (!defaultProbabilityIncrease) {
+        throw new Error('Le supplément de probabilité de défaut proposé est absent.');
+      }
+      const parameters = this.scenarioProposal.engineParameters;
+      this.scenarios.push({
+        scenarioId: `scenario-ai-${this.nextScenarioNumber++}`,
+        type: 'COMBINED',
+        rateShock: parameters.rateShock,
+        recessionProbabilityMultiplier: parameters.recessionProbabilityMultiplier,
+        recessionLossGivenDefaultAddOn: parameters.recessionLossGivenDefaultAddOn,
+        defaultProbabilityAddOn: percentagePointsToFraction(
+          defaultProbabilityIncrease.value
+        ),
+        equityReturnShock: parameters.equityReturnShock
+      });
+      this.proposalConfirmed = true;
+      this.proposalError = '';
+      this.clearResponse();
+    } catch (error: unknown) {
+      this.proposalError = error instanceof Error
+        ? error.message
+        : 'La proposition n’a pas pu être confirmée.';
+    }
+  }
+
   loadDemoComparison(): void {
     if (!this.demoAvailable || this.loading || this.banks.length > 0
         || this.scenarios.length > 0) {
@@ -522,6 +628,17 @@ export class BankingStressComponent {
 
   scenarioLabel(type: BankingStressScenarioType): string {
     return this.scenarioTypes.find(item => item.value === type)?.label ?? type;
+  }
+
+  factorLabel(type: EconomicStressFactorType): string {
+    const labels: Record<EconomicStressFactorType, string> = {
+      UNEMPLOYMENT_INCREASE: 'Hausse du chômage',
+      GDP_CONTRACTION: 'Baisse du PIB / récession',
+      BANK_REVENUE_DECLINE: 'Baisse des revenus bancaires',
+      ASSET_QUALITY_DETERIORATION: 'Dégradation de la qualité des actifs',
+      DEFAULT_PROBABILITY_INCREASE: 'Augmentation de la probabilité de défaut'
+    };
+    return labels[type];
   }
 
   normalizedPercent(value: number | null | undefined): string {
@@ -787,5 +904,19 @@ export class BankingStressComponent {
       return body.detail;
     }
     return `La simulation a échoué (HTTP ${error.status}). Vérifiez les données saisies.`;
+  }
+
+  private describeProposalError(error: HttpErrorResponse): string {
+    if (error.status === 0) {
+      return 'Le service de génération IA est injoignable. Vous pouvez créer un scénario manuellement.';
+    }
+    if (typeof error.error === 'object' && error.error !== null
+        && 'detail' in error.error && typeof error.error.detail === 'string') {
+      return error.error.detail;
+    }
+    if (error.status === 401) {
+      return 'Authentification requise pour demander une proposition de scénario.';
+    }
+    return `La génération IA est indisponible (HTTP ${error.status}). Le mode manuel reste disponible.`;
   }
 }
