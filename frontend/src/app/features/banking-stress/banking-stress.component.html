@@ -754,6 +754,95 @@
           <span>Le backend n’a produit aucune comparaison pour ces paramètres.</span>
         </div>
       } @else {
+        @if (comparisonBankNames.length === 2) {
+          <section class="normalized-comparison" aria-labelledby="normalized-comparison-title">
+            <div class="normalized-comparison-heading">
+              <div>
+                <h3 id="normalized-comparison-title">Comparaison normalisée</h3>
+                <p>
+                  Ratios côte à côte, sans classement ni score composite. Les montants sont
+                  comparés dans la devise de simulation ({{ currencyLabel(result.currency) }});
+                  aucune conversion KDT/TND n’est effectuée.
+                </p>
+              </div>
+              <span class="regulatory-pill">Ratios indicatifs non réglementaires</span>
+            </div>
+
+            @if (isDemoResult) {
+              <div class="demo-result-notice" role="note">
+                En DEMO, les pertes proviennent de fixtures fictives fixes; elles ne sont pas
+                recalculées depuis les saisies. Les ratios ci-dessous utilisent les expositions
+                de la requête et sont uniquement illustratifs.
+              </div>
+            }
+
+            <p class="comparison-formula-note">
+              Sévérité globale du choc = (pertes banque + investisseurs) ÷ capital proxy initial
+              × 100; ce n’est pas une perte intégralement supportée par la banque. Impact sur le
+              capital bancaire = perte supportée par la banque ÷ capital proxy initial × 100.
+              Les deux parts sont additionnées une seule fois; les pertes crédit, taux et marché
+              ne sont pas ajoutées à nouveau. Perte crédit / exposition crédit = perte crédit
+              totale ÷ somme des EAD × 100. Perte marché / exposition marché = − P&amp;L marché ÷
+              somme des valeurs de marché × 100 (positif = perte, négatif = gain). Capital
+              stressé / RWA = capital proxy après stress ÷ RWA × 100. Ces proxies simulés ne
+              constituent pas des mesures comptables ni des ratios réglementaires.
+            </p>
+
+            @if (normalizedComparisons.length === 0) {
+              <div class="empty-state compact">
+                <strong>Ratios non disponibles</strong>
+                <span>Aucun scénario ne peut être comparé pour les deux banques sélectionnées.</span>
+              </div>
+            } @else {
+              @for (comparison of normalizedComparisons; track comparison.scenarioId) {
+                <div class="comparison-table-wrapper">
+                  <table class="comparison-table">
+                    <caption>{{ scenarioLabel(comparison.scenarioType) }}</caption>
+                    <thead>
+                      <tr>
+                        <th scope="col">Indicateur</th>
+                        <th scope="col">{{ comparisonBankNames[0] }}</th>
+                        <th scope="col">{{ comparisonBankNames[1] }}</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <th scope="row">Sévérité globale du choc / capital initial</th>
+                        <td>{{ normalizedPercent(comparison.banks[0]?.shockSeverityToInitialCapitalPercent) }}</td>
+                        <td>{{ normalizedPercent(comparison.banks[1]?.shockSeverityToInitialCapitalPercent) }}</td>
+                      </tr>
+                      <tr>
+                        <th scope="row">Impact supporté par la banque / capital initial</th>
+                        <td>{{ normalizedPercent(comparison.banks[0]?.bankCapitalImpactPercent) }}</td>
+                        <td>{{ normalizedPercent(comparison.banks[1]?.bankCapitalImpactPercent) }}</td>
+                      </tr>
+                      <tr>
+                        <th scope="row">Perte crédit / exposition crédit</th>
+                        <td>{{ normalizedPercent(comparison.banks[0]?.creditLossToCreditExposurePercent) }}</td>
+                        <td>{{ normalizedPercent(comparison.banks[1]?.creditLossToCreditExposurePercent) }}</td>
+                      </tr>
+                      <tr>
+                        <th scope="row">Perte marché / exposition marché</th>
+                        <td>{{ normalizedPercent(comparison.banks[0]?.marketLossToMarketExposurePercent) }}</td>
+                        <td>{{ normalizedPercent(comparison.banks[1]?.marketLossToMarketExposurePercent) }}</td>
+                      </tr>
+                      <tr>
+                        <th scope="row">Capital stressé / RWA</th>
+                        <td>{{ normalizedPercent(comparison.banks[0]?.stressedCapitalToRwaPercent) }}</td>
+                        <td>{{ normalizedPercent(comparison.banks[1]?.stressedCapitalToRwaPercent) }}</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              }
+            }
+            <p class="comparison-unavailable-note">
+              « — » signifie donnée absente, devise incohérente ou dénominateur nul/non positif.
+              Les indicateurs ne sont pas des ratios réglementaires officiels.
+            </p>
+          </section>
+        }
+
         <div class="results-list">
           @for (item of result.results; track item.bankId + '-' + item.scenarioId) {
             <article class="result-card">
