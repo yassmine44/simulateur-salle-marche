@@ -106,7 +106,7 @@
 
       <p>
         Les 10 premières bougies hebdomadaires seront révélées.
-        Utilisez « Semaine suivante » pour découvrir la suite.
+        Lancez la lecture pour avancer automatiquement d’une semaine toutes les 10&nbsp;secondes.
       </p>
 
     </section>
@@ -132,18 +132,50 @@
           </div>
 
 
-          <button
-            type="button"
-            class="advance-button"
-            [disabled]="
-              busy
-              || !isPlaying
-              || portfolio?.completed
-            "
-            (click)="advanceWeek()"
-          >
-            Semaine suivante
-          </button>
+          <div class="playback-controls">
+
+            <button
+              type="button"
+              class="playback-button"
+              [class.playing]="isPlaying"
+              [disabled]="
+                gameStatus !== 'PLAYING'
+                || !!portfolio?.completed
+                || busy && !isPlaying
+              "
+              (click)="togglePlayPause()"
+              [attr.aria-pressed]="isPlaying"
+              [attr.aria-label]="
+                isPlaying
+                  ? 'Mettre en pause'
+                  : 'Lancer la lecture'
+              "
+            >
+              @if (isPlaying) {
+                <span class="playback-icon pause" aria-hidden="true"></span>
+                Pause
+              } @else {
+                <span class="playback-icon play" aria-hidden="true"></span>
+                Lecture
+              }
+            </button>
+
+            <div
+              class="autoplay-timer"
+              [class.active]="isPlaying"
+              [attr.aria-hidden]="!isPlaying"
+              title="Prochaine bougie dans 10 secondes"
+            >
+              <span class="timer-dot"></span>
+              <span class="timer-track">
+                @if (isPlaying) {
+                  <span class="timer-progress"></span>
+                }
+              </span>
+              <span class="timer-label">10s</span>
+            </div>
+
+          </div>
 
         </div>
 
@@ -354,7 +386,7 @@
             min="0.00000001"
             step="1"
             [(ngModel)]="quantity"
-            [disabled]="busy || !isPlaying"
+            [disabled]="busy || gameStatus !== 'PLAYING'"
           >
 
           <div class="order-actions">
@@ -364,7 +396,7 @@
               class="buy"
               [disabled]="
                 busy
-                || !isPlaying
+                || gameStatus !== 'PLAYING'
                 || portfolio?.completed
               "
               (click)="placeOrder('BUY')"
@@ -377,7 +409,7 @@
               class="sell"
               [disabled]="
                 busy
-                || !isPlaying
+                || gameStatus !== 'PLAYING'
                 || portfolio?.completed
               "
               (click)="placeOrder('SELL')"

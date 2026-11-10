@@ -181,7 +181,7 @@
   margin-bottom: 12px;
 }
 
-.advance-button,
+.playback-button,
 .order-actions button,
 .restart {
   border: 0;
@@ -190,18 +190,137 @@
   font-weight: 800;
 }
 
-.advance-button {
+.playback-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+}
+
+.playback-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
   min-height: 42px;
   padding: 0 16px;
   background: var(--primary);
   color: #fff;
+  transition: background 0.2s ease, box-shadow 0.2s ease;
 }
 
-.advance-button:hover:not(:disabled) {
+.playback-button:hover:not(:disabled) {
   background: var(--primary-hover);
 }
 
-.advance-button:disabled,
+.playback-button.playing {
+  background: #0f172a;
+  box-shadow: 0 0 0 1px rgba(15, 23, 42, 0.08);
+}
+
+.playback-button.playing:hover:not(:disabled) {
+  background: #1e293b;
+}
+
+.playback-icon {
+  display: inline-block;
+  width: 0;
+  height: 0;
+  flex-shrink: 0;
+}
+
+.playback-icon.play {
+  border-style: solid;
+  border-width: 6px 0 6px 10px;
+  border-color: transparent transparent transparent currentColor;
+}
+
+.playback-icon.pause {
+  width: 10px;
+  height: 12px;
+  border-left: 3px solid currentColor;
+  border-right: 3px solid currentColor;
+  box-sizing: border-box;
+}
+
+.autoplay-timer {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 92px;
+  opacity: 0.35;
+  transition: opacity 0.2s ease;
+}
+
+.autoplay-timer.active {
+  opacity: 1;
+}
+
+.timer-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #94a3b8;
+  flex-shrink: 0;
+}
+
+.autoplay-timer.active .timer-dot {
+  background: var(--primary);
+  animation: timer-pulse 1s ease-in-out infinite;
+}
+
+.timer-track {
+  position: relative;
+  width: 56px;
+  height: 4px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: #e2e8f0;
+}
+
+.timer-progress {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  transform-origin: left center;
+  background: linear-gradient(90deg, var(--primary), #38bdf8);
+  transform: scaleX(0);
+}
+
+.autoplay-timer.active .timer-progress {
+  animation: timer-countdown 10s linear infinite;
+}
+
+.timer-label {
+  color: #64748b;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+}
+
+@keyframes timer-countdown {
+  from {
+    transform: scaleX(1);
+  }
+
+  to {
+    transform: scaleX(0);
+  }
+}
+
+@keyframes timer-pulse {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  50% {
+    opacity: 0.45;
+    transform: scale(0.85);
+  }
+}
+
+.playback-button:disabled,
 .order-actions button:disabled,
 .restart:disabled {
   opacity: 0.55;
