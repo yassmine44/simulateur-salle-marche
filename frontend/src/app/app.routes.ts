@@ -117,6 +117,12 @@ export const routes: Routes = [
           ProfileComponent
       },
       {
+        path: 'banking-stress',
+        loadComponent: () =>
+          import('./features/banking-stress/banking-stress.component')
+            .then(module => module.BankingStressComponent)
+      },
+      {
   path: 'scenarios',
   loadComponent: () =>
     import('./features/scenarios/scenario-lab.component')

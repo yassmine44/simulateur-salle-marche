@@ -2,12 +2,14 @@
 package tn.esprit.simulateurbackend.service;
 
 import org.springframework.boot.context.event.ApplicationReadyEvent;
+import org.springframework.context.annotation.Profile;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
 
 import java.time.Instant;
 
 @Component
+@Profile("!banking-test")
 public class ScenarioHistoryStartup {
 
     private final ScenarioHistoryService historyService;
