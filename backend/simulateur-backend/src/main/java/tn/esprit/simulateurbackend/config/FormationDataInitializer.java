@@ -1,6 +1,7 @@
 package tn.esprit.simulateurbackend.config;
 
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import tn.esprit.simulateurbackend.entity.Course;
@@ -10,6 +11,7 @@ import tn.esprit.simulateurbackend.entity.QuizQuestion;
 import tn.esprit.simulateurbackend.repository.CourseRepository;
 
 @Component
+@Profile("!banking-test")
 public class FormationDataInitializer
         implements CommandLineRunner {
 

@@ -1,0 +1,3 @@
+﻿bank_name,banking_model,financial_year,as_of_date,unit,total_assets,total_equity,share_capital,customer_receivables_net,customer_receivables_gross,customer_deposits,investment_portfolio,trading_portfolio,net_banking_income,net_profit,customer_credit_provisions,additional_provisions,collective_provisions,reserved_interest_or_income,source
+BIAT,CONVENTIONAL,2025,2025-12-31,KDT,26606988,2367818,204000,13045363,14380757,22291018,7080071,4304,1594799,385264,691131,,399959,244304,biat_efd311225.pdf
+Banque Zitouna,NON_CONVENTIONAL,2025,2025-12-31,KDT,8149516,737369,265000,5838897,6254121,7005512,370763,,450885,54563,174453,69721,103092,67958,banque_zitouna_efd311225.pdf

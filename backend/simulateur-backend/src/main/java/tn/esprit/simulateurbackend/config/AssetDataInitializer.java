@@ -1,6 +1,7 @@
 package tn.esprit.simulateurbackend.config;
 
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 
 import tn.esprit.simulateurbackend.entity.Asset;
@@ -10,6 +11,7 @@ import tn.esprit.simulateurbackend.repository.AssetRepository;
 import java.math.BigDecimal;
 
 @Component
+@Profile("!banking-test")
 public class AssetDataInitializer
         implements CommandLineRunner {
 

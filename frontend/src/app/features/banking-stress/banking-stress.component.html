@@ -1,0 +1,865 @@
+<section class="banking-stress" (input)="onFormChange()" (change)="onFormChange()">
+  <header class="page-heading">
+    <div>
+      <span class="eyebrow">RISK &amp; RESILIENCE</span>
+      <h1>Banking Stress Testing</h1>
+      <p>Étudiez l’impact de chocs financiers sur des expositions simulées.</p>
+    </div>
+    <div class="disclaimer">
+      <span class="simulation-pill">Résultats simulés</span>
+      <span class="regulatory-pill">Ratios indicatifs non réglementaires</span>
+    </div>
+  </header>
+
+  @if (demoAvailable) {
+    <aside class="demo-mode-panel" aria-label="Mode de démonstration local">
+      <div>
+        <strong>Démo locale de développement uniquement</strong>
+        <p>
+          Le preset BIAT / Banque Zitouna et ses hypothèses sont fictifs.
+          Les résultats prédéterminés ne sont calculés ni depuis vos saisies ni depuis
+          les références publiées et aucun appel backend n’est effectué.
+        </p>
+      </div>
+      <div class="demo-actions">
+        <button
+          class="button button-secondary"
+          type="button"
+          (click)="loadDemoComparison()"
+          [disabled]="loading || banks.length > 0 || scenarios.length > 0"
+        >
+          Charger l’exemple fictif BIAT / Zitouna
+        </button>
+        <button
+          class="button button-demo"
+          type="button"
+          (click)="runDemo()"
+          [disabled]="loading || banks.length === 0 || scenarios.length === 0"
+        >
+          Lancer la démo locale fictive
+        </button>
+      </div>
+      @if (banks.length > 0 || scenarios.length > 0) {
+        <small>
+          Le chargement du preset est désactivé pour préserver les paramètres déjà saisis.
+        </small>
+      }
+    </aside>
+  }
+
+  <aside class="notice" aria-label="Limites de la simulation">
+    <span class="notice-icon" aria-hidden="true">i</span>
+    <p>
+      Saisissez des hypothèses de simulation, pas des données bancaires réelles.
+      Les pertes sont réparties selon les parts déclarées pour chaque exposition ;
+      elles ne sont pas déduites du modèle bancaire.
+    </p>
+  </aside>
+
+  <section class="panel setup-panel" aria-labelledby="setup-title">
+    <div class="section-heading">
+      <div>
+        <span class="step-label">01 / PARAMÈTRES</span>
+        <h2 id="setup-title">Cadre de la simulation</h2>
+      </div>
+      <span class="section-hint">
+        Saisies et résultats dans la devise choisie (TND par défaut) · PD à l’horizon indiqué
+      </span>
+    </div>
+
+    <div class="global-fields">
+      <label class="field">
+        <span>Devise de simulation</span>
+        <select
+          name="currency"
+          [(ngModel)]="currency"
+          [disabled]="loading"
+          aria-label="Devise de simulation, aucune conversion automatique"
+        >
+          @for (option of currencies; track option.code) {
+            <option [ngValue]="option.code">
+              {{ option.flag }} {{ option.code }} — {{ option.name }} — {{ option.symbol }}
+            </option>
+          }
+        </select>
+      </label>
+      <label class="field">
+        <span>Horizon PD (jours)</span>
+        <input
+          name="creditHorizonDays"
+          type="number"
+          min="1"
+          max="3650"
+          step="1"
+          [(ngModel)]="creditHorizonDays"
+          [disabled]="loading"
+        />
+      </label>
+      <p class="horizon-help">
+        Les références publiées sont en KDT; les saisies et résultats utilisent la devise
+        choisie. En TND, 1 KDT = 1 000 TND. Aucune conversion automatique n’est effectuée.
+      </p>
+    </div>
+  </section>
+
+  <section class="panel" aria-labelledby="banks-title">
+    <div class="section-heading">
+      <div>
+        <span class="step-label">02 / BILANS SIMULÉS</span>
+        <h2 id="banks-title">Banques et expositions</h2>
+      </div>
+      <button class="button button-secondary" type="button" (click)="addBank()" [disabled]="loading">
+        <span aria-hidden="true">＋</span> Ajouter une banque
+      </button>
+    </div>
+
+    @if (bankPickerOpen) {
+      <div class="bank-picker" (keydown)="onBankPickerKeydown($event)">
+        <label class="field bank-search-label" for="bank-search">
+          <span>Rechercher une banque</span>
+          <input
+            id="bank-search"
+            #bankSearchInput
+            type="search"
+            role="combobox"
+            aria-autocomplete="list"
+            aria-controls="bank-options"
+            [attr.aria-expanded]="bankPickerOpen"
+            [attr.aria-activedescendant]="availableBanks[activeBankOptionIndex]
+              ? 'bank-option-' + availableBanks[activeBankOptionIndex].id : null"
+            [ngModel]="bankSearch"
+            (ngModelChange)="searchBanks($event)"
+            placeholder="Nom de la banque…"
+            autocomplete="off"
+            [disabled]="loading"
+          />
+        </label>
+        <div id="bank-options" class="bank-options" role="listbox" aria-label="Banques disponibles">
+          @for (option of availableBanks; track option.id; let optionIndex = $index) {
+            <button
+              type="button"
+              class="bank-option"
+              role="option"
+              [id]="'bank-option-' + option.id"
+              [attr.aria-selected]="optionIndex === activeBankOptionIndex"
+              [class.option-active]="optionIndex === activeBankOptionIndex"
+              (mouseenter)="activeBankOptionIndex = optionIndex"
+              (click)="selectBank(option)"
+              [disabled]="loading"
+            >
+              @if (bankLogo(option); as logoPath) {
+                <img class="bank-logo option-avatar" [src]="logoPath"
+                  alt="" aria-hidden="true" referrerpolicy="no-referrer"
+                  (error)="markLogoUnavailable(option.id)" />
+              } @else {
+                <span class="bank-avatar option-avatar" aria-hidden="true">
+                  {{ initials(option.name) }}
+                </span>
+              }
+              <span class="option-copy">
+                <strong>{{ option.name }}</strong>
+                <small>
+                  {{ bankTypeLabel(option.bankingModel) }}
+                  · {{ ownershipTypeLabel(option.ownershipType) }}
+                </small>
+              </span>
+              <span class="option-action">Sélectionner</span>
+            </button>
+          } @empty {
+            <p class="no-bank-options">Aucune banque ne correspond à cette recherche.</p>
+          }
+        </div>
+        <p class="picker-help">
+          Navigation clavier : ↑ / ↓ pour choisir, Entrée pour sélectionner, Échap pour fermer.
+          Le profil personnalisé permet de saisir manuellement le modèle et la propriété.
+        </p>
+        <button class="text-button picker-close" type="button"
+          (click)="closeBankPicker()">Fermer</button>
+      </div>
+    }
+
+    @if (banks.length === 0) {
+      <div class="empty-state compact">
+        <strong>Aucune banque ajoutée</strong>
+        <span>Ajoutez un profil simulé et saisissez ses hypothèses financières.</span>
+      </div>
+    }
+
+    <div class="card-list">
+      @for (bank of banks; track bank.bankId; let bankIndex = $index) {
+        <article class="bank-card">
+          <div class="card-heading">
+            <div class="card-title">
+              @if (bankLogoForId(bank.catalogBankId); as logoPath) {
+                <img class="bank-logo" [src]="logoPath"
+                  [alt]="'Logo de ' + bank.bankName" referrerpolicy="no-referrer"
+                  (error)="markLogoUnavailable(bank.catalogBankId)" />
+              } @else {
+                <span class="bank-avatar card-avatar" aria-hidden="true">
+                  {{ initials(bank.bankName || 'Profil personnalisé') }}
+                </span>
+              }
+              <div>
+                <h3>{{ bank.bankName || 'Profil personnalisé' }}</h3>
+                <span class="technical-id">{{ bank.bankId }}</span>
+                @if (catalogEntry(bank.catalogBankId); as entry) {
+                  @if (!entry.custom) {
+                    <a class="source-link" [href]="entry.sourceUrl" target="_blank"
+                      rel="noopener noreferrer">Source de classification</a>
+                  }
+                }
+              </div>
+            </div>
+            <div class="bank-tags">
+              <span class="bank-model-badge">{{ bankTypeLabel(bank.model) }}</span>
+              <span class="ownership-badge">{{ ownershipTypeLabel(bank.ownershipType) }}</span>
+            </div>
+            <button
+              class="icon-button danger-action"
+              type="button"
+              [attr.aria-label]="'Supprimer ' + (bank.bankName || 'cette banque')"
+              (click)="removeBank(bankIndex)"
+              [disabled]="loading"
+            >Supprimer</button>
+          </div>
+
+          <div class="form-grid bank-fields">
+            <label class="field">
+              <span>{{ catalogEntry(bank.catalogBankId)?.custom
+                ? 'Nom du profil personnalisé' : 'Banque sélectionnée' }}</span>
+              @if (catalogEntry(bank.catalogBankId)?.custom) {
+                <input
+                  [name]="'bankName-' + bankIndex"
+                  [(ngModel)]="bank.bankName"
+                  maxlength="120"
+                  placeholder="Saisir un nom de profil"
+                  [disabled]="loading"
+                />
+              } @else {
+                <input [value]="bank.bankName" readonly [name]="'bankName-' + bankIndex" />
+              }
+            </label>
+            <label class="field">
+              <span>Modèle bancaire</span>
+              @if (catalogEntry(bank.catalogBankId)?.custom) {
+                <select
+                  [name]="'bankModel-' + bankIndex"
+                  [(ngModel)]="bank.model"
+                  (ngModelChange)="onModelChange()"
+                  [disabled]="loading"
+                >
+                  <option [ngValue]="null">Sélectionner un modèle</option>
+                  @for (model of models; track model.value) {
+                    <option [ngValue]="model.value">{{ model.label }}</option>
+                  }
+                </select>
+              } @else {
+                <input [value]="bankTypeLabel(bank.model)" readonly
+                  [name]="'bankModel-' + bankIndex" />
+              }
+            </label>
+            <label class="field">
+              <span>Type de propriété</span>
+              @if (catalogEntry(bank.catalogBankId)?.custom) {
+                <select
+                  [name]="'ownershipType-' + bankIndex"
+                  [(ngModel)]="bank.ownershipType"
+                  (ngModelChange)="onOwnershipChange()"
+                  [disabled]="loading"
+                >
+                  <option [ngValue]="'UNKNOWN'">Non vérifiée</option>
+                  <option [ngValue]="'PUBLIC'">Publique</option>
+                  <option [ngValue]="'PRIVATE'">Privée</option>
+                </select>
+              } @else {
+                <input [value]="ownershipTypeLabel(bank.ownershipType)" readonly
+                  [name]="'ownershipType-' + bankIndex" />
+              }
+            </label>
+            <label class="field">
+              <span>Capital proxy ({{ currencyLabel(currency) }})</span>
+              <input
+                [name]="'capital-' + bankIndex"
+                type="number"
+                min="0"
+                max="999999999999999"
+                step="0.00000001"
+                [(ngModel)]="bank.capitalProxy"
+                placeholder="À renseigner"
+                [disabled]="loading"
+              />
+            </label>
+            <label class="field">
+              <span>RWA proxy ({{ currencyLabel(currency) }})</span>
+              <input
+                [name]="'rwa-' + bankIndex"
+                type="number"
+                min="0"
+                max="999999999999999"
+                step="0.00000001"
+                [(ngModel)]="bank.riskWeightedAssets"
+                placeholder="À renseigner"
+                [disabled]="loading"
+              />
+            </label>
+          </div>
+
+          @if (publishedFinancialData(bank.catalogBankId); as financialData) {
+            <section class="published-financials"
+              [attr.aria-labelledby]="'published-financials-title-' + bankIndex">
+              <div class="published-financials-heading">
+                <div>
+                  <span class="step-label">RÉFÉRENTIEL INFORMATIF</span>
+                  <h4 [id]="'published-financials-title-' + bankIndex">
+                    Données financières publiées — {{ financialData.financialYear }}
+                  </h4>
+                  <p>
+                    Situation au {{ financialData.asOfDate }} · Unité d’origine :
+                    {{ financialData.unit }}
+                  </p>
+                </div>
+                <a class="source-link" [href]="financialData.sourceUrl" target="_blank"
+                  rel="noopener noreferrer">Consulter la source</a>
+              </div>
+              <p class="published-financials-disclaimer">
+                Données comptables publiées, séparées des hypothèses de stress. Les capitaux
+                propres ne sont pas un capital réglementaire ; les crédits ne sont pas une EAD ;
+                les portefeuilles ne sont pas des expositions actions. Aucune valeur n’est
+                préremplie dans les paramètres de simulation et aucune conversion monétaire
+                n’est effectuée. Unité publiée : KDT; 1 KDT = 1 000 TND.
+              </p>
+              <dl class="published-financials-grid">
+                @for (metric of publishedFinancialMetrics; track metric.key) {
+                  <div class="published-financial-metric">
+                    <dt>{{ metric.label }}</dt>
+                    <dd>
+                      @let value = publishedMetricValue(financialData, metric.key);
+                      @if (value !== null) {
+                        {{ value | number:'1.0-3' }} {{ financialData.unit }}
+                      } @else {
+                        <span class="unavailable-value">Donnée non disponible</span>
+                      }
+                    </dd>
+                  </div>
+                }
+              </dl>
+              @if (financialData.creditReconciliationGapKdt !== null) {
+                <p class="published-financials-note">
+                  Écart de rapprochement crédit :
+                  {{ financialData.creditReconciliationGapKdt | number:'1.0-3' }}
+                  {{ financialData.unit }}.
+                </p>
+              }
+              <details class="published-source-details">
+                <summary>Source et limites d’extraction</summary>
+                <p>{{ financialData.sourceDocument }}</p>
+                <p>{{ financialData.extractionStatus }}</p>
+                <p>{{ financialData.dataQualityNote }}</p>
+                <p>
+                  Pages — bilan : {{ financialData.sourcePages.balanceSheet }};
+                  crédits : {{ financialData.sourcePages.customerCredit }};
+                  résultat : {{ financialData.sourcePages.incomeStatement }}.
+                </p>
+              </details>
+            </section>
+          }
+
+          <section class="exposure-section" [attr.aria-labelledby]="'credit-title-' + bankIndex">
+            <div class="subsection-heading">
+              <div>
+                <h4 [id]="'credit-title-' + bankIndex">Expositions de crédit</h4>
+                <p>PD et LGD sont des fractions entre 0 et 1, à l’horizon PD choisi.</p>
+              </div>
+              <button class="button button-small" type="button"
+                (click)="addExposure(bank, 'credit')" [disabled]="loading">＋ Crédit</button>
+            </div>
+            @for (exposure of bank.creditExposures; track exposure.exposureId; let i = $index) {
+              <div class="exposure-card">
+                <div class="exposure-heading">
+                  <strong>Crédit {{ i + 1 }}</strong>
+                  <span>{{ exposure.exposureId }}</span>
+                  <button class="text-button" type="button"
+                    (click)="removeExposure(bank, 'credit', i)" [disabled]="loading">Retirer</button>
+                </div>
+                <div class="form-grid">
+                  <label class="field">
+                    <span>Contrat</span>
+                    <select [name]="exposure.exposureId + '-contract'"
+                      [(ngModel)]="exposure.terms.contractType" [disabled]="loading">
+                      @for (contract of contracts; track contract.value) {
+                        <option [ngValue]="contract.value">{{ contract.label }}</option>
+                      }
+                    </select>
+                  </label>
+                  <label class="field">
+                    <span>Base de rendement</span>
+                    <select [name]="exposure.exposureId + '-basis'"
+                      [(ngModel)]="exposure.terms.returnBasis" [disabled]="loading">
+                      @for (basis of returnBases; track basis.value) {
+                        <option [ngValue]="basis.value">{{ basis.label }}</option>
+                      }
+                    </select>
+                  </label>
+                  <label class="field">
+                    <span>EAD ({{ currencyLabel(currency) }})</span>
+                    <input [name]="exposure.exposureId + '-ead'" type="number" min="0"
+                      max="999999999999999" step="0.00000001"
+                      [(ngModel)]="exposure.exposureAtDefault" placeholder="Montant simulé"
+                      [disabled]="loading" />
+                  </label>
+                  <label class="field">
+                    <span>PD (0–1)</span>
+                    <input [name]="exposure.exposureId + '-pd'" type="number" min="0" max="1"
+                      step="0.00000001" [(ngModel)]="exposure.probabilityOfDefault"
+                      placeholder="Ex. 0,02" [disabled]="loading" />
+                  </label>
+                  <label class="field">
+                    <span>LGD (0–1)</span>
+                    <input [name]="exposure.exposureId + '-lgd'" type="number" min="0" max="1"
+                      step="0.00000001" [(ngModel)]="exposure.lossGivenDefault"
+                      placeholder="Fraction simulée" [disabled]="loading" />
+                  </label>
+                  <label class="field">
+                    <span>Part banque (0–1)</span>
+                    <input [name]="exposure.exposureId + '-bank-share'" type="text"
+                      inputmode="decimal" [(ngModel)]="exposure.terms.bankLossShare"
+                      placeholder="0–1, 8 décimales max" [disabled]="loading" />
+                  </label>
+                  <label class="field">
+                    <span>Part investisseurs (0–1)</span>
+                    <input [name]="exposure.exposureId + '-investor-share'" type="text"
+                      inputmode="decimal" [(ngModel)]="exposure.terms.investorLossShare"
+                      placeholder="0–1, 8 décimales max" [disabled]="loading" />
+                  </label>
+                </div>
+              </div>
+            }
+          </section>
+
+          <section class="exposure-section" [attr.aria-labelledby]="'rates-title-' + bankIndex">
+            <div class="subsection-heading">
+              <div>
+                <h4 [id]="'rates-title-' + bankIndex">Expositions de taux</h4>
+                <p>Choc en fraction de taux annuel ; duration en années, convexité en années².</p>
+              </div>
+              <button class="button button-small" type="button"
+                (click)="addExposure(bank, 'rate')" [disabled]="loading">＋ Taux</button>
+            </div>
+            @for (exposure of bank.rateExposures; track exposure.exposureId; let i = $index) {
+              <div class="exposure-card">
+                <div class="exposure-heading">
+                  <strong>Taux {{ i + 1 }}</strong>
+                  <span>{{ exposure.exposureId }}</span>
+                  <button class="text-button" type="button"
+                    (click)="removeExposure(bank, 'rate', i)" [disabled]="loading">Retirer</button>
+                </div>
+                <div class="form-grid">
+                  <label class="field">
+                    <span>Contrat</span>
+                    <select [name]="exposure.exposureId + '-contract'"
+                      [(ngModel)]="exposure.terms.contractType" [disabled]="loading">
+                      @for (contract of contracts; track contract.value) {
+                        <option [ngValue]="contract.value">{{ contract.label }}</option>
+                      }
+                    </select>
+                  </label>
+                  <label class="field">
+                    <span>Base de rendement</span>
+                    <select [name]="exposure.exposureId + '-basis'"
+                      [(ngModel)]="exposure.terms.returnBasis" [disabled]="loading">
+                      @for (basis of returnBases; track basis.value) {
+                        <option [ngValue]="basis.value">{{ basis.label }}</option>
+                      }
+                    </select>
+                  </label>
+                  <label class="field">
+                    <span>Côté du bilan</span>
+                    <select [name]="exposure.exposureId + '-side'"
+                      [(ngModel)]="exposure.side" [disabled]="loading">
+                      @for (side of sides; track side.value) {
+                        <option [ngValue]="side.value">{{ side.label }}</option>
+                      }
+                    </select>
+                  </label>
+                  <label class="field">
+                    <span>Valeur actuelle ({{ currencyLabel(currency) }})</span>
+                    <input [name]="exposure.exposureId + '-pv'" type="number" min="0"
+                      max="999999999999999" step="0.00000001" [(ngModel)]="exposure.presentValue"
+                      placeholder="Montant simulé" [disabled]="loading" />
+                  </label>
+                  <label class="field">
+                    <span>Duration modifiée (années)</span>
+                    <input [name]="exposure.exposureId + '-duration'" type="number" min="0"
+                      max="99999999" step="0.00000001"
+                      [(ngModel)]="exposure.modifiedDurationYears" placeholder="Durée simulée"
+                      [disabled]="loading" />
+                  </label>
+                  <label class="field">
+                    <span>Convexité (années²)</span>
+                    <input [name]="exposure.exposureId + '-convexity'" type="number" min="0"
+                      max="99999999" step="0.00000001"
+                      [(ngModel)]="exposure.convexityYearsSquared" placeholder="Convexité simulée"
+                      [disabled]="loading" />
+                  </label>
+                  <label class="field">
+                    <span>Part banque (0–1)</span>
+                    <input [name]="exposure.exposureId + '-bank-share'" type="text"
+                      inputmode="decimal" [(ngModel)]="exposure.terms.bankLossShare"
+                      placeholder="0–1, 8 décimales max" [disabled]="loading" />
+                  </label>
+                  <label class="field">
+                    <span>Part investisseurs (0–1)</span>
+                    <input [name]="exposure.exposureId + '-investor-share'" type="text"
+                      inputmode="decimal" [(ngModel)]="exposure.terms.investorLossShare"
+                      placeholder="0–1, 8 décimales max" [disabled]="loading" />
+                  </label>
+                </div>
+              </div>
+            }
+          </section>
+
+          <section class="exposure-section" [attr.aria-labelledby]="'market-title-' + bankIndex">
+            <div class="subsection-heading">
+              <div>
+                <h4 [id]="'market-title-' + bankIndex">Expositions actions / marché</h4>
+                <p>Le choc actions est un rendement en fraction, compris entre −1 et 1.</p>
+              </div>
+              <button class="button button-small" type="button"
+                (click)="addExposure(bank, 'market')" [disabled]="loading">＋ Marché</button>
+            </div>
+            @for (exposure of bank.marketExposures; track exposure.exposureId; let i = $index) {
+              <div class="exposure-card">
+                <div class="exposure-heading">
+                  <strong>Marché {{ i + 1 }}</strong>
+                  <span>{{ exposure.exposureId }}</span>
+                  <button class="text-button" type="button"
+                    (click)="removeExposure(bank, 'market', i)" [disabled]="loading">Retirer</button>
+                </div>
+                <div class="form-grid">
+                  <label class="field">
+                    <span>Contrat</span>
+                    <select [name]="exposure.exposureId + '-contract'"
+                      [(ngModel)]="exposure.terms.contractType" [disabled]="loading">
+                      @for (contract of contracts; track contract.value) {
+                        <option [ngValue]="contract.value">{{ contract.label }}</option>
+                      }
+                    </select>
+                  </label>
+                  <label class="field">
+                    <span>Base de rendement</span>
+                    <select [name]="exposure.exposureId + '-basis'"
+                      [(ngModel)]="exposure.terms.returnBasis" [disabled]="loading">
+                      @for (basis of returnBases; track basis.value) {
+                        <option [ngValue]="basis.value">{{ basis.label }}</option>
+                      }
+                    </select>
+                  </label>
+                  <label class="field">
+                    <span>Valeur de marché ({{ currencyLabel(currency) }})</span>
+                    <input [name]="exposure.exposureId + '-market-value'" type="number" min="0"
+                      max="999999999999999" step="0.00000001"
+                      [(ngModel)]="exposure.marketValue" placeholder="Montant simulé"
+                      [disabled]="loading" />
+                  </label>
+                  <label class="field">
+                    <span>Part banque (0–1)</span>
+                    <input [name]="exposure.exposureId + '-bank-share'" type="text"
+                      inputmode="decimal" [(ngModel)]="exposure.terms.bankLossShare"
+                      placeholder="0–1, 8 décimales max" [disabled]="loading" />
+                  </label>
+                  <label class="field">
+                    <span>Part investisseurs (0–1)</span>
+                    <input [name]="exposure.exposureId + '-investor-share'" type="text"
+                      inputmode="decimal" [(ngModel)]="exposure.terms.investorLossShare"
+                      placeholder="0–1, 8 décimales max" [disabled]="loading" />
+                  </label>
+                </div>
+              </div>
+            }
+          </section>
+        </article>
+      }
+    </div>
+  </section>
+
+  <section class="panel" aria-labelledby="scenarios-title">
+    <div class="section-heading">
+      <div>
+        <span class="step-label">03 / HYPOTHÈSES DE CHOC</span>
+        <h2 id="scenarios-title">Scénarios de stress</h2>
+      </div>
+      <button class="button button-secondary" type="button"
+        (click)="addScenario()" [disabled]="loading">
+        <span aria-hidden="true">＋</span> Ajouter un scénario
+      </button>
+    </div>
+
+    @if (scenarios.length === 0) {
+      <div class="empty-state compact">
+        <strong>Aucun scénario ajouté</strong>
+        <span>Créez un ou plusieurs chocs à comparer sur chaque banque simulée.</span>
+      </div>
+    }
+
+    <div class="scenario-grid">
+      @for (scenario of scenarios; track scenario.scenarioId; let i = $index) {
+        <article class="scenario-card">
+          <div class="exposure-heading">
+            <div>
+              <h3>Scénario {{ i + 1 }}</h3>
+              <span>{{ scenario.scenarioId }}</span>
+            </div>
+            <button class="text-button" type="button"
+              (click)="removeScenario(i)" [disabled]="loading">Retirer</button>
+          </div>
+          <label class="field">
+            <span>Type de scénario</span>
+            <select [name]="scenario.scenarioId + '-type'"
+              [(ngModel)]="scenario.type" (ngModelChange)="onScenarioTypeChange(scenario)"
+              [disabled]="loading">
+              @for (type of scenarioTypes; track type.value) {
+                <option [ngValue]="type.value">{{ type.label }}</option>
+              }
+            </select>
+          </label>
+
+          @if (scenario.type === 'RATE_SHOCK' || scenario.type === 'COMBINED') {
+            <label class="field">
+              <span>Choc de taux (fraction annuelle)</span>
+              <input [name]="scenario.scenarioId + '-rate'" type="number" min="-1" max="1"
+                step="0.00000001" [(ngModel)]="scenario.rateShock"
+                placeholder="Ex. 0,01 = +1 %" [disabled]="loading" />
+            </label>
+          }
+          @if (scenario.type === 'RECESSION' || scenario.type === 'COMBINED') {
+            <div class="form-grid">
+              <label class="field">
+                <span>Multiplicateur PD (≥ 1)</span>
+                <input [name]="scenario.scenarioId + '-pd-multiplier'" type="number" min="1"
+                  max="100" step="0.00000001"
+                  [(ngModel)]="scenario.recessionProbabilityMultiplier"
+                  placeholder="Facteur simulé" [disabled]="loading" />
+              </label>
+              <label class="field">
+                <span>Supplément LGD (0–1)</span>
+                <input [name]="scenario.scenarioId + '-lgd-addon'" type="number" min="0" max="1"
+                  step="0.00000001" [(ngModel)]="scenario.recessionLossGivenDefaultAddOn"
+                  placeholder="Fraction simulée" [disabled]="loading" />
+              </label>
+            </div>
+          }
+          @if (scenario.type === 'CREDIT_DEFAULT' || scenario.type === 'COMBINED') {
+            <label class="field">
+              <span>Supplément PD défaut (0–1)</span>
+              <input [name]="scenario.scenarioId + '-pd-addon'" type="number" min="0" max="1"
+                step="0.00000001" [(ngModel)]="scenario.defaultProbabilityAddOn"
+                placeholder="Fraction simulée" [disabled]="loading" />
+            </label>
+          }
+          @if (scenario.type === 'EQUITY_SHOCK' || scenario.type === 'COMBINED') {
+            <label class="field">
+              <span>Rendement actions (−1 à 1)</span>
+              <input [name]="scenario.scenarioId + '-equity'" type="number" min="-1" max="1"
+                step="0.00000001" [(ngModel)]="scenario.equityReturnShock"
+                placeholder="Ex. −0,20 = −20 %" [disabled]="loading" />
+            </label>
+          }
+          @if (scenario.type === 'COMBINED') {
+            <p class="scenario-hint">
+              Au moins un choc est requis. La récession exige simultanément le multiplicateur
+              PD et le supplément LGD.
+            </p>
+          }
+        </article>
+      }
+    </div>
+  </section>
+
+  <div class="submit-row">
+    <p>Les calculs sont effectués par le service backend authentifié.</p>
+    <div class="submit-actions">
+      <button class="button button-primary" type="button" (click)="submit()"
+        [disabled]="loading || banks.length === 0 || scenarios.length === 0">
+        @if (loading) {
+          <span class="spinner" aria-hidden="true"></span> Calcul en cours…
+        } @else {
+          Lancer l’analyse backend
+        }
+      </button>
+    </div>
+  </div>
+
+  @if (errorMessage) {
+    <div class="feedback error-feedback" role="alert">
+      <strong>Analyse impossible</strong>
+      <span>{{ errorMessage }}</span>
+    </div>
+  }
+
+  @if (loading) {
+    <div class="feedback loading-feedback" role="status" aria-live="polite">
+      <span class="spinner" aria-hidden="true"></span>
+      <span>Transmission des hypothèses au backend sécurisé…</span>
+    </div>
+  }
+
+  @if (response; as result) {
+    <section class="results-section" aria-labelledby="results-title" aria-live="polite">
+      <div class="results-heading">
+        <div>
+          <span class="step-label">04 / RÉSULTATS</span>
+          <h2 id="results-title">Comparaison des scénarios</h2>
+          <p>{{ resultCount }} résultat(s) · Horizon PD : {{ result.creditHorizonDays }} jours</p>
+        </div>
+        <div class="disclaimer">
+          @if (isDemoResult) {
+            <span class="demo-result-pill">Résultats simulés — démonstration</span>
+          }
+          @if (result.simulatedResults) {
+            <span class="simulation-pill">Résultats simulés</span>
+          }
+          <span class="regulatory-pill">Ratios indicatifs non réglementaires</span>
+        </div>
+      </div>
+
+      <div class="notice result-notice">
+        <span class="notice-icon" aria-hidden="true">i</span>
+        <div>
+          <strong>{{ result.probabilityOfDefaultHorizon }}</strong>
+          <p>{{ result.regulatoryStatus }}</p>
+        </div>
+      </div>
+
+      @if (isDemoResult) {
+        <div class="demo-result-notice" role="note">
+          Fixture fictive déterministe : les montants affichés ne proviennent pas des données
+          financières publiées et ne reflètent pas les paramètres saisis.
+        </div>
+      }
+
+      @if (result.assumptionsAndLimitations.length > 0) {
+        <details class="assumptions">
+          <summary>Hypothèses et limites du modèle</summary>
+          <ul>
+            @for (assumption of result.assumptionsAndLimitations; track assumption) {
+              <li>{{ assumption }}</li>
+            }
+          </ul>
+        </details>
+      }
+
+      @if (result.results.length === 0) {
+        <div class="empty-state">
+          <strong>Aucun résultat retourné</strong>
+          <span>Le backend n’a produit aucune comparaison pour ces paramètres.</span>
+        </div>
+      } @else {
+        <div class="results-list">
+          @for (item of result.results; track item.bankId + '-' + item.scenarioId) {
+            <article class="result-card">
+              <header class="result-card-heading">
+                <div>
+                  <span class="result-model">
+                    {{ item.model === 'CONVENTIONAL' ? 'Conventionnel' : 'Non conventionnel' }}
+                  </span>
+                  <h3>{{ item.bankName }}</h3>
+                </div>
+                <span class="scenario-badge">{{ scenarioLabel(item.scenarioType) }}</span>
+              </header>
+
+              <div class="result-metrics">
+                <div class="result-metric">
+                  <span>Perte crédit</span>
+                  <strong>{{ item.creditLoss | number:'1.2-2' }} {{ currencyLabel(result.currency) }}</strong>
+                  <small>
+                    ECL avant {{ item.creditExpectedLossBefore | number:'1.2-2' }}
+                    {{ currencyLabel(result.currency) }} → après
+                    {{ item.creditExpectedLossAfter | number:'1.2-2' }}
+                    {{ currencyLabel(result.currency) }}
+                  </small>
+                </div>
+                <div class="result-metric">
+                  <span>Répartition crédit</span>
+                  <strong>
+                    {{ item.creditLossBank | number:'1.2-2' }} /
+                    {{ item.creditLossInvestors | number:'1.2-2' }}
+                    {{ currencyLabel(result.currency) }}
+                  </strong>
+                  <small>Banque / investisseurs</small>
+                </div>
+                <div class="result-metric">
+                  <span>Variation de valeur économique</span>
+                  <strong [class.negative]="item.economicValueChange < 0"
+                    [class.positive]="item.economicValueChange > 0">
+                    {{ item.economicValueChange | number:'1.2-2' }} {{ currencyLabel(result.currency) }}
+                  </strong>
+                  <small>
+                    Banque {{ item.bankEconomicValueChange | number:'1.2-2' }}
+                    · Investisseurs {{ item.investorEconomicValueChange | number:'1.2-2' }}
+                    {{ currencyLabel(result.currency) }}
+                  </small>
+                </div>
+                <div class="result-metric">
+                  <span>Perte de taux</span>
+                  <strong>{{ item.rateRiskLoss | number:'1.2-2' }} {{ currencyLabel(result.currency) }}</strong>
+                  <small>
+                    Banque {{ item.rateRiskLossBank | number:'1.2-2' }}
+                    · Investisseurs {{ item.rateRiskLossInvestors | number:'1.2-2' }}
+                    {{ currencyLabel(result.currency) }}
+                  </small>
+                </div>
+                <div class="result-metric">
+                  <span>P&amp;L marché</span>
+                  <strong [class.negative]="item.marketProfitAndLoss < 0"
+                    [class.positive]="item.marketProfitAndLoss > 0">
+                    {{ item.marketProfitAndLoss | number:'1.2-2' }} {{ currencyLabel(result.currency) }}
+                  </strong>
+                  <small>
+                    Perte banque {{ item.marketLossBank | number:'1.2-2' }}
+                    · investisseurs {{ item.marketLossInvestors | number:'1.2-2' }}
+                    {{ currencyLabel(result.currency) }}
+                  </small>
+                </div>
+                <div class="result-metric">
+                  <span>Pertes totales allouées</span>
+                  <strong>
+                    {{ item.bankBorneLoss | number:'1.2-2' }} /
+                    {{ item.investorBorneLoss | number:'1.2-2' }}
+                    {{ currencyLabel(result.currency) }}
+                  </strong>
+                  <small>Banque / investisseurs</small>
+                </div>
+                <div class="result-metric capital-metric">
+                  <span>Capital proxy avant → après</span>
+                  <strong>
+                    {{ item.capitalProxyBefore | number:'1.2-2' }} →
+                    {{ item.capitalProxyAfter | number:'1.2-2' }}
+                    {{ currencyLabel(result.currency) }}
+                  </strong>
+                  <small>Proxy économique simulé</small>
+                </div>
+                <div class="result-metric">
+                  <span>Capital / RWA proxy</span>
+                  <strong>
+                    @if (item.capitalToRwaPercentBefore === null) {
+                      —
+                    } @else {
+                      {{ item.capitalToRwaPercentBefore | number:'1.2-4' }} %
+                    }
+                    →
+                    @if (item.capitalToRwaPercentAfter === null) {
+                      —
+                    } @else {
+                      {{ item.capitalToRwaPercentAfter | number:'1.2-4' }} %
+                    }
+                  </strong>
+                  <small>Ratios indicatifs non réglementaires</small>
+                </div>
+              </div>
+            </article>
+          }
+        </div>
+      }
+    </section>
+  }
+</section>

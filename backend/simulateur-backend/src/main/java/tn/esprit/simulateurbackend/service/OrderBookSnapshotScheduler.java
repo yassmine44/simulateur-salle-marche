@@ -3,6 +3,7 @@ package tn.esprit.simulateurbackend.service;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import org.springframework.context.annotation.Profile;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
@@ -14,6 +15,7 @@ import java.util.List;
 
 
 @Service
+@Profile("!banking-test")
 public class OrderBookSnapshotScheduler {
 
 

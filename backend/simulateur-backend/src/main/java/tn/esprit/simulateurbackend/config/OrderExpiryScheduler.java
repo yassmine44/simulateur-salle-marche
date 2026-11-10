@@ -5,6 +5,7 @@ import org.slf4j.LoggerFactory;
 
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Profile;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
 
@@ -17,6 +18,7 @@ import java.time.Instant;
  * Désactivable avec app.trading.expiry-enabled=false (tests).
  */
 @Configuration
+@Profile("!banking-test")
 @EnableScheduling
 @ConditionalOnProperty(
         name = "app.trading.expiry-enabled",
