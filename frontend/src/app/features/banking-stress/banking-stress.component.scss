@@ -668,6 +668,114 @@ button:disabled {
   margin-top: 13px;
 }
 
+.ai-proposal-panel {
+  margin-bottom: 18px;
+}
+
+.proposal-pill {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  padding: 5px 9px;
+  border: 1px solid color-mix(in srgb, var(--primary) 30%, var(--border-color));
+  border-radius: 999px;
+  color: var(--primary);
+  background: var(--primary-soft);
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.proposal-request-fields {
+  margin: 14px 0;
+}
+
+.proposal-context {
+  grid-column: 1 / -1;
+}
+
+.proposal-context textarea {
+  min-height: 64px;
+  resize: vertical;
+}
+
+.proposal-limit-note {
+  margin: 12px 0;
+  padding: 10px 12px;
+  border-left: 3px solid #d6a53c;
+  color: var(--text-secondary);
+  background: var(--bg-muted);
+  font-size: 11px;
+  line-height: 1.55;
+}
+
+.proposal-review {
+  margin-top: 18px;
+  padding-top: 18px;
+  border-top: 1px solid var(--border-color);
+}
+
+.proposal-review-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.proposal-review-heading h3 {
+  margin: 8px 0 0;
+  color: var(--text-primary);
+}
+
+.proposal-review-heading > span {
+  color: var(--text-secondary);
+  font-size: 11px;
+}
+
+.proposal-factor-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.proposal-factor {
+  min-width: 0;
+  padding: 12px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  background: var(--bg-muted);
+}
+
+.proposal-value {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 7px;
+}
+
+.proposal-value input {
+  min-width: 0;
+  flex: 1;
+}
+
+.proposal-value strong {
+  color: var(--text-secondary);
+  font-size: 10px;
+  white-space: nowrap;
+}
+
+.proposal-factor small {
+  display: block;
+  margin-top: 7px;
+  color: var(--text-muted);
+  font-size: 10px;
+  line-height: 1.45;
+}
+
+.proposal-engine-grid {
+  margin: 14px 0;
+}
+
 .scenario-card .form-grid {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
@@ -1006,6 +1114,7 @@ button:disabled {
 
   .global-fields,
   .form-grid,
+  .proposal-factor-grid,
   .bank-fields,
   .scenario-grid,
   .scenario-card .form-grid,
@@ -1020,6 +1129,10 @@ button:disabled {
 
   .section-hint {
     font-size: 11px;
+  }
+
+  .proposal-review-heading {
+    flex-direction: column;
   }
 
   .result-metric,
