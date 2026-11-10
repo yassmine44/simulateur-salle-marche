@@ -180,11 +180,15 @@ export const FINANCIAL_REFERENCE_2025: Readonly<Record<string, PublishedBankFina
     otherCreditAdjustments: 11137,
     prepaidInterestDeduction: null,
     creditReconciliationGapKdt: 0,
-    sourceDocument: 'bh_bank_efd311225.pdf',
-    sourcePages: { balanceSheet: '2', customerCredit: '12', incomeStatement: '4' },
-    extractionStatus: 'Données principales et crédit contrôlés',
-    dataQualityNote: 'Postes comptables publiés ; ne valent pas EAD/RWA/PD/LGD.',
-    sourceUrl: 'https://www.cmf.tn/'
+    sourceDocument: 'BH Bank — états financiers 2025 (PDF CMF, états de la banque)',
+    sourcePages: {
+      balanceSheet: 'PDF p. 2',
+      customerCredit: 'PDF p. 2 (AC3)',
+      incomeStatement: 'PDF p. 4'
+    },
+    extractionStatus: '5 indicateurs contrôlés sur les états 2025; autres postes non certifiés',
+    dataQualityNote: 'Actifs, capitaux propres, AC3, dépôts clientèle et résultat net concordent avec les PDF p. 2 et 4 (unité source : mille dinars). Le document présente les états de BH Bank, sans groupe ni colonnes consolidées. Les postes comptables ne valent pas EAD/RWA/PD/LGD.',
+    sourceUrl: 'https://www.cmf.tn/sites/default/files/pdfs/emetteurs/informations/rapports-societes/bh_bank_efd311225.pdf'
   },
   'amen-bank': {
     bankId: 'amen-bank',
@@ -270,15 +274,15 @@ export const FINANCIAL_REFERENCE_2025: Readonly<Record<string, PublishedBankFina
     otherCreditAdjustments: null,
     prepaidInterestDeduction: null,
     creditReconciliationGapKdt: -1,
-    sourceDocument: 'rapportBT2025.pdf',
+    sourceDocument: 'Banque de Tunisie — états financiers individuels 2025 (PDF CMF)',
     sourcePages: {
-      balanceSheet: '69 (rapport p.68)',
-      customerCredit: '27, 87–88 (rapport p.26, 86–87)',
-      incomeStatement: '71 (rapport p.70)'
+      balanceSheet: 'PDF p. 2',
+      customerCredit: 'PDF p. 2 (AC3)',
+      incomeStatement: 'PDF p. 4'
     },
-    extractionStatus: 'Bilan, résultat et crédits extraits',
-    dataQualityNote: 'Écart de rapprochement crédit de -1 KDT (arrondis des postes publiés). Les provisions additionnelles de 98 677 KDT sont incluses dans les provisions individuelles de 387 201 KDT et ne sont pas à ajouter. Les capitaux propres du bilan sont de 1 507 191 KDT ; les chiffres clés p.15 affichent 1 412 691 KDT sous un libellé différent.',
-    sourceUrl: 'https://www.bt.com.tn/'
+    extractionStatus: '5 indicateurs contrôlés dans les états individuels 2025; autres postes non certifiés',
+    dataQualityNote: 'Les 5 indicateurs concordent avec le bilan individuel PDF p. 2 et l’état de résultat p. 4 (unité source : K.TND). Le bilan indique des capitaux propres de 1 507 191 KDT; conserver cette ligne de bilan distincte de tout indicateur de synthèse portant un autre libellé. L’écart de rapprochement crédit de -1 KDT est préservé; les provisions additionnelles de 98 677 KDT sont incluses dans les provisions individuelles de 387 201 KDT. Les postes publiés ne valent pas EAD/RWA/PD/LGD.',
+    sourceUrl: 'https://www.cmf.tn/sites/default/files/pdfs/emetteurs/informations/rapports-societes/bt_efd311225.pdf'
   },
   atb: {
     bankId: 'atb',
@@ -364,15 +368,15 @@ export const FINANCIAL_REFERENCE_2025: Readonly<Record<string, PublishedBankFina
     otherCreditAdjustments: null,
     prepaidInterestDeduction: null,
     creditReconciliationGapKdt: null,
-    sourceDocument: 'UBCI — États individuels 2025, publication Bourse relayée Zonebourse',
+    sourceDocument: 'UBCI — états financiers 2025 (PDF CMF, états de la banque)',
     sourcePages: {
-      balanceSheet: 'section Bilan individuel',
-      customerCredit: 'section Bilan / note 5.3 (net)',
-      incomeStatement: 'section État de résultat'
+      balanceSheet: 'PDF p. 2',
+      customerCredit: 'PDF p. 2 (AC3 net), détail note 5.3 PDF p. 17',
+      incomeStatement: 'PDF p. 4'
     },
-    extractionStatus: 'Bilan individuel et résultat vérifiés ; détail crédit non réconcilié',
-    dataQualityNote: 'Source reproduisant l’avis des sociétés d’UBCI. Ne pas utiliser les chiffres consolidés. Les provisions de crédit ne sont pas vérifiées dans le document exploité.',
-    sourceUrl: 'https://www.zonebourse.com/actualite-bourse/union-bancaire-pour-le-commerce-et-l-industrie-societe-anonyme-ubci-etats-financiers-annuels-ind-ce7f59d8d18af621'
+    extractionStatus: '5 indicateurs contrôlés sur les états 2025; autres postes non certifiés',
+    dataQualityNote: 'Actifs, capitaux propres, AC3 net, dépôts clientèle et résultat net concordent avec le PDF p. 2, la note 5.3 p. 17 et l’état de résultat p. 4 (unité source : milliers de dinars). Le PDF présente les états de l’UBCI sans colonnes consolidées; la première page ne qualifie pas explicitement les états d’individuels. Les provisions séparées restent non disponibles; les postes comptables ne valent pas EAD/RWA/PD/LGD.',
+    sourceUrl: 'https://www.cmf.tn/sites/default/files/pdfs/emetteurs/informations/rapports-societes/ubci_efd311225.pdf'
   },
   'al-baraka-bank-tunisia': {
     bankId: 'al-baraka-bank-tunisia',
@@ -428,10 +432,14 @@ export const FINANCIAL_REFERENCE_2025: Readonly<Record<string, PublishedBankFina
     otherCreditAdjustments: null,
     prepaidInterestDeduction: null,
     creditReconciliationGapKdt: null,
-    sourceDocument: 'Wifak — États financiers individuels 2025 (PDF, copie Mubasher/BVMT)',
-    sourcePages: { balanceSheet: 'PDF p. 1', customerCredit: 'PDF p. 1 / note 1.3 (AC3)', incomeStatement: 'PDF p. 3' },
-    extractionStatus: 'Bilan individuel et résultat vérifiés ; détails crédit à compléter',
-    dataQualityNote: 'Source annuelle individuelle 2025 au 31/12 : copie PDF hébergée par Mubasher, identifiée comme document BVMT. Les montants publiés en dinars ont été convertis en KDT avec 3 décimales. Le résultat net est celui des états annuels, distinct du chiffre préliminaire communiqué. Les PDF locaux 2024 et semestriel 2025 ne sont pas utilisés.',
+    sourceDocument: 'Wifak — copie Mubasher identifiée comme états financiers individuels 2025 (source secondaire)',
+    sourcePages: {
+      balanceSheet: 'PDF p. 1 (à confirmer dans une source primaire)',
+      customerCredit: 'PDF p. 1 / note 1.3 (AC3, à confirmer)',
+      incomeStatement: 'PDF p. 3 (à confirmer dans une source primaire)'
+    },
+    extractionStatus: 'Source primaire non confirmée ; chiffres, pages et conversion à vérifier',
+    dataQualityNote: 'Copie PDF hébergée par Mubasher et identifiée comme document BVMT, sans publication primaire confirmée. La conversion déclarée de TND en KDT et les chiffres doivent être contrôlés sur la source primaire. Le résultat net indiqué diffère du chiffre préliminaire communiqué ; les PDF locaux 2024 et semestriel 2025 ne sont pas utilisés.',
     sourceUrl: 'https://static.mubasher.info/File.Mix_Announcement_File/A2CA40C9-CD73-4D74-AD04-2B0543A66835.pdf'
   }
 };
