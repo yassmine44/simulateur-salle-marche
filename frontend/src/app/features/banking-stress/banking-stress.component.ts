@@ -782,6 +782,10 @@ export class BankingStressComponent {
         && typeof body.message === 'string') {
       return body.message;
     }
+    if (typeof body === 'object' && body !== null && 'detail' in body
+        && typeof body.detail === 'string') {
+      return body.detail;
+    }
     return `La simulation a échoué (HTTP ${error.status}). Vérifiez les données saisies.`;
   }
 }
