@@ -43,6 +43,27 @@
   </header>
 
 
+  <section class="challenge-picker flash-entry">
+
+    <h2>
+      Multiplayer Event
+    </h2>
+
+    <p class="flash-entry-copy">
+      Same trading experience as solo challenges, synchronized for the whole
+      room. Only the admin starts the stream — students wait in the lobby.
+    </p>
+
+    <a
+      routerLink="/app/gamification/flash"
+      class="flash-entry-link"
+    >
+      Join multiplayer lobby
+    </a>
+
+  </section>
+
+
   <section class="challenge-picker">
 
     <h2>
@@ -115,7 +136,7 @@
 
     <section class="workspace">
 
-      <div class="chart-panel">
+      <div class="chart-panel" data-tour="chart">
 
         <div class="panel-heading">
 
@@ -214,6 +235,33 @@
 
 
       <aside class="side-panel">
+
+        <app-ai-radar [metrics]="mlMetrics"></app-ai-radar>
+
+        <section class="voice-card" data-tour="desk-output">
+          <div class="voice-card-head">
+            <h3>AI voice analyst</h3>
+            @if (audioUnlocked) {
+              <button type="button" class="mute-btn" (click)="toggleVoiceMute()">
+                {{ voiceMuted ? 'Unmute' : 'Mute' }}
+              </button>
+            }
+          </div>
+          @if (!audioUnlocked) {
+            <button type="button" class="mute-btn" (click)="enableAiVoice()">
+              Enable AI Voice
+            </button>
+            <p class="empty-orders">
+              Click once to unlock browser audio, then insights can speak.
+            </p>
+          } @else if (lastVoiceInsight) {
+            <p>{{ lastVoiceInsight }}</p>
+          } @else {
+            <p class="empty-orders">
+              Voice tips play while the challenge runs (remote Ollama).
+            </p>
+          }
+        </section>
 
         <section class="portfolio-card">
 
@@ -389,7 +437,7 @@
             [disabled]="busy || gameStatus !== 'PLAYING'"
           >
 
-          <div class="order-actions">
+          <div class="order-actions" data-tour="trade-actions">
 
             <button
               type="button"
@@ -485,18 +533,22 @@
 
     <section class="context-grid">
 
-      <article class="context-card ai-card">
+      <article
+        class="context-card ai-card"
+        aria-label="Trading Advice"
+        data-tour="quant-analysis"
+      >
 
         <div class="context-heading">
 
           <div>
 
             <span class="panel-kicker">
-              QUANT &amp; FONDAMENTAL
+              TRADING ADVICE
             </span>
 
             <h3>
-              Analyse Quant &amp; Fondamentale (IA)
+              Trading Advice
             </h3>
 
           </div>
@@ -511,7 +563,7 @@
         @if (!aiAnalysis) {
 
           <p class="context-empty">
-            En attente du moteur quantitatif…
+            En attente du Trading Advice…
           </p>
 
         } @else {
@@ -542,7 +594,7 @@
                   @switch (rsiTone) {
                     @case ('overbought') { Surachat }
                     @case ('oversold') { Survente }
-                    @case ('learning') { Apprentissage }
+                    @case ('learning') { Fenêtre courte }
                     @default { Neutre }
                   }
                 </small>
@@ -615,13 +667,13 @@
               <div class="confidence-header">
 
                 <span>
-                  Score ML simulé
+                  ML Prediction Model
                 </span>
 
                 <strong>
                   {{
                     aiAnalysis.learningPhase
-                      ? "En phase d'apprentissage"
+                      ? 'Fenêtre ML insuffisante'
                       : aiAnalysis.mlConfidenceLabel
                   }}
                 </strong>
@@ -664,84 +716,58 @@
       </article>
 
 
-      <article class="context-card calendar-card">
+      <article
+        class="context-card calendar-card calendar-card-compact"
+        aria-label="Macro et géopolitique"
+        data-tour="market-calendar"
+      >
+        <details class="macro-details">
+          <summary class="macro-summary">
+            <div class="macro-summary-text">
+              <span class="panel-kicker">
+                MACRO &amp; GÉOPOLITIQUE
+              </span>
+              <strong>Calendrier économique</strong>
+              <span class="macro-count">
+                {{ calendarEvents.length }} événement(s) · Semaine {{ currentWeekLabel }}
+              </span>
+            </div>
+          </summary>
 
-        <div class="context-heading">
-
-          <div>
-
-            <span class="panel-kicker">
-              MACRO &amp; GÉOPOLITIQUE
-            </span>
-
-            <h3>
-              Calendrier économique
-            </h3>
-
-          </div>
-
-          <span class="week-chip">
-            Semaine {{ currentWeekLabel }}
-          </span>
-
-        </div>
-
-
-        @if (!calendarEvents.length) {
-
-          <p class="context-empty">
-            Aucun événement économique majeur cette semaine.
-          </p>
-
-        } @else {
-
-          <ol class="event-timeline">
-
-            @for (
-              event of calendarEvents;
-              track event.date + event.description
-            ) {
-
-              <li [attr.data-impact]="impactClass(event.impact)">
-
-                <span
-                  class="timeline-dot"
-                  [attr.data-impact]="impactClass(event.impact)"
-                  aria-hidden="true"
-                >
-                </span>
-
-                <div class="timeline-body">
-
-                  <div class="timeline-meta">
-
-                    <time>
-                      {{ event.date }}
-                    </time>
-
-                    <span
-                      class="impact-pill"
-                      [attr.data-impact]="impactClass(event.impact)"
-                    >
-                      {{ event.impact }}
-                    </span>
-
+          @if (!calendarEvents.length) {
+            <p class="context-empty">
+              Aucun événement économique majeur cette semaine.
+            </p>
+          } @else {
+            <ol class="event-timeline event-timeline-compact">
+              @for (
+                event of calendarEvents;
+                track event.date + event.description
+              ) {
+                <li [attr.data-impact]="impactClass(event.impact)">
+                  <span
+                    class="timeline-dot"
+                    [attr.data-impact]="impactClass(event.impact)"
+                    aria-hidden="true"
+                  >
+                  </span>
+                  <div class="timeline-body">
+                    <div class="timeline-meta">
+                      <time>{{ event.date }}</time>
+                      <span
+                        class="impact-pill"
+                        [attr.data-impact]="impactClass(event.impact)"
+                      >
+                        {{ event.impact }}
+                      </span>
+                    </div>
+                    <p>{{ event.description }}</p>
                   </div>
-
-                  <p>
-                    {{ event.description }}
-                  </p>
-
-                </div>
-
-              </li>
-
-            }
-
-          </ol>
-
-        }
-
+                </li>
+              }
+            </ol>
+          }
+        </details>
       </article>
 
     </section>

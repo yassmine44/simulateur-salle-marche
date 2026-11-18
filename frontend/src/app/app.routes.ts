@@ -238,6 +238,40 @@ export const routes: Routes = [
             )
       },
 
+      {
+        path: 'gamification/flash',
+
+        loadComponent: () =>
+
+          import(
+            './features/flash/pages/flash-arena/flash-arena.component'
+          )
+
+            .then(
+              module =>
+                module.FlashArenaComponent
+            )
+      },
+
+      {
+        path: 'admin/flash',
+
+        canActivate: [
+          adminGuard
+        ],
+
+        loadComponent: () =>
+
+          import(
+            './features/flash/pages/admin-flash/admin-flash.component'
+          )
+
+            .then(
+              module =>
+                module.AdminFlashComponent
+            )
+      },
+
       // =====================
       // FORMATION
       // =====================

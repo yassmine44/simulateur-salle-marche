@@ -5,17 +5,26 @@ import org.springframework.stereotype.Service;
 import tn.esprit.simulateurbackend.dto.AiAnalysisReport;
 import tn.esprit.simulateurbackend.dto.GamificationCandleResponse;
 import tn.esprit.simulateurbackend.dto.HistoricalEvent;
+import tn.esprit.simulateurbackend.dto.MlPredictResponse;
 
 import java.math.BigDecimal;
 import java.math.MathContext;
 import java.math.RoundingMode;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
+import java.util.Optional;
 
-/*
- * Moteur quantitatif offline : RSI 14, SMA 20, volatilité,
- * score fondamental et simulation de confiance ML.
+/**
+ * Hybrid quantitative desk:
+ * - Spring computes classical indicators (RSI / SMA / volatility)
+ *   and fundamental event sentiment.
+ * - A Python RandomForestClassifier microservice supplies the genuine
+ *   supervised ML prediction + probability.
+ * - If the ML service is offline, we degrade gracefully without
+ *   breaking the gamification loop.
  */
 @Service
 public class QuantitativeEngine {
@@ -26,8 +35,26 @@ public class QuantitativeEngine {
 
     public static final int VOL_PERIOD = 20;
 
+    /**
+     * Minimum candle depth required by the Python feature pipeline
+     * ({@code features.MIN_HISTORY}). Matches challenge start depth.
+     */
+    public static final int ML_MIN_HISTORY = 10;
+
+    public static final String ML_UNAVAILABLE_MESSAGE =
+            "Service IA en cours de démarrage...";
+
     private static final MathContext MATH =
             new MathContext(16, RoundingMode.HALF_UP);
+
+    private final MlPredictionClient mlPredictionClient;
+
+
+    public QuantitativeEngine(
+            MlPredictionClient mlPredictionClient
+    ) {
+        this.mlPredictionClient = mlPredictionClient;
+    }
 
 
     public AiAnalysisReport analyze(
@@ -38,10 +65,12 @@ public class QuantitativeEngine {
         String fundamentalSentiment =
                 scoreFundamentalSentiment(weekEvents);
 
+        // Model is pre-trained at startup. Inference runs as soon as the
+        // feature window is deep enough — no live training delay.
         if (
                 visibleCandles == null
                 ||
-                visibleCandles.size() <= RSI_PERIOD
+                visibleCandles.size() < ML_MIN_HISTORY
         ) {
             return AiAnalysisReport.learning(
                     fundamentalSentiment
@@ -54,7 +83,9 @@ public class QuantitativeEngine {
                         .toList();
 
         Double rsi =
-                calculateRsi(closes, RSI_PERIOD);
+                closes.size() > RSI_PERIOD
+                        ? calculateRsi(closes, RSI_PERIOD)
+                        : null;
 
         Double sma =
                 closes.size() >= SMA_PERIOD
@@ -75,44 +106,59 @@ public class QuantitativeEngine {
         String trendIndicator =
                 resolveTrend(lastClose, sma, rsi);
 
-        int technicalScore =
-                scoreTechnical(rsi, trendIndicator, volatility);
+        Optional<MlPredictResponse> mlPrediction =
+                mlPredictionClient.predict(visibleCandles);
 
-        int fundamentalScore =
-                fundamentalNumericScore(
-                        weekEvents,
-                        fundamentalSentiment
-                );
+        if (mlPrediction.isEmpty()) {
+            return buildUnavailableReport(
+                    rsi,
+                    sma,
+                    volatility,
+                    trendIndicator,
+                    fundamentalSentiment,
+                    lastClose,
+                    weekEvents
+            );
+        }
 
-        int combined =
-                Math.round(
-                        (technicalScore * 0.55f)
-                        +
-                        (fundamentalScore * 0.45f)
-                );
+        return buildMlReport(
+                mlPrediction.get(),
+                rsi,
+                sma,
+                volatility,
+                trendIndicator,
+                fundamentalSentiment,
+                lastClose,
+                weekEvents
+        );
+    }
 
-        combined = clamp(combined, 0, 100);
+
+    private AiAnalysisReport buildMlReport(
+            MlPredictResponse ml,
+            Double rsi,
+            Double sma,
+            Double volatility,
+            String trendIndicator,
+            String fundamentalSentiment,
+            BigDecimal lastClose,
+            List<HistoricalEvent> weekEvents
+    ) {
 
         String predictionDirection =
-                combined >= 50 ? "Baisse" : "Hausse";
+                mapPrediction(ml.prediction());
 
-        // Confiance = distance au point neutre 50.
         int mlConfidenceScore =
-                clamp(Math.abs(combined - 50) * 2, 35, 95);
-
-        if (
-                volatility != null
-                &&
-                volatility >= 4.5
-        ) {
-            mlConfidenceScore =
-                    clamp(mlConfidenceScore + 5, 35, 97);
-        }
+                toConfidencePercent(ml.probability());
 
         String mlConfidenceLabel =
                 mlConfidenceScore
                         + "% Probabilité de "
-                        + predictionDirection;
+                        + predictionDirection
+                        + " (Random Forest)";
+
+        String topFeature =
+                topFeatureLabel(ml.featureImportance());
 
         String detailedAnalysis =
                 buildDetailedAnalysis(
@@ -124,7 +170,9 @@ public class QuantitativeEngine {
                         fundamentalSentiment,
                         weekEvents,
                         mlConfidenceLabel,
-                        predictionDirection
+                        predictionDirection,
+                        topFeature,
+                        true
                 );
 
         return new AiAnalysisReport(
@@ -139,6 +187,118 @@ public class QuantitativeEngine {
                 mlConfidenceLabel,
                 detailedAnalysis
         );
+    }
+
+
+    private AiAnalysisReport buildUnavailableReport(
+            Double rsi,
+            Double sma,
+            Double volatility,
+            String trendIndicator,
+            String fundamentalSentiment,
+            BigDecimal lastClose,
+            List<HistoricalEvent> weekEvents
+    ) {
+
+        String detailedAnalysis =
+                buildDetailedAnalysis(
+                        lastClose,
+                        rsi,
+                        sma,
+                        volatility,
+                        trendIndicator,
+                        fundamentalSentiment,
+                        weekEvents,
+                        ML_UNAVAILABLE_MESSAGE,
+                        "—",
+                        null,
+                        false
+                );
+
+        return new AiAnalysisReport(
+                round1(rsi),
+                sma == null ? null : round2(sma),
+                volatility == null ? null : round2(volatility),
+                false,
+                trendIndicator,
+                fundamentalSentiment,
+                null,
+                "—",
+                ML_UNAVAILABLE_MESSAGE,
+                detailedAnalysis
+        );
+    }
+
+
+    private static String mapPrediction(
+            String raw
+    ) {
+
+        if (raw == null) {
+            return "—";
+        }
+
+        String normalized =
+                raw.trim().toLowerCase(Locale.ROOT);
+
+        if (
+                normalized.equals("up")
+                ||
+                normalized.equals("hausse")
+        ) {
+            return "Hausse";
+        }
+
+        if (
+                normalized.equals("down")
+                ||
+                normalized.equals("baisse")
+        ) {
+            return "Baisse";
+        }
+
+        return raw;
+    }
+
+
+    private static int toConfidencePercent(
+            Double probability
+    ) {
+
+        if (
+                probability == null
+                ||
+                !Double.isFinite(probability)
+        ) {
+            return 50;
+        }
+
+        double pct =
+                probability <= 1.0
+                        ? probability * 100.0
+                        : probability;
+
+        return clamp((int) Math.round(pct), 1, 99);
+    }
+
+
+    private static String topFeatureLabel(
+            Map<String, Double> importance
+    ) {
+
+        if (
+                importance == null
+                ||
+                importance.isEmpty()
+        ) {
+            return null;
+        }
+
+        return importance.entrySet().stream()
+                .filter(entry -> entry.getValue() != null)
+                .max(Comparator.comparingDouble(Map.Entry::getValue))
+                .map(Map.Entry::getKey)
+                .orElse(null);
     }
 
 
@@ -323,7 +483,6 @@ public class QuantitativeEngine {
             return stdev;
         }
 
-        // Volatilité relative en % du prix moyen.
         return (stdev / mean.doubleValue()) * 100.0;
     }
 
@@ -371,47 +530,6 @@ public class QuantitativeEngine {
         }
 
         return "Neutral";
-    }
-
-
-    private int scoreTechnical(
-            Double rsi,
-            String trendIndicator,
-            Double volatility
-    ) {
-
-        // 0 = très haussier, 100 = très baissier.
-        int score = 50;
-
-        if (rsi != null) {
-
-            if (rsi >= 70) {
-                score += 22;
-            } else if (rsi >= 60) {
-                score += 10;
-            } else if (rsi <= 30) {
-                score -= 22;
-            } else if (rsi <= 40) {
-                score -= 10;
-            }
-        }
-
-        if ("Bearish".equals(trendIndicator)) {
-            score += 12;
-        } else if ("Bullish".equals(trendIndicator)) {
-            score -= 12;
-        }
-
-        if (volatility != null) {
-
-            if (volatility >= 5.0) {
-                score += 8;
-            } else if (volatility <= 1.5) {
-                score -= 4;
-            }
-        }
-
-        return clamp(score, 0, 100);
     }
 
 
@@ -465,48 +583,6 @@ public class QuantitativeEngine {
     }
 
 
-    private int fundamentalNumericScore(
-            List<HistoricalEvent> weekEvents,
-            String sentiment
-    ) {
-
-        if (
-                weekEvents == null
-                ||
-                weekEvents.isEmpty()
-        ) {
-            return 50;
-        }
-
-        int score = 50;
-
-        for (HistoricalEvent event : weekEvents) {
-
-            int bias = eventBias(event);
-
-            // bias négatif = baissier => score technique baissier ↑
-            score -= bias * 8;
-        }
-
-        String lower =
-                sentiment.toLowerCase(Locale.ROOT);
-
-        if (lower.contains("extrêmement baissier")) {
-            score += 10;
-        } else if (lower.contains("fortement haussier")) {
-            score -= 10;
-        }
-
-        return clamp(score, 0, 100);
-    }
-
-
-    /*
-     * Bias signé :
-     *  > 0 haussier (Fed cut, QE, turnaround…)
-     *  < 0 baissier (faillite, invasion, CPI chaud…)
-     * Impact amplifie l'amplitude.
-     */
     private int eventBias(
             HistoricalEvent event
     ) {
@@ -565,7 +641,6 @@ public class QuantitativeEngine {
                     case LOW -> 1;
                 };
 
-        // Market Peak (LOW) reste légèrement baissier/contrarian.
         if (text.contains("market peak")) {
             direction = -1;
             magnitude = Math.max(magnitude, 1);
@@ -584,7 +659,9 @@ public class QuantitativeEngine {
             String fundamentalSentiment,
             List<HistoricalEvent> weekEvents,
             String mlConfidenceLabel,
-            String predictionDirection
+            String predictionDirection,
+            String topFeature,
+            boolean mlOnline
     ) {
 
         StringBuilder text =
@@ -648,19 +725,34 @@ public class QuantitativeEngine {
 
             text.append("Les catalyseurs de la semaine (")
                     .append(weekEvents.size())
-                    .append(") sont croisés avec le score technique ")
-                    .append("pour produire une inférence ML simulée. ");
-        } else {
-
-            text.append("Sans catalyseur macro dominant, ")
-                    .append("le modèle s'appuie surtout sur le prix. ");
+                    .append(") contextualisent la prédiction ML. ");
         }
 
-        text.append("Verdict algorithmique : ")
-                .append(mlConfidenceLabel)
-                .append(" — biais directionnel ")
-                .append(predictionDirection)
-                .append(".");
+        if (mlOnline) {
+
+            text.append("Le microservice Python RandomForestClassifier ")
+                    .append("a voté sur les features techniques ")
+                    .append("(momentum, SMA ratios, volatilité, volume). ");
+
+            if (topFeature != null) {
+
+                text.append("Feature dominante (importance Gini) : ")
+                        .append(topFeature)
+                        .append(". ");
+            }
+
+            text.append("Verdict ML supervisé : ")
+                    .append(mlConfidenceLabel)
+                    .append(" — biais directionnel ")
+                    .append(predictionDirection)
+                    .append(".");
+        } else {
+
+            text.append(ML_UNAVAILABLE_MESSAGE)
+                    .append(" Les indicateurs techniques et le sentiment ")
+                    .append("fondamental restent disponibles en attendant ")
+                    .append("le microservice scikit-learn.");
+        }
 
         return text.toString();
     }

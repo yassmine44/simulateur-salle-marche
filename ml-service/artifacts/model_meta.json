@@ -1,0 +1,74 @@
+{
+  "model": "RandomForestClassifier",
+  "task": "binary_classification_next_week_direction",
+  "feature_columns": [
+    "ret_1",
+    "ret_2",
+    "ret_4",
+    "momentum_5",
+    "momentum_8",
+    "sma5_ratio",
+    "sma10_ratio",
+    "volatility_5",
+    "volatility_10",
+    "range_pct",
+    "volume_z"
+  ],
+  "holdout_accuracy": 0.5333333333333333,
+  "overall_accuracy": 0.5333333333333333,
+  "historicalPredictionSuccessRate": 0.5333333333333333,
+  "crash_detection_rating": 0.6280487804878049,
+  "rally_prediction_rating": 0.44545454545454544,
+  "down_recall": 0.6280487804878049,
+  "up_precision": 0.44545454545454544,
+  "classification_report": {
+    "Down": {
+      "precision": 0.5885714285714285,
+      "recall": 0.6280487804878049,
+      "f1-score": 0.6076696165191741,
+      "support": 164.0
+    },
+    "Up": {
+      "precision": 0.44545454545454544,
+      "recall": 0.4049586776859504,
+      "f1-score": 0.42424242424242425,
+      "support": 121.0
+    },
+    "accuracy": 0.5333333333333333,
+    "macro avg": {
+      "precision": 0.5170129870129869,
+      "recall": 0.5165037290868777,
+      "f1-score": 0.5159560203807991,
+      "support": 285.0
+    },
+    "weighted avg": {
+      "precision": 0.5278095238095237,
+      "recall": 0.5333333333333333,
+      "f1-score": 0.5297935103244837,
+      "support": 285.0
+    }
+  },
+  "feature_importances": {
+    "volume_z": 0.1513074125735701,
+    "ret_1": 0.10446853204545474,
+    "momentum_8": 0.09301957594016326,
+    "volatility_10": 0.09270694584036306,
+    "range_pct": 0.09081433052369314,
+    "ret_4": 0.08945597609328369,
+    "volatility_5": 0.08356625912404307,
+    "momentum_5": 0.07997887243504632,
+    "ret_2": 0.07192823226688688,
+    "sma5_ratio": 0.07187369552330493,
+    "sma10_ratio": 0.0708801676341908
+  },
+  "n_training_rows": 1138,
+  "training_sources": [
+    "sp500_weekly_2008_2009.csv",
+    "sp500_weekly_2020_covid.csv",
+    "sp500_weekly_2022.csv",
+    "histo_cotation_BIAT_2018_2026"
+  ],
+  "symbol": "BIAT",
+  "include_sp500": true,
+  "include_histo_2018_2026": true
+}

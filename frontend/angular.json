@@ -32,9 +32,13 @@
               }
             ],
             "styles": [
+              "node_modules/driver.js/dist/driver.css",
               "src/styles.scss"
             ],
-            "scripts": []
+            "scripts": [],
+            "allowedCommonJsDependencies": [
+              "sockjs-client"
+            ]
           },
           "configurations": {
             "production": {
@@ -91,6 +95,7 @@
               }
             ],
             "styles": [
+              "node_modules/driver.js/dist/driver.css",
               "src/styles.scss"
             ],
             "scripts": []

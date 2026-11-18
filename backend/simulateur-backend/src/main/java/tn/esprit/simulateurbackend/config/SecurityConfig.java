@@ -10,6 +10,7 @@ import org.springframework.http.HttpMethod;
 
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.web.SecurityFilterChain;
 
@@ -28,6 +29,7 @@ import tn.esprit.simulateurbackend.service.AuditService;
 
 
 @Configuration
+@EnableMethodSecurity
 public class SecurityConfig {
 
     private final CustomOidcUserService customOidcUserService;
@@ -86,7 +88,9 @@ public class SecurityConfig {
                                 "/api/auth/register",
                                 "/api/auth/login",
                                 "/api/auth/forgot-password",
-                                "/api/auth/reset-password"
+                                "/api/auth/reset-password",
+                                "/ws/**",
+                                "/ws-native/**"
                         )
                 )
 

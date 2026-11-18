@@ -1,0 +1,83 @@
+<div class="admin-flash-page">
+
+  <header class="toolbar">
+    <div>
+      <span class="eyebrow">ADMIN ONLY</span>
+      <h1>Multiplayer Event Control</h1>
+      <p class="dataset">{{ datasetLabel }}</p>
+    </div>
+    <a routerLink="/app/gamification/flash" class="toolbar-link">
+      Student lobby
+    </a>
+  </header>
+
+  <section class="control-card">
+    <p>
+      Select a verified 2018 Tunisian stock (249 trading days), then start the
+      synchronized 2018–2026 stream for every student. Pace: one candle every
+      15 seconds. On start, the AI builds a dynamic Market Calendar once; each
+      new candle triggers a short live commentator voice update (≤30 words).
+    </p>
+
+    <label class="symbol-field">
+      <span>Best Starting Company</span>
+      <select
+        name="selectedSymbol"
+        [(ngModel)]="selectedSymbol"
+        [disabled]="busy || session?.status === 'RUNNING'"
+      >
+        @for (ticker of verifiedStocks; track ticker) {
+          <option [value]="ticker">{{ ticker }}</option>
+        }
+      </select>
+    </label>
+
+    <div class="actions">
+      <button
+        type="button"
+        class="start-btn"
+        (click)="start()"
+        [disabled]="busy || !selectedSymbol"
+      >
+        Start Event
+      </button>
+      <button
+        type="button"
+        class="stop-btn"
+        (click)="stop()"
+        [disabled]="busy"
+      >
+        Stop
+      </button>
+    </div>
+
+    @if (error) {
+      <p class="error">{{ error }}</p>
+    }
+  </section>
+
+  <section class="status-card">
+    <h2>Current session</h2>
+    @if (session?.sessionId) {
+      <dl>
+        <div><dt>Status</dt><dd>{{ session?.status }}</dd></div>
+        <div><dt>Company</dt><dd>{{ session?.symbol || selectedSymbol }}</dd></div>
+        <div><dt>Dataset</dt><dd>{{ datasetLabel }}</dd></div>
+        <div>
+          <dt>Progress</dt>
+          <dd>
+            {{ session?.visibleCandleCount || 0 }}
+            /
+            {{ session?.totalCandles || 0 }}
+          </dd>
+        </div>
+        <div>
+          <dt>Interval</dt>
+          <dd>{{ (session?.intervalMs || 15000) / 1000 }}s / candle</dd>
+        </div>
+      </dl>
+    } @else {
+      <p class="muted">No active multiplayer session.</p>
+    }
+  </section>
+</div>

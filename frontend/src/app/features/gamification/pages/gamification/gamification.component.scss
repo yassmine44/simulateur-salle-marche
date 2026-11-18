@@ -82,6 +82,57 @@
   margin: 0;
 }
 
+.voice-card {
+  border: 1px solid var(--border-color);
+  border-radius: 14px;
+  background: #fff;
+  padding: 14px 16px;
+}
+
+.voice-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.voice-card h3 {
+  margin: 0;
+  font-size: 15px;
+}
+
+.voice-card .mute-btn {
+  border: 1px solid #cbd5e1;
+  background: #fff;
+  border-radius: 8px;
+  padding: 4px 10px;
+  cursor: pointer;
+  font: inherit;
+}
+
+.flash-entry-copy {
+  max-width: 640px;
+  margin: 8px 0 12px;
+  color: #64748b;
+  line-height: 1.45;
+}
+
+.flash-entry-link {
+  display: inline-flex;
+  align-items: center;
+  padding: 10px 14px;
+  border-radius: 10px;
+  background: #0f172a;
+  color: #e2e8f0;
+  text-decoration: none;
+  font-weight: 700;
+}
+
+.flash-entry-link:hover {
+  background: #1e293b;
+}
+
 .challenge-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -171,6 +222,65 @@
 
 .chart-panel {
   padding: 16px;
+}
+
+.ai-calendar {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border-color);
+}
+
+.ai-calendar-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.ai-calendar-head h3 {
+  margin: 0;
+  font-size: 0.95rem;
+}
+
+.ai-calendar-hint,
+.ai-calendar-empty {
+  margin: 0;
+  color: #64748b;
+  font-size: 0.8rem;
+}
+
+.ai-calendar-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-height: 220px;
+  overflow-y: auto;
+  display: grid;
+  gap: 8px;
+}
+
+.ai-calendar-list li {
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: #f8fafc;
+  border: 1px solid var(--border-color);
+}
+
+.ai-calendar-list time {
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--primary);
+  margin-bottom: 4px;
+}
+
+.ai-calendar-list p {
+  margin: 0;
+  color: #334155;
+  font-size: 0.84rem;
+  line-height: 1.4;
 }
 
 .panel-heading {
@@ -536,8 +646,9 @@
 
 .context-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 16px;
+  grid-template-columns: 1.6fr 0.9fr;
+  gap: 12px;
+  align-items: start;
 }
 
 .context-card {
@@ -546,6 +657,79 @@
   border-radius: 16px;
   background: #fff;
   box-shadow: var(--shadow-sm);
+}
+
+.calendar-card-compact {
+  padding: 8px 10px;
+}
+
+.macro-details {
+  margin: 0;
+}
+
+.macro-summary {
+  list-style: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 2px 0;
+}
+
+.macro-summary::-webkit-details-marker {
+  display: none;
+}
+
+.macro-summary-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.macro-summary-text .panel-kicker {
+  font-size: 10px;
+  letter-spacing: 0.06em;
+}
+
+.macro-summary-text strong {
+  font-size: 13px;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.macro-count {
+  color: #64748b;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.macro-details[open] .macro-summary {
+  margin-bottom: 8px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.event-timeline-compact {
+  margin: 0;
+  padding: 0 0 0 12px;
+}
+
+.event-timeline-compact li {
+  padding-bottom: 8px;
+  gap: 8px;
+}
+
+.event-timeline-compact .timeline-body p {
+  margin: 4px 0 0;
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.event-timeline-compact .timeline-meta time,
+.event-timeline-compact .impact-pill {
+  font-size: 10px;
 }
 
 .context-heading {
