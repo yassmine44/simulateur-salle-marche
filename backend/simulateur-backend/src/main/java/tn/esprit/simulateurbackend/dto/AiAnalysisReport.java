@@ -26,14 +26,11 @@ public record AiAnalysisReport(
                 fundamentalSentiment,
                 null,
                 "—",
-                "En phase d'apprentissage",
-                "En phase d'apprentissage : l'historique visible "
-                        + "est encore trop court pour calculer un RSI 14 "
-                        + "et une SMA 20 robustes. Le modèle quantitatif "
-                        + "accumule les bougies et affinera le score ML "
-                        + "dès que la profondeur de marché sera suffisante. "
-                        + "Le calendrier fondamental reste néanmoins actif "
-                        + "pour contextualiser la semaine courante."
+                "Fenêtre ML insuffisante",
+                "La fenêtre de bougies visibles est encore trop courte "
+                        + "pour l'inférence du modèle pré-entraîné "
+                        + "(minimum 10 observations). "
+                        + "Le calendrier fondamental reste actif."
         );
     }
 }

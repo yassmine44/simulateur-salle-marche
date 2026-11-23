@@ -1,0 +1,239 @@
+<div class="flash-page">
+
+  @if (!audioUnlocked) {
+    <div class="voice-unlock">
+      <div class="voice-unlock-card">
+        <h2>Enable AI Voice</h2>
+        <p>
+          Browsers block autoplay audio. Click once to unlock speech, then the
+          desk speaks only live Ollama insights.
+        </p>
+        <button type="button" class="voice-unlock-btn" (click)="enableAiVoice()">
+          Join Audio
+        </button>
+      </div>
+    </div>
+  }
+
+  <header class="toolbar">
+    <div class="toolbar-title">
+      <span class="eyebrow">MULTIPLAYER</span>
+      <h1>Trading room</h1>
+      <p class="dataset">{{ datasetLabel }}</p>
+    </div>
+
+    <nav class="toolbar-nav" aria-label="Multiplayer controls">
+      <a routerLink="/app/gamification">Solo</a>
+      @if (isAdmin) {
+        <a routerLink="/app/admin/flash">Admin</a>
+      }
+      <button type="button" (click)="toggleMute()" [disabled]="!audioUnlocked">
+        {{ voiceMuted ? 'Unmute' : 'Mute' }}
+      </button>
+    </nav>
+  </header>
+
+  <section class="status-strip" [attr.data-phase]="phase">
+    @if (phase === 'WAITING') {
+      <strong>Lobby</strong>
+      <span>Waiting for Admin to start the event…</span>
+    } @else if (phase === 'COUNTDOWN') {
+      <strong>Countdown</strong>
+      <span>Live in {{ countdownSec }}s</span>
+    } @else if (phase === 'LIVE') {
+      <strong>Live</strong>
+      <span>
+        {{ portfolio?.visibleCandleCount || session?.visibleCandleCount || 0 }}
+        /
+        {{ portfolio?.totalCandles || session?.totalCandles || 0 }}
+        candles
+      </span>
+    } @else {
+      <strong>Finished</strong>
+      <span>Event ended. Wait for the next admin start.</span>
+    }
+  </section>
+
+  @if (error) {
+    <div class="alert">{{ error }}</div>
+  }
+
+  <div class="flash-grid" [class.lobby-mode]="phase === 'WAITING'">
+
+    <section class="chart-panel" data-tour="chart">
+      <div class="chart-shell">
+        <div #chartHost class="chart-host"></div>
+        @if (phase === 'WAITING') {
+          <div class="chart-overlay">
+            <span class="spinner" aria-hidden="true"></span>
+            <p>Waiting for the admin data stream…</p>
+          </div>
+        } @else if (chartLoading) {
+          <div class="chart-overlay">
+            <span class="spinner" aria-hidden="true"></span>
+            <p>Loading chart candles…</p>
+          </div>
+        }
+      </div>
+      <p class="price-hint">
+        Reference close:
+        <strong>{{ formatMoney(portfolio?.currentPrice) }} TND</strong>
+      </p>
+
+      <section
+        class="ai-calendar"
+        aria-label="AI market calendar"
+        data-tour="market-calendar"
+      >
+        <div class="ai-calendar-head">
+          <h3>Market calendar</h3>
+          <span class="ai-calendar-hint">
+            Dynamic 2018 timeline for {{ session?.symbol || 'the selected company' }}
+          </span>
+        </div>
+        @if (calendarLoading && aiCalendarEvents.length === 0) {
+          <p class="ai-calendar-empty">
+            Generating Market Calendar for the selected company…
+          </p>
+        } @else if (aiCalendarEvents.length === 0) {
+          <p class="ai-calendar-empty">
+            Market Calendar unavailable — retrying seed…
+          </p>
+        } @else {
+          <ul class="ai-calendar-list">
+            @for (entry of aiCalendarEvents; track entry.at) {
+              <li [class.active]="isCalendarHighlight(entry.date)">
+                <time>{{ entry.date }}</time>
+                <p>{{ entry.text }}</p>
+              </li>
+            }
+          </ul>
+        }
+      </section>
+    </section>
+
+    <aside class="side-panel">
+
+      @if (phase === 'WAITING') {
+        <section class="lobby-card">
+          <h3>Student lobby</h3>
+          <p>
+            Stay here. When the admin starts the event, the chart and portfolio
+            sync automatically. You cannot start or pause the stream.
+          </p>
+        </section>
+      }
+
+      <section class="portfolio-card" data-tour="portfolio-metrics">
+        <h3>Portfolio</h3>
+        <p class="muted tiny">
+          Starting kit: 100,000 cash + 500
+          {{ session?.symbol || 'BIAT' }} shares
+        </p>
+        <dl>
+          <div><dt>Cash</dt><dd>{{ formatMoney(portfolio?.cashBalance) }}</dd></div>
+          <div><dt>Shares</dt><dd>{{ portfolio?.sharesHeld ?? '—' }}</dd></div>
+          <div><dt>Equity</dt><dd>{{ formatMoney(portfolio?.equity) }}</dd></div>
+          <div>
+            <dt>P&amp;L</dt>
+            <dd>{{ formatMoney(portfolio?.unrealizedPnl) }}</dd>
+          </div>
+        </dl>
+      </section>
+
+      <section class="order-card" data-tour="trade-actions">
+        <h3>Limit order</h3>
+        <label>
+          Quantity
+          <input
+            type="number"
+            min="0.00000001"
+            step="1"
+            [(ngModel)]="quantity"
+            [disabled]="busy || phase !== 'LIVE' || !!portfolio?.completed"
+          />
+        </label>
+        <label>
+          Price
+          <input
+            type="number"
+            min="0.0001"
+            step="0.01"
+            [(ngModel)]="limitPrice"
+            [disabled]="busy || phase !== 'LIVE' || !!portfolio?.completed"
+          />
+        </label>
+        <div class="order-actions">
+          <button
+            type="button"
+            class="buy"
+            [disabled]="busy || phase !== 'LIVE' || !!portfolio?.completed"
+            (click)="placeOrder('BUY')"
+          >
+            Buy
+          </button>
+          <button
+            type="button"
+            class="sell"
+            [disabled]="busy || phase !== 'LIVE' || !!portfolio?.completed"
+            (click)="placeOrder('SELL')"
+          >
+            Sell
+          </button>
+        </div>
+        <p class="muted tiny">
+          You start with cash + 500 shares. House desk quotes both sides;
+          you can also trade student-to-student on the carnet.
+        </p>
+      </section>
+
+      <section class="carnet-card">
+        <h3>Carnet d'ordres</h3>
+        <div class="carnet-grid">
+          <div class="asks">
+            <h4>Asks (Vendeurs)</h4>
+            @if (!orderBook?.asks?.length) {
+              <p class="muted tiny">No asks</p>
+            } @else {
+              <ul>
+                @for (level of orderBook!.asks; track level.price) {
+                  <li class="ask">
+                    <span>{{ formatMoney(level.price) }}</span>
+                    <span>{{ level.quantity }}</span>
+                  </li>
+                }
+              </ul>
+            }
+          </div>
+          <div class="bids">
+            <h4>Bids (Acheteurs)</h4>
+            @if (!orderBook?.bids?.length) {
+              <p class="muted tiny">No bids</p>
+            } @else {
+              <ul>
+                @for (level of orderBook!.bids; track level.price) {
+                  <li class="bid">
+                    <span>{{ formatMoney(level.price) }}</span>
+                    <span>{{ level.quantity }}</span>
+                  </li>
+                }
+              </ul>
+            }
+          </div>
+        </div>
+      </section>
+
+      <section class="voice-card" data-tour="desk-output">
+        <h3>AI voice</h3>
+        @if (!audioUnlocked) {
+          <p class="muted">Click “Join Audio” above to unlock speech.</p>
+        } @else if (lastInsight) {
+          <p>{{ lastInsight }}</p>
+        } @else {
+          <p class="muted">Listening for market insights…</p>
+        }
+      </section>
+
+    </aside>
+  </div>
+</div>

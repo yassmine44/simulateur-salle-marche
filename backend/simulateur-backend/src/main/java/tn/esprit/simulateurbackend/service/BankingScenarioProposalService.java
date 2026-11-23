@@ -5,6 +5,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
@@ -79,24 +80,34 @@ public class BankingScenarioProposalService {
     private final RestClient restClient;
     private final JsonMapper jsonMapper = JsonMapper.builder().build();
 
+    /**
+     * Spring must be told which constructor to use when a second
+     * (test-only) constructor also exists — otherwise it looks for a
+     * no-arg default and fails with NoSuchMethodException.
+     */
+    @Autowired
     public BankingScenarioProposalService(
             RestClient.Builder builder,
             @Value("${app.banking-stress.ai.enabled:false}") boolean enabled,
-            @Value("${app.banking-stress.ai.ollama.model:}") String model,
-            @Value("${app.banking-stress.ai.connect-timeout:2s}") Duration connectTimeout,
+            @Value("${app.banking-stress.ai.ollama.model:llama3.2}") String model,
+            @Value("${app.banking-stress.ai.ollama.base-url:https://modular-spectacle-stopping.ngrok-free.dev}")
+            String baseUrl,
+            @Value("${app.banking-stress.ai.connect-timeout:5s}") Duration connectTimeout,
             @Value("${app.banking-stress.ai.read-timeout:60s}") Duration readTimeout
     ) {
-        this(createRestClient(builder, connectTimeout, readTimeout), enabled, model);
+        this(createRestClient(builder, baseUrl, connectTimeout, readTimeout), enabled, model);
     }
 
+    /** Package-private for unit tests; not used by Spring. */
     BankingScenarioProposalService(RestClient restClient, boolean enabled, String model) {
         this.enabled = enabled;
-        this.model = model == null ? "" : model.trim();
+        this.model = model == null || model.isBlank() ? "llama3.2" : model.trim();
         this.restClient = restClient;
     }
 
     private static RestClient createRestClient(
             RestClient.Builder builder,
+            String baseUrl,
             Duration connectTimeout,
             Duration readTimeout
     ) {
@@ -108,8 +119,13 @@ public class BankingScenarioProposalService {
                 new SimpleClientHttpRequestFactory();
         requestFactory.setConnectTimeout(connectTimeout);
         requestFactory.setReadTimeout(readTimeout);
+        String normalized = baseUrl == null ? "" : baseUrl.trim();
+        if (normalized.endsWith("/")) {
+            normalized = normalized.substring(0, normalized.length() - 1);
+        }
         return builder
-                .baseUrl("http://127.0.0.1:11434")
+                .baseUrl(normalized)
+                .defaultHeader("ngrok-skip-browser-warning", "69420")
                 .requestFactory(requestFactory)
                 .build();
     }
@@ -129,6 +145,7 @@ public class BankingScenarioProposalService {
                     .uri("/api/chat")
                     .contentType(MediaType.APPLICATION_JSON)
                     .accept(MediaType.APPLICATION_JSON)
+                    .header("ngrok-skip-browser-warning", "69420")
                     .body(requestBody(request))
                     .retrieve()
                     .body(String.class);

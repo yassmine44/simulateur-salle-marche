@@ -362,7 +362,153 @@ a {
 
 
 /* =========================================================
-   7. PRINT — PORTFOLIO STATEMENTS
+   7. ONBOARDING TOUR (Driver.js)
+   ========================================================= */
+
+.driver-layer,
+.driver-overlay {
+  z-index: 100000000 !important;
+  background: rgba(2, 12, 27, 0.78) !important;
+}
+
+/*
+ * Focused target must sit ABOVE the dim overlay and keep a solid fill.
+ * Transparent / inherited panel backgrounds look washed-out otherwise.
+ */
+.driver-active-element,
+.driver-active-element:focus,
+.driver-active-element:focus-visible {
+  position: relative !important;
+  z-index: 100000010 !important;
+  opacity: 1 !important;
+  filter: none !important;
+  -webkit-filter: none !important;
+  mix-blend-mode: normal !important;
+  pointer-events: auto !important;
+  border-radius: 14px !important;
+  outline: none !important;
+  box-shadow:
+    0 0 0 2px rgba(56, 189, 248, 0.98),
+    0 0 0 7px rgba(14, 165, 233, 0.38),
+    0 0 32px rgba(56, 189, 248, 0.6) !important;
+}
+
+/* Light UI panels (chart, orders, calendar, portfolio) */
+.driver-active-element.chart-panel,
+.driver-active-element.order-card,
+.driver-active-element.portfolio-card,
+.driver-active-element.ai-calendar,
+.driver-active-element.calendar-card,
+.driver-active-element.voice-card:not(.ai-card),
+[data-tour='chart'].driver-active-element,
+[data-tour='trade-actions'].driver-active-element,
+[data-tour='market-calendar'].driver-active-element,
+[data-tour='portfolio-metrics'].driver-active-element {
+  background: #ffffff !important;
+  background-image: none !important;
+  color: #0f172a !important;
+}
+
+/* Dark trading-advice / desk panels */
+.driver-active-element.ai-card,
+.driver-active-element[data-tour='quant-analysis'],
+.driver-active-element[data-tour='desk-output'].voice-card {
+  background: #111827 !important;
+  background-image: linear-gradient(180deg, #0b1220 0%, #111827 100%) !important;
+  color: #e2e8f0 !important;
+  border-color: #38bdf8 !important;
+}
+
+.driver-active-element.ai-card .panel-kicker,
+.driver-active-element.ai-card .week-chip,
+.driver-active-element[data-tour='quant-analysis'] .panel-kicker {
+  color: #93c5fd !important;
+}
+
+.driver-active-element.ai-card .context-heading h3,
+.driver-active-element[data-tour='quant-analysis'] h3 {
+  color: #f8fafc !important;
+}
+
+.driver-popover {
+  z-index: 100000020 !important;
+}
+
+.six7-tour-popover.driver-popover {
+  max-width: 340px;
+  background: #0b1220;
+  color: #e2e8f0;
+  border: 1px solid rgba(56, 189, 248, 0.45);
+  border-radius: 14px;
+  box-shadow:
+    0 18px 40px rgba(2, 8, 23, 0.45),
+    0 0 0 1px rgba(14, 165, 233, 0.2);
+}
+
+.six7-tour-popover .driver-popover-title {
+  font-size: 1rem;
+  font-weight: 800;
+  color: #f8fafc;
+}
+
+.six7-tour-popover .driver-popover-description {
+  font-size: 0.9rem;
+  line-height: 1.45;
+  color: #cbd5e1;
+}
+
+.six7-tour-popover .driver-popover-progress-text {
+  color: #7dd3fc;
+  font-weight: 700;
+  font-size: 0.78rem;
+}
+
+.six7-tour-popover .driver-popover-navigation-btns {
+  gap: 8px;
+}
+
+.six7-tour-popover .driver-popover-next-btn,
+.six7-tour-popover .driver-popover-done-btn {
+  background: #0284c7 !important;
+  color: #fff !important;
+  border: 0 !important;
+  border-radius: 8px !important;
+  text-shadow: none !important;
+  font-weight: 700 !important;
+}
+
+.six7-tour-popover .driver-popover-prev-btn {
+  background: transparent !important;
+  color: #94a3b8 !important;
+  border: 1px solid #334155 !important;
+  border-radius: 8px !important;
+  text-shadow: none !important;
+}
+
+.six7-tour-popover .driver-popover-close-btn {
+  color: #94a3b8;
+}
+
+.six7-tour-popover .six7-skip-tour {
+  margin-right: auto;
+  background: transparent !important;
+  color: #7dd3fc !important;
+  border: 0 !important;
+  text-shadow: none !important;
+  font-weight: 700 !important;
+  cursor: pointer;
+}
+
+.six7-tour-popover .driver-popover-arrow-side-left,
+.six7-tour-popover .driver-popover-arrow-side-right,
+.six7-tour-popover .driver-popover-arrow-side-top,
+.six7-tour-popover .driver-popover-arrow-side-bottom {
+  border-color: #0b1220;
+}
+
+
+/* =========================================================
+   8. PRINT — PORTFOLIO STATEMENTS
    ========================================================= */
 
 @media print {

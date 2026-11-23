@@ -2,12 +2,23 @@ import {
   Component,
   ElementRef,
   OnDestroy,
+  OnInit,
   ViewChild,
   inject
 } from '@angular/core';
 
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { RouterLink } from '@angular/router';
+
+import { AiRadarComponent, AiRadarMetrics }
+  from '../../../../shared/ai/ai-radar.component';
+import { AiVoiceAnalystService }
+  from '../../../../shared/ai/ai-voice-analyst.service';
+import { TradingTourService }
+  from '../../../../shared/onboarding/trading-tour.service';
+import { FlashService }
+  from '../../../flash/services/flash.service';
 
 import {
   CandlestickData,
@@ -49,16 +60,30 @@ export type GameStatus =
   standalone: true,
   imports: [
     CommonModule,
-    FormsModule
+    FormsModule,
+    RouterLink,
+    AiRadarComponent
   ],
   templateUrl: './gamification.component.html',
   styleUrl: './gamification.component.scss'
 })
 export class GamificationComponent
-  implements OnDestroy {
+  implements OnInit, OnDestroy {
 
   private readonly gamificationService =
     inject(GamificationService);
+
+  private readonly flashService =
+    inject(FlashService);
+
+  private readonly voiceAnalyst =
+    inject(AiVoiceAnalystService);
+
+  private readonly tradingTour =
+    inject(TradingTourService);
+
+  mlMetrics: AiRadarMetrics | null = null;
+  private advanceCountForVoice = 0;
 
   @ViewChild('chartHost')
   private chartHost?: ElementRef<HTMLDivElement>;
@@ -131,10 +156,78 @@ export class GamificationComponent
   successMessage = '';
 
 
+  ngOnInit(): void {
+    this.flashService.getMetrics().subscribe({
+      next: metrics => {
+        this.mlMetrics = {
+          historicalPredictionSuccessRate:
+            metrics?.historicalPredictionSuccessRate ?? null,
+          crashDetectionRating: metrics?.crashDetectionRating ?? null,
+          rallyPredictionRating: metrics?.rallyPredictionRating ?? null,
+          explainer: metrics?.explainer,
+          available: metrics?.available ?? (
+            metrics?.historicalPredictionSuccessRate != null
+          )
+        };
+      },
+      error: err => {
+        console.error('[ML Metrics] unavailable', err);
+        this.mlMetrics = {
+          historicalPredictionSuccessRate: null,
+          crashDetectionRating: null,
+          rallyPredictionRating: null,
+          explainer:
+            'ML Prediction Model metrics unavailable. Start ml-service on :5000.',
+          available: false
+        };
+      }
+    });
+  }
+
+
   ngOnDestroy(): void {
 
     this.pauseAutoPlay();
     this.destroyChart();
+  }
+
+
+  get voiceMuted(): boolean {
+    return this.voiceAnalyst.muted;
+  }
+
+
+  get audioUnlocked(): boolean {
+    return this.voiceAnalyst.audioUnlocked;
+  }
+
+
+  get lastVoiceInsight(): string {
+    return this.voiceAnalyst.lastInsight;
+  }
+
+
+  get aiCalendarEvents() {
+    return this.voiceAnalyst.calendarEvents;
+  }
+
+
+  enableAiVoice(): void {
+    const visible = this.portfolio?.visibleCandleCount ?? this.allCandles.length;
+    const slice = this.allCandles.slice(0, Math.max(visible, 0)).map(c => ({
+      date: c.date,
+      open: Number(c.open),
+      high: Number(c.high),
+      low: Number(c.low),
+      close: Number(c.close),
+      volume: Number(c.volume)
+    }));
+    this.voiceAnalyst.unlockAudio(slice, this.selectedEvent);
+  }
+
+
+  toggleVoiceMute(): void {
+    this.voiceAnalyst.toggleMute();
   }
 
 
@@ -173,6 +266,7 @@ export class GamificationComponent
     this.loading = true;
     this.clearMessages();
     this.resetGameOutcome();
+    this.voiceAnalyst.clearCalendar();
 
     this.gamificationService
       .getHistoricalData(key)
@@ -200,6 +294,7 @@ export class GamificationComponent
 
                 this.busy = false;
                 this.loading = false;
+                this.tradingTour.startIfNeeded('offline');
               },
 
               error: (error) => {
@@ -300,6 +395,7 @@ export class GamificationComponent
           this.applyPortfolio(portfolio);
           this.queueChartRefresh();
           this.checkGameConditions();
+          this.maybeSpeakVoice();
 
           if (this.gameStatus === 'PLAYING') {
 
@@ -639,6 +735,31 @@ export class GamificationComponent
   ): string {
 
     return impact.toLowerCase();
+  }
+
+
+  private maybeSpeakVoice(): void {
+    this.advanceCountForVoice += 1;
+    // Speak about every 2 weekly advances (~20s of autoplay).
+    if (this.advanceCountForVoice % 2 !== 0) {
+      return;
+    }
+    const visible = this.portfolio?.visibleCandleCount ?? 0;
+    const slice = this.allCandles.slice(0, Math.max(visible, 1));
+    if (slice.length < 3) {
+      return;
+    }
+    this.voiceAnalyst.speakInsight(
+      this.selectedEvent,
+      slice.map(c => ({
+        date: c.date,
+        open: Number(c.open),
+        high: Number(c.high),
+        low: Number(c.low),
+        close: Number(c.close),
+        volume: Number(c.volume)
+      }))
+    );
   }
 
 
