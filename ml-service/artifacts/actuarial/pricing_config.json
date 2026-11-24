@@ -1,7 +1,7 @@
 {
-  "created_at": "2026-11-24T16:24:03+00:00",
-  "frequency_model_version": "20261124162401",
-  "severity_model_version": "20261124162402",
+  "created_at": "2026-11-24T17:04:50+00:00",
+  "frequency_model_version": "20261124170448",
+  "severity_model_version": "20261124170449",
   "large_claim_cap": {
     "quantile": 0.995,
     "threshold": 34792.54,

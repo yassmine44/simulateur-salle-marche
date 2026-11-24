@@ -1,0 +1,75 @@
+@use 'viz-common';
+
+.rows {
+  display: grid;
+  gap: 2px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.row {
+  display: grid;
+  grid-template-columns: minmax(120px, 180px) 1fr 52px;
+  align-items: center;
+  gap: 12px;
+  min-height: 30px;
+  padding: 2px 6px;
+  border-radius: var(--radius-sm);
+  outline: none;
+
+  &:hover,
+  &:focus-visible {
+    background: var(--bg-hover);
+  }
+
+  &:focus-visible {
+    box-shadow: 0 0 0 2px var(--primary);
+  }
+}
+
+.name {
+  overflow: hidden;
+  color: var(--text-primary);
+  font-size: 12.5px;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.track {
+  position: relative;
+  height: 14px;
+  border-left: 1px solid var(--viz-reference);
+}
+
+.bar {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  min-width: 2px;
+  border-radius: 0 4px 4px 0;
+  background: var(--viz-series-1);
+}
+
+.value {
+  color: var(--text-primary);
+  font-size: 12px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+@media (max-width: 560px) {
+  .row {
+    grid-template-columns: 1fr 46px;
+    row-gap: 2px;
+    column-gap: 8px;
+  }
+
+  .name {
+    grid-column: 1 / -1;
+    white-space: normal;
+  }
+}

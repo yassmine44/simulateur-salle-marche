@@ -1,0 +1,131 @@
+@use 'viz-common';
+
+.plot-wrap {
+  position: relative;
+}
+
+.plot {
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: visible;
+  outline: none;
+  touch-action: pan-y;
+
+  &:focus-visible {
+    border-radius: var(--radius-sm);
+    box-shadow: 0 0 0 2px var(--primary);
+  }
+}
+
+.grid {
+  stroke: var(--viz-grid);
+  stroke-width: 1;
+}
+
+.axis {
+  stroke: var(--border-strong);
+  stroke-width: 1;
+}
+
+.tick {
+  fill: var(--text-muted);
+  font-size: 10.5px;
+  font-variant-numeric: tabular-nums;
+
+  &.y {
+    dominant-baseline: middle;
+    text-anchor: end;
+  }
+
+  &.x {
+    text-anchor: middle;
+  }
+}
+
+.axis-label {
+  fill: var(--text-secondary);
+  font-size: 11px;
+  font-weight: 600;
+  text-anchor: middle;
+}
+
+.y-label {
+  position: absolute;
+  top: -4px;
+  left: 0;
+  color: var(--text-secondary);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.reference {
+  fill: none;
+  stroke: var(--viz-reference);
+  stroke-width: 1.5;
+}
+
+.line {
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2;
+
+  &.series-1 { stroke: var(--viz-series-1); }
+  &.series-2 { stroke: var(--viz-series-2); }
+  &.reference { stroke: var(--viz-reference); }
+}
+
+.marker,
+.focus {
+  stroke: var(--bg-card);
+  stroke-width: 2;
+
+  &.series-1 { fill: var(--viz-series-1); }
+  &.series-2 { fill: var(--viz-series-2); }
+  &.reference { fill: var(--viz-reference); }
+}
+
+.crosshair {
+  stroke: var(--border-strong);
+  stroke-width: 1;
+  pointer-events: none;
+}
+
+.tooltip {
+  position: absolute;
+  z-index: 2;
+  top: 8px;
+  min-width: 170px;
+  margin-left: 12px;
+  padding: 8px 10px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  background: var(--bg-card);
+  box-shadow: var(--shadow-md);
+  font-size: 11.5px;
+  pointer-events: none;
+
+  &.right {
+    margin-left: 0;
+    transform: translateX(calc(-100% - 12px));
+  }
+}
+
+.tooltip-title {
+  margin-bottom: 4px;
+  color: var(--text-secondary);
+  font-weight: 650;
+}
+
+.tooltip-row {
+  display: grid;
+  grid-template-columns: 10px 1fr auto;
+  align-items: center;
+  gap: 6px;
+  color: var(--text-primary);
+
+  strong {
+    font-variant-numeric: tabular-nums;
+  }
+}

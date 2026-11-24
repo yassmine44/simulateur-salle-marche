@@ -1,0 +1,36 @@
+<div class="presets" role="group" aria-label="Profils types">
+  <span class="presets-label">Profils types</span>
+  @for (preset of presets; track preset.id) {
+    <button type="button" class="preset" (click)="applyPreset(preset)">{{ preset.label }}</button>
+  }
+</div>
+
+<div [formGroup]="form()">
+  @for (section of sections(); track section.title) {
+    <fieldset>
+      <legend>{{ section.title }}</legend>
+      <div class="grid">
+        @for (field of section.fields; track field.field) {
+          <label class="field" [attr.for]="idPrefix() + '-' + field.field">
+            <span>{{ field.label }}</span>
+            @if (field.type === 'category') {
+              <select [id]="idPrefix() + '-' + field.field" [formControlName]="field.field">
+                @for (value of field.values; track value) {
+                  <option [value]="value">{{ value }}</option>
+                }
+              </select>
+            } @else {
+              <input [id]="idPrefix() + '-' + field.field" type="number" inputmode="numeric"
+                     [formControlName]="field.field" [min]="field.min ?? null" [max]="field.max ?? null" step="1">
+            }
+            @if (error(field); as message) {
+              <small class="field-error">{{ message }}</small>
+            } @else if (hints[field.field]) {
+              <small class="field-hint">{{ hints[field.field] }}</small>
+            }
+          </label>
+        }
+      </div>
+    </fieldset>
+  }
+</div>

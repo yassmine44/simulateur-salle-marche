@@ -123,6 +123,13 @@ export const routes: Routes = [
             .then(module => module.BankingStressComponent)
       },
       {
+        // Module d'actuariat (cahier des charges §3.7)
+        path: 'actuarial',
+        loadChildren: () =>
+          import('./features/actuarial/actuarial.routes')
+            .then(module => module.ACTUARIAL_ROUTES)
+      },
+      {
   path: 'scenarios',
   loadComponent: () =>
     import('./features/scenarios/scenario-lab.component')

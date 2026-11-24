@@ -1,0 +1,64 @@
+@if (loadError(); as message) {
+  <div class="alert" role="alert"><strong>Module indisponible.</strong> {{ message }}</div>
+} @else if (!metadata()) {
+  <div class="alert info"><span class="spinner"></span> Chargement du moteur actuariel…</div>
+} @else {
+  <div class="profiles">
+    <section class="panel">
+      <div class="panel-heading">
+        <div><span class="eyebrow">Assuré A</span><h2>Premier profil</h2></div>
+      </div>
+      <app-profile-form [form]="formA!" [fields]="metadata()!.fields" idPrefix="profile-a" />
+    </section>
+
+    <section class="panel">
+      <div class="panel-heading">
+        <div><span class="eyebrow">Assuré B</span><h2>Second profil</h2></div>
+      </div>
+      <app-profile-form [form]="formB!" [fields]="metadata()!.fields" idPrefix="profile-b" />
+    </section>
+  </div>
+
+  <div class="actions">
+    <button type="button" class="button secondary" (click)="swap()">Inverser A et B</button>
+    <button type="button" class="button primary" (click)="submit()" [disabled]="submitting()">
+      @if (submitting()) { <span class="spinner"></span> Comparaison… } @else { Comparer les primes }
+    </button>
+  </div>
+
+  @if (submitError(); as message) {
+    <div class="alert" role="alert">{{ message }}</div>
+  }
+
+  @if (result(); as r) {
+    <section class="panel result" aria-live="polite">
+      <div class="panel-heading">
+        <div>
+          <span class="eyebrow">Explication de l'écart</span>
+          <h2>{{ headline() }}</h2>
+          <p>
+            Chaque barre indique de combien un facteur multiplie la prime de A par rapport à celle de B.
+            Le produit de tous les multiplicateurs donne exactement le ratio des primes.
+          </p>
+        </div>
+      </div>
+
+      <div class="tile-grid compact">
+        <div class="tile">
+          <div class="tile-label">Prime pure de A</div>
+          <div class="tile-value">{{ euros(r.premiumA) }}</div>
+        </div>
+        <div class="tile">
+          <div class="tile-label">Prime pure de B</div>
+          <div class="tile-value">{{ euros(r.premiumB) }}</div>
+        </div>
+      </div>
+
+      <app-relativity-chart
+        [rows]="rows()"
+        upLabel="A paie plus à cause de ce facteur"
+        downLabel="A paie moins à cause de ce facteur"
+        caption="Différences de valeurs de Shapley entre A et B, en échelle logarithmique." />
+    </section>
+  }
+}

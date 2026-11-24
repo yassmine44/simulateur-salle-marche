@@ -303,17 +303,48 @@ def global_importance(phi: np.ndarray, features: tuple[str, ...] = s.FEATURES) -
     return sorted(rows, key=lambda row: row["mean_abs_phi"], reverse=True)
 
 
+MAX_DISTINCT_VALUES = 12  # au-delà, une variable numérique est regroupée en classes
+DEPENDENCE_BINS = 10
+
+
 def dependence(
     profiles: pd.DataFrame, phi: np.ndarray, features: tuple[str, ...] = s.FEATURES
 ) -> dict[str, list[dict[str, Any]]]:
     """How each feature's value drives its contribution (dependence plot data).
 
-    Numeric features: mean contribution per observed value. Categorical
-    features: mean contribution and count per category.
+    * Categorical or low-cardinality features: mean contribution per value.
+    * Numeric features with many values (age, density, bonus-malus...):
+      grouped into decile bins of their values. Averaging per raw value would
+      rest on 1 to 5 policies per point on a 200-policy sample and draw noise
+      as if it were an effect. Each bin reports the mean value of the feature
+      (x position), its range and the number of policies.
     """
     result: dict[str, list[dict[str, Any]]] = {}
     for j, feature in enumerate(features):
-        frame = pd.DataFrame({"value": profiles[feature].to_numpy(), "phi": phi[:, j]})
+        values = profiles[feature].reset_index(drop=True)
+        frame = pd.DataFrame({"value": values, "phi": phi[:, j]})
+        if pd.api.types.is_numeric_dtype(values) and values.nunique() > MAX_DISTINCT_VALUES:
+            # Quantiles of the values themselves: tied values (e.g. the 50 %
+            # of policies at bonus-malus 50) stay in a single bin.
+            frame["group"] = pd.qcut(values, q=DEPENDENCE_BINS, labels=False, duplicates="drop")
+            grouped = frame.groupby("group").agg(
+                value=("value", "mean"),
+                low=("value", "min"),
+                high=("value", "max"),
+                mean=("phi", "mean"),
+                size=("phi", "size"),
+            )
+            result[feature] = [
+                {
+                    "value": round(float(row["value"]), 1),
+                    "range": [_json_value(row["low"]), _json_value(row["high"])],
+                    "mean_phi": round(float(row["mean"]), 6),
+                    "relativity": round(float(np.exp(row["mean"])), 6),
+                    "count": int(row["size"]),
+                }
+                for _, row in grouped.iterrows()
+            ]
+            continue
         grouped = frame.groupby("value", observed=True)["phi"].agg(["mean", "size"]).reset_index()
         result[feature] = [
             {

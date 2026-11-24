@@ -1,0 +1,26 @@
+// Couleurs des graphiques, validées (contraste ≥ 3:1, séparation daltonisme
+// ΔE ≥ 24) sur les surfaces des cartes : #ffffff en clair, #112238 en sombre.
+//   series-1 / series-2 : deux séries comparées (bleu / orange)
+//   up / down           : polarité d'une contribution (hausse rouge / baisse bleue)
+// À inclure à la racine d'une feuille de style de composant.
+@mixin viz-tokens {
+  :host {
+    --viz-series-1: #2a78d6;
+    --viz-series-2: #eb6834;
+    --viz-up: #e34948;
+    --viz-down: #2a78d6;
+    --viz-neutral: #cbd5e1;
+    --viz-reference: #94a3b8;
+    --viz-grid: #e2e8f0;
+  }
+
+  :host-context([data-theme='dark']) {
+    --viz-series-1: #3987e5;
+    --viz-series-2: #d95926;
+    --viz-up: #e66767;
+    --viz-down: #3987e5;
+    --viz-neutral: #425b77;
+    --viz-reference: #8298b1;
+    --viz-grid: #2b405a;
+  }
+}

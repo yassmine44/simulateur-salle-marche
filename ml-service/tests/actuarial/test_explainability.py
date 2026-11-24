@@ -124,6 +124,36 @@ def test_global_importance_and_dependence(background, profiles) -> None:
     assert sum(point["count"] for point in curves[s.AREA]) == len(profiles)
 
 
+def test_dependence_bins_high_cardinality_numeric_features(background, policies) -> None:
+    sample = policies.sample(n=120, random_state=5)
+    phi = ShapleyExplainer(additive_model, background).shapley_values(sample)
+    curves = dependence(sample, phi)
+
+    density = curves[s.DENSITY]  # ~120 distinct values -> deciles
+    assert 8 <= len(density) <= 10
+    assert len({point["value"] for point in density}) == len(density)  # no duplicated x
+    assert sum(point["count"] for point in density) == len(sample)
+    assert all(point["range"][0] <= point["value"] <= point["range"][1] for point in density)
+    # Monotone true effect (0.1 x log density) must give increasing relativities per bin.
+    relativities = [point["relativity"] for point in density]
+    assert relativities == sorted(relativities)
+
+    area = curves[s.AREA]  # categorical: one point per category, no binning
+    assert all("range" not in point for point in area)
+
+
+def test_dependence_keeps_tied_values_in_one_bin(background, policies) -> None:
+    sample = policies.sample(n=120, random_state=5).copy()
+    sample.loc[sample.index[:70], s.DENSITY] = 50  # a large mass point, like bonus-malus 50
+    phi = ShapleyExplainer(additive_model, background).shapley_values(sample)
+    density = dependence(sample, phi)[s.DENSITY]
+
+    # Exactly one bin covers the value 50, and it holds all 70 tied policies.
+    tied = [point for point in density if point["range"][0] <= 50 <= point["range"][1]]
+    assert len(tied) == 1 and tied[0]["count"] >= 70
+    assert len({point["value"] for point in density}) == len(density)
+
+
 # --- premium explanations on the trained pipeline ------------------------------
 @pytest.fixture(scope="module")
 def premium_explainer(trained):

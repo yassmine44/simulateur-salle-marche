@@ -1,0 +1,46 @@
+@use '../actuarial-ui';
+
+:host {
+  display: grid;
+  // minmax(0, …) : les tableaux défilent dans leur cadre au lieu d'élargir la page.
+  grid-template-columns: minmax(0, 1fr);
+  gap: 18px;
+}
+
+.two-columns {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.note {
+  margin: 14px 0 0;
+  color: var(--text-secondary);
+  font-size: 12px;
+  line-height: 1.55;
+}
+
+.field.inline {
+  min-width: 200px;
+}
+
+.data-table {
+  tr.champion td {
+    font-weight: 650;
+  }
+
+  .badge {
+    margin-left: 6px;
+  }
+
+  td.negative {
+    color: var(--danger);
+    font-weight: 650;
+  }
+}
+
+@media (max-width: 1080px) {
+  .two-columns {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

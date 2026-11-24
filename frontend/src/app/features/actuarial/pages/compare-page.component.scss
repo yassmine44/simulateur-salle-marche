@@ -1,0 +1,34 @@
+@use '../actuarial-ui';
+
+:host {
+  display: block;
+}
+
+.profiles {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 10px;
+  margin: 16px 0;
+}
+
+.alert {
+  margin-bottom: 16px;
+}
+
+.result .tile-grid {
+  max-width: 420px;
+  margin-bottom: 18px;
+}
+
+@media (max-width: 960px) {
+  .profiles {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

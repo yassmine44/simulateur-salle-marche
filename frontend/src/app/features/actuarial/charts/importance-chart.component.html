@@ -1,0 +1,38 @@
+<figure class="viz">
+  <div class="viz-toolbar">
+    <span class="legend">Part de l'effet total sur la prime</span>
+    <button type="button" class="table-toggle" (click)="showTable.set(!showTable())"
+            [attr.aria-pressed]="showTable()">
+      {{ showTable() ? 'Voir le graphique' : 'Voir le tableau' }}
+    </button>
+  </div>
+
+  @if (!showTable()) {
+    <ul class="rows">
+      @for (row of bars(); track row.key) {
+        <li class="row" tabindex="0" [attr.aria-label]="row.label + ' : ' + formatPercent(row.share)">
+          <span class="name">{{ row.label }}</span>
+          <span class="track">
+            <span class="bar" [style.width.%]="row.width"></span>
+          </span>
+          <span class="value">{{ formatPercent(row.share) }}</span>
+        </li>
+      }
+    </ul>
+  } @else {
+    <div class="table-scroll">
+      <table class="viz-table">
+        <thead><tr><th>Variable</th><th class="num">Part de l'importance</th></tr></thead>
+        <tbody>
+          @for (row of rows(); track row.key) {
+            <tr><td>{{ row.label }}</td><td class="num">{{ formatPercent(row.share) }}</td></tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+
+  @if (caption()) {
+    <figcaption>{{ caption() }}</figcaption>
+  }
+</figure>

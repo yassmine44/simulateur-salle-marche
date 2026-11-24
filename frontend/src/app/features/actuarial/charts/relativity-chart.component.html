@@ -1,0 +1,62 @@
+<figure class="viz">
+  <div class="viz-toolbar">
+    <div class="legend" aria-hidden="true">
+      <span class="legend-item"><span class="swatch up"></span>{{ upLabel() }}</span>
+      <span class="legend-item"><span class="swatch down"></span>{{ downLabel() }}</span>
+    </div>
+    <button type="button" class="table-toggle" (click)="showTable.set(!showTable())"
+            [attr.aria-pressed]="showTable()">
+      {{ showTable() ? 'Voir le graphique' : 'Voir le tableau' }}
+    </button>
+  </div>
+
+  @if (!showTable()) {
+    <ul class="rows">
+      @for (row of positioned(); track row.key) {
+        <li class="row" tabindex="0" [attr.aria-label]="describe(row)">
+          <div class="label">
+            <span class="name">{{ row.label }}</span>
+            <span class="detail">{{ row.detail }}</span>
+          </div>
+          <div class="track">
+            <span class="baseline"></span>
+            <span [class]="'bar ' + row.bar.side"
+                  [style.left.%]="row.bar.left" [style.width.%]="row.bar.width"></span>
+            <span class="tip" role="tooltip">
+              <strong>{{ row.label }}</strong> = {{ row.detail }}<br>
+              Prime {{ formatRelativity(row.relativity) }} ({{ formatChange(row.relativity) }})
+            </span>
+          </div>
+          <span class="value">{{ formatRelativity(row.relativity) }}</span>
+        </li>
+      }
+    </ul>
+    <div class="scale" aria-hidden="true">
+      <span>{{ scaleEnds().low }}</span>
+      <span>×1</span>
+      <span>{{ scaleEnds().high }}</span>
+    </div>
+  } @else {
+    <div class="table-scroll">
+      <table class="viz-table">
+        <thead>
+          <tr><th>Facteur</th><th>Valeur</th><th class="num">Multiplicateur</th><th class="num">Effet</th></tr>
+        </thead>
+        <tbody>
+          @for (row of rows(); track row.key) {
+            <tr>
+              <td>{{ row.label }}</td>
+              <td>{{ row.detail }}</td>
+              <td class="num">{{ formatRelativity(row.relativity) }}</td>
+              <td class="num">{{ formatChange(row.relativity) }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+
+  @if (caption()) {
+    <figcaption>{{ caption() }}</figcaption>
+  }
+</figure>

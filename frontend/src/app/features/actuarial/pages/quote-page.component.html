@@ -1,0 +1,180 @@
+@if (loadError(); as message) {
+  <div class="alert" role="alert">
+    <strong>Module indisponible.</strong> {{ message }}
+  </div>
+} @else if (!metadata()) {
+  <div class="alert info"><span class="spinner"></span> Chargement du moteur actuariel…</div>
+} @else {
+  <div class="layout">
+    <!-- Profil et hypothèses ------------------------------------------------ -->
+    <form class="panel" (submit)="onSubmit($event)" novalidate>
+      <div class="panel-heading">
+        <div>
+          <span class="eyebrow">1. Profil</span>
+          <h2>Assuré et véhicule</h2>
+        </div>
+      </div>
+
+      <app-profile-form [form]="profileForm!" [fields]="metadata()!.fields" idPrefix="quote" />
+
+      <div class="assumptions" [formGroup]="assumptionsForm">
+        <button type="button" class="button ghost disclosure" (click)="showAssumptions.set(!showAssumptions())"
+                [attr.aria-expanded]="showAssumptions()" aria-controls="assumptions-panel">
+          {{ showAssumptions() ? '▾' : '▸' }} Hypothèses commerciales et horizon
+        </button>
+
+        @if (showAssumptions()) {
+          <div id="assumptions-panel" class="assumptions-grid">
+            <label class="field">
+              <span>Frais (% de la prime)</span>
+              <input type="number" formControlName="expensePct" min="0" max="99" step="0.5">
+            </label>
+            <label class="field">
+              <span>Bénéfice visé (% de la prime)</span>
+              <input type="number" formControlName="profitPct" min="0" max="99" step="0.5">
+            </label>
+            <label class="field">
+              <span>Chargement de sécurité (%)</span>
+              <input type="number" formControlName="safetyPct" min="0" max="100" step="0.5">
+            </label>
+            <label class="field">
+              <span>Horizon de la probabilité (ans)</span>
+              <input type="number" formControlName="years" min="0.1" max="10" step="0.5">
+            </label>
+            @if (assumptionsForm.hasError('ratioSum')) {
+              <p class="field-error wide">Frais + bénéfice doivent rester sous 100 % de la prime.</p>
+            }
+            <p class="field-hint wide">
+              Prime commerciale = prime pure × (1 + sécurité) ÷ (1 − frais − bénéfice).
+              <button type="button" class="button ghost" (click)="resetAssumptions()">Valeurs par défaut</button>
+            </p>
+          </div>
+        }
+      </div>
+
+      @if (submitError(); as message) {
+        <div class="alert" role="alert">{{ message }}</div>
+      }
+
+      <div class="submit-row">
+        <button type="submit" class="button primary" [disabled]="submitting()">
+          @if (submitting()) { <span class="spinner"></span> Calcul… } @else { Calculer la prime }
+        </button>
+      </div>
+    </form>
+
+    <!-- Résultat ------------------------------------------------------------- -->
+    <div class="results" aria-live="polite">
+      @if (quote(); as q) {
+        <section class="panel">
+          <div class="panel-heading">
+            <div>
+              <span class="eyebrow">2. Tarif</span>
+              <h2>Prime annuelle</h2>
+            </div>
+            <span class="badge" title="Versions des modèles fréquence / sévérité">
+              Modèles {{ q.modelVersions.frequency }}
+            </span>
+          </div>
+
+          <div class="hero">
+            <span class="hero-value">{{ format.euros(q.commercialPremium) }}</span>
+            <span class="hero-unit">par an, prime commerciale</span>
+          </div>
+
+          <div class="tile-grid">
+            <div class="tile">
+              <div class="tile-label">Prime pure</div>
+              <div class="tile-value">{{ format.euros(q.purePremium) }}</div>
+              <div class="tile-hint">Coût attendu des sinistres</div>
+            </div>
+            <div class="tile">
+              <div class="tile-label">Marge de prime</div>
+              <div class="tile-value">{{ format.euros(q.premiumMargin) }}</div>
+              <div class="tile-hint">Frais, bénéfice et sécurité · S/P attendu {{ format.percent(q.expectedLossRatio, 0) }}</div>
+            </div>
+            <div class="tile">
+              <div class="tile-label">Probabilité de sinistre</div>
+              <div class="tile-value">{{ format.percent(q.claimProbability) }}</div>
+              <div class="tile-hint">Au moins un sinistre sur {{ format.number(q.years, 1) }} an{{ q.years > 1 ? 's' : '' }}</div>
+            </div>
+            <div class="tile">
+              <div class="tile-label">Fréquence attendue</div>
+              <div class="tile-value">{{ format.number(q.frequency, 3) }}</div>
+              <div class="tile-hint">Sinistres par an · coût moyen {{ format.euros(q.severity) }}</div>
+            </div>
+          </div>
+        </section>
+
+        @if (q.explanation; as explanation) {
+          <section class="panel">
+            <div class="panel-heading">
+              <div>
+                <span class="eyebrow">3. Explication</span>
+                <h2>Pourquoi cette prime ?</h2>
+                <p>
+                  Partant de la prime pure moyenne du portefeuille
+                  ({{ format.euros(explanation.basePremium) }}), chaque facteur multiplie la prime :
+                  le produit des multiplicateurs donne exactement {{ format.euros(explanation.purePremium) }}.
+                </p>
+              </div>
+            </div>
+
+            @if (reading().length > 0) {
+              <ul class="reading">
+                @for (sentence of reading(); track $index) { <li>{{ sentence }}</li> }
+              </ul>
+            }
+
+            <app-relativity-chart
+              [rows]="rows()"
+              caption="Valeurs de Shapley exactes, en échelle logarithmique : ×2 et ×0,5 ont la même longueur." />
+          </section>
+        }
+      } @else {
+        <section class="panel empty">
+          <h2>Aucun devis pour l'instant</h2>
+          <p>
+            Choisissez un profil type ou saisissez un profil, puis lancez le calcul :
+            la prime, la probabilité de sinistre et l'explication de chaque facteur s'afficheront ici.
+          </p>
+        </section>
+      }
+
+      <section class="panel">
+        <div class="panel-heading">
+          <div>
+            <span class="eyebrow">Historique</span>
+            <h2>Mes derniers devis</h2>
+            <p>Chaque devis est enregistré avec les versions des modèles utilisés.</p>
+          </div>
+        </div>
+        @if (history().length === 0) {
+          <p class="muted">Aucun devis enregistré.</p>
+        } @else {
+          <div class="table-scroll">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Date</th><th>Profil</th>
+                  <th class="num">Prime commerciale</th><th class="num">Prime pure</th><th class="num">P(sinistre)</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (item of history(); track item.id) {
+                  <tr>
+                    <td>{{ item.createdAt | date: 'dd/MM/yyyy HH:mm' }}</td>
+                    <td>{{ item.driverAge }} ans · BM {{ item.bonusMalus }} · zone {{ item.area }} · {{ item.vehicleBrand }}</td>
+                    <td class="num">{{ format.euros(item.commercialPremium) }}</td>
+                    <td class="num">{{ format.euros(item.purePremium) }}</td>
+                    <td class="num">{{ format.percent(item.claimProbability) }}</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+      </section>
+    </div>
+  </div>
+}

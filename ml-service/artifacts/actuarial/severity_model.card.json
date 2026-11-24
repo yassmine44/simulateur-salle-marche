@@ -39,7 +39,7 @@
       "name": "baseline",
       "algorithm": "DummyRegressor(mean)",
       "description": "Coût moyen unique d'un sinistre (référence minimale).",
-      "fit_seconds": 0.09,
+      "fit_seconds": 0.11,
       "train": {
         "deviance_power": 2.0,
         "mean_deviance": 1.123378,
@@ -87,7 +87,7 @@
       "name": "gamma_gbm",
       "algorithm": "HistGradientBoostingRegressor (loss=gamma)",
       "description": "Gradient boosting à perte Gamma : capte non-linéarités et interactions.",
-      "fit_seconds": 0.15,
+      "fit_seconds": 0.13,
       "train": {
         "deviance_power": 2.0,
         "mean_deviance": 1.062896,
@@ -117,8 +117,8 @@
     }
   },
   "random_state": 42,
-  "version": "20261124162402",
-  "created_at": "2026-11-24T16:24:02+00:00",
+  "version": "20261124170449",
+  "created_at": "2026-11-24T17:04:49+00:00",
   "environment": {
     "python": "3.12.7",
     "scikit_learn": "1.5.2"

@@ -1,5 +1,5 @@
 {
-  "model_version": "20261124162402",
+  "model_version": "20261124170449",
   "large_claim_cap": {
     "quantile": 0.995,
     "threshold": 34792.54,
@@ -13,7 +13,7 @@
       "name": "baseline",
       "algorithm": "DummyRegressor(mean)",
       "description": "Coût moyen unique d'un sinistre (référence minimale).",
-      "fit_seconds": 0.09,
+      "fit_seconds": 0.11,
       "train": {
         "deviance_power": 2.0,
         "mean_deviance": 1.123378,
@@ -61,7 +61,7 @@
       "name": "gamma_gbm",
       "algorithm": "HistGradientBoostingRegressor (loss=gamma)",
       "description": "Gradient boosting à perte Gamma : capte non-linéarités et interactions.",
-      "fit_seconds": 0.15,
+      "fit_seconds": 0.13,
       "train": {
         "deviance_power": 2.0,
         "mean_deviance": 1.062896,

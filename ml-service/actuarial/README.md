@@ -243,10 +243,38 @@ d'entraînement sont plafonnées comme à l'entraînement (pas d'écart
 entraînement/production). Modèles chargés une fois, de façon thread-safe.
 Latence mesurée d'un devis expliqué : ~0,8 s.
 
+### Interface Angular (`frontend/src/app/features/actuarial/`)
+
+Route `/app/actuarial`, lien « Actuariat » dans le menu, chargée à la demande.
+
+| Onglet | Contenu |
+|---|---|
+| **Tarification** | Formulaire de profil (profils types, bornes issues de `/metadata`), hypothèses commerciales et horizon, prime commerciale, prime pure, marge, probabilité de sinistre, explication facteur par facteur avec phrase de lecture, historique des devis |
+| **Comparaison** | Deux profils côte à côte ; décomposition du ratio des primes A/B |
+| **Portefeuille et modèles** | Gini, calibration, S/P attendu/réalisé, surcharge sinistres graves ; comparaison des modèles ; courbe de Lorenz ; calibration par décile ; importance des variables ; effet d'une variable ; marges par segment |
+
+Graphiques en SVG/CSS, sans dépendance : barres divergentes de relativités
+(échelle logarithmique, ×2 et ×0,5 symétriques), barres d'importance, lignes
+génériques (Lorenz, calibration, dépendance). Chacun a une info-bulle au
+survol et au clavier, une vue tableau et des libellés lisibles par lecteur
+d'écran. Couleurs validées (contraste ≥ 3:1, séparation daltonisme ΔE ≥ 24)
+en thème clair et sombre. Les variables continues sont regroupées en déciles
+dans les courbes de dépendance, pour que chaque point repose sur assez de
+contrats.
+
+Vérification visuelle effectuée dans Chrome (clair, sombre, mobile 390 px)
+sur les vrais modèles ; elle a permis de corriger un rechargement de page à
+la soumission et un débordement horizontal sur mobile, désormais couverts par
+les tests et les styles.
+
 ### Tests de l'intégration
 
 * Python : 27 tests d'API (`tests/actuarial/test_api.py`) — cas nominaux,
   9 cas de validation, plafonnement, 503 sans modèles, rechargement.
+* Angular : 36 tests (`ng test --include='src/app/features/actuarial/**/*.spec.ts'`) —
+  échelles des graphiques, formats, service HTTP et cache, formulaire,
+  composants graphiques, page de tarification (soumission par le vrai bouton,
+  conversion des hypothèses, erreurs).
 * Java : 24 tests — client HTTP avec `MockRestServiceServer` (traduction de
   chaque erreur, champs transmis), service (traçabilité, historique borné),
   contrôleur (authentification sur chaque route), validation des DTO. Le
@@ -261,7 +289,7 @@ python -m pip install -r requirements-dev.txt
 
 python -m actuarial.train                  # pipeline complet (~1 min)
 python -m actuarial.train --sample 100000  # exécution rapide
-python -m pytest tests/actuarial           # 100 tests, données synthétiques
+python -m pytest tests/actuarial           # 102 tests, données synthétiques
 ```
 
 ```python
@@ -310,7 +338,7 @@ actuarial/
 ├── registry.py       persistance versionnée + fiche modèle
 ├── train.py          pipeline d'entraînement de bout en bout
 └── api.py            API FastAPI (contrat camelCase, validation, chargement thread-safe)
-tests/actuarial/      100 tests sur portefeuille synthétique au processus connu
+tests/actuarial/      102 tests sur portefeuille synthétique au processus connu
 ```
 
 ## Feuille de route
@@ -319,6 +347,6 @@ tests/actuarial/      100 tests sur portefeuille synthétique au processus connu
 2. ~~Modèle de sévérité, prime pure/commerciale, marge de prime~~
 3. ~~Explicabilité SHAP (§3.6)~~
 4. ~~API FastAPI + endpoints Spring Boot~~
-5. Écrans Angular
+5. ~~Écrans Angular~~
 6. Provisionnement Chain-Ladder
 7. Administration et intégration (stress test, formation)

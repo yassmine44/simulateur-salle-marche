@@ -1,0 +1,249 @@
+@if (error(); as message) {
+  <div class="alert" role="alert"><strong>Rapports indisponibles.</strong> {{ message }}</div>
+} @else if (!reports()) {
+  <div class="alert info"><span class="spinner"></span> Chargement des rapports d'évaluation…</div>
+} @else {
+  <!-- Indicateurs clés ---------------------------------------------------------- -->
+  @if (kpis(); as k) {
+    <section class="panel">
+      <div class="panel-heading">
+        <div>
+          <span class="eyebrow">Qualité du tarif</span>
+          <h2>Évaluation sur 169 504 contrats jamais vus à l'entraînement</h2>
+        </div>
+      </div>
+      <div class="tile-grid">
+        <div class="tile">
+          <div class="tile-label">Pouvoir de classement (Gini)</div>
+          <div class="tile-value">{{ format.number(k.gini, 3) }}</div>
+          <div class="tile-hint">0 = hasard ; plus haut = mieux le tarif distingue les risques</div>
+        </div>
+        <div class="tile">
+          <div class="tile-label">Calibration hors sinistres graves</div>
+          <div class="tile-value">{{ format.number(k.cappedCalibration, 3) }}</div>
+          <div class="tile-hint">Sinistres prédits ÷ observés (idéal : 1)</div>
+        </div>
+        <div class="tile">
+          <div class="tile-label">S/P attendu → réalisé</div>
+          <div class="tile-value">{{ format.percent(k.expectedLossRatio, 0) }} → {{ format.percent(k.actualLossRatio, 0) }}</div>
+          <div class="tile-hint">Sinistres ÷ primes sur le portefeuille de test</div>
+        </div>
+        <div class="tile">
+          <div class="tile-label">Surcharge sinistres graves</div>
+          <div class="tile-value">{{ format.percent(k.loading, 1) }}</div>
+          <div class="tile-hint">Sinistres écrêtés à {{ format.euros(k.threshold) }}</div>
+        </div>
+      </div>
+      <p class="note">
+        Calibration totale : {{ format.number(k.totalCalibration, 3) }}. L'écart vient des sinistres graves,
+        rares et volatils : ils pèsent {{ format.percent(k.trainExcess, 0) }} du coût dans les données d'entraînement
+        contre {{ format.percent(k.testExcess, 0) }} dans celles de test. Hors sinistres graves, le modèle est
+        calibré à {{ format.percent(k.cappedGap, 0) }} près.
+      </p>
+    </section>
+  }
+
+  <!-- Comparaison des modèles ----------------------------------------------------- -->
+  <div class="two-columns">
+    <section class="panel">
+      <div class="panel-heading">
+        <div>
+          <span class="eyebrow">Survenance des sinistres</span>
+          <h2>Modèles de fréquence</h2>
+          <p>Le modèle retenu minimise la déviance de Poisson sur le jeu de test.</p>
+        </div>
+      </div>
+      <ng-container *ngTemplateOutlet="candidateTable; context: { $implicit: frequencyCandidates() }" />
+    </section>
+
+    <section class="panel">
+      <div class="panel-heading">
+        <div>
+          <span class="eyebrow">Montant des indemnisations</span>
+          <h2>Modèles de coût moyen</h2>
+          <p>
+            Aucun modèle ne bat la moyenne : avec ces variables, le profil explique <em>si</em> un sinistre
+            survient, pas <em>combien</em> il coûte. La moyenne est donc retenue.
+          </p>
+        </div>
+      </div>
+      <ng-container *ngTemplateOutlet="candidateTable; context: { $implicit: severityCandidates() }" />
+    </section>
+  </div>
+
+  <ng-template #candidateTable let-candidates>
+    <div class="table-scroll">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Modèle</th>
+            <th class="num" title="Part de la déviance expliquée">D²</th>
+            <th class="num" title="Pouvoir de classement">Gini</th>
+            <th class="num" title="Total prédit ÷ total observé">Calibration</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (c of candidates; track c.name) {
+            <tr [class.champion]="c.champion">
+              <td>
+                {{ candidateLabel(c.name) }}
+                @if (c.champion) { <span class="badge">retenu</span> }
+              </td>
+              <td class="num">{{ format.percent(c.test.d2_explained, 1) }}</td>
+              <td class="num">{{ format.number(c.test.gini, 3) }}</td>
+              <td class="num">{{ format.number(c.test.calibration_ratio, 3) }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </ng-template>
+
+  <!-- Lorenz et calibration -------------------------------------------------------- -->
+  <div class="two-columns">
+    <section class="panel">
+      <div class="panel-heading">
+        <div>
+          <span class="eyebrow">Classement des risques</span>
+          <h2>Courbe de Lorenz</h2>
+          <p>
+            Contrats classés du moins au plus risqué selon le modèle. Plus la courbe est basse,
+            mieux le modèle repousse les sinistres vers les profils qu'il juge risqués.
+          </p>
+        </div>
+      </div>
+      <app-line-chart
+        [series]="lorenzSeries()"
+        reference="diagonal"
+        referenceLabel="Classement au hasard"
+        [xDomain]="unitDomain" [yDomain]="unitDomain"
+        xLabel="Part cumulée de l'exposition" yLabel="Part cumulée des sinistres"
+        [xFormat]="format.share" [yFormat]="format.share"
+        [tableStep]="10"
+        ariaLabel="Courbe de Lorenz du modèle de fréquence comparée à l'oracle et au hasard" />
+    </section>
+
+    <section class="panel">
+      <div class="panel-heading">
+        <div>
+          <span class="eyebrow">Fiabilité</span>
+          <h2>Calibration par classe de risque</h2>
+          <p>
+            Les contrats de test sont répartis en 10 classes selon la fréquence prédite.
+            Un modèle fiable prédit la fréquence observée dans chaque classe.
+          </p>
+        </div>
+      </div>
+      <app-line-chart
+        [series]="calibrationSeries()"
+        [markers]="true"
+        xLabel="Classe de risque (1 = moins risqué)" yLabel="Sinistres par an"
+        [xFormat]="format.decile" [yFormat]="format.frequency"
+        ariaLabel="Fréquence prédite et observée pour chaque classe de risque" />
+    </section>
+  </div>
+
+  <!-- Explicabilité globale ------------------------------------------------------- -->
+  <div class="two-columns">
+    <section class="panel">
+      <div class="panel-heading">
+        <div>
+          <span class="eyebrow">Explicabilité globale</span>
+          <h2>Ce qui fait la prime</h2>
+          <p>Moyenne de l'effet absolu de chaque variable sur la prime, sur {{ reports()!.explainability.global_sample_size }} contrats.</p>
+        </div>
+      </div>
+      <app-importance-chart
+        [rows]="importance()"
+        caption="La zone pèse peu : elle mesure presque la même chose que la densité, déjà exploitée par le modèle." />
+    </section>
+
+    <section class="panel">
+      <div class="panel-heading">
+        <div>
+          <span class="eyebrow">Effet d'une variable</span>
+          <h2>{{ dependenceLabel() }}</h2>
+          <p>Multiplicateur moyen de prime selon la valeur de la variable (×1 = sans effet).</p>
+        </div>
+        <label class="field inline">
+          <span>Variable</span>
+          <select [value]="dependenceFeature()" (change)="onDependenceFeature($event)">
+            @for (option of dependenceOptions(); track option.feature) {
+              <option [value]="option.feature">{{ option.label }}</option>
+            }
+          </select>
+        </label>
+      </div>
+      @if (dependenceIsNumeric()) {
+        <app-line-chart
+          [series]="dependenceSeries()"
+          [reference]="neutralLine"
+          referenceLabel="Sans effet (×1)"
+          [markers]="true"
+          [xLabel]="dependenceLabel()" yLabel="Multiplicateur de prime"
+          [xFormat]="format.plain" [yFormat]="format.relativity"
+          [ariaLabel]="'Effet de ' + dependenceLabel() + ' sur la prime'" />
+      } @else {
+        <app-relativity-chart [rows]="dependenceRows()" />
+      }
+      <p class="note">
+        Variables continues regroupées en déciles de contrats ; chaque point repose sur au moins
+        {{ minDependenceCount }} contrats de l'échantillon.
+      </p>
+    </section>
+  </div>
+
+  <!-- Marges par segment ----------------------------------------------------------- -->
+  <section class="panel">
+    <div class="panel-heading">
+      <div>
+        <span class="eyebrow">Rentabilité</span>
+        <h2>Marge de prime par segment</h2>
+        <p>
+          Primes encaissées comparées aux sinistres attendus (marge prévue) et aux sinistres réellement
+          survenus sur le portefeuille de test (marge réalisée).
+        </p>
+      </div>
+      <label class="field inline">
+        <span>Segmentation</span>
+        <select [value]="segmentation()" (change)="onSegmentation($event)">
+          @for (option of segmentations; track option.id) {
+            <option [value]="option.id">{{ option.label }}</option>
+          }
+        </select>
+      </label>
+    </div>
+    <div class="table-scroll">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Segment</th>
+            <th class="num">Contrats</th>
+            <th class="num">Primes</th>
+            <th class="num">Sinistres attendus</th>
+            <th class="num">Sinistres réels</th>
+            <th class="num">Marge prévue</th>
+            <th class="num">Marge réalisée</th>
+            <th class="num">S/P attendu</th>
+            <th class="num">S/P réalisé</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (row of marginRows(); track row.segment) {
+            <tr>
+              <td>{{ segmentLabel(row) }}</td>
+              <td class="num">{{ format.plain(row.policies) }}</td>
+              <td class="num">{{ format.compact(row.premiums) }}</td>
+              <td class="num">{{ format.compact(row.expected_claims) }}</td>
+              <td class="num">{{ format.compact(row.actual_claims) }}</td>
+              <td class="num">{{ format.compact(row.expected_margin) }}</td>
+              <td class="num" [class.negative]="row.actual_margin < 0">{{ format.compact(row.actual_margin) }}</td>
+              <td class="num">{{ format.percent(row.expected_loss_ratio, 0) }}</td>
+              <td class="num" [class.negative]="row.actual_loss_ratio > 1">{{ format.percent(row.actual_loss_ratio, 0) }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </section>
+}
