@@ -29,10 +29,14 @@
   font: inherit;
   font-size: 11.5px;
 
-  &:hover {
-    border-color: var(--primary);
+  transition: border-color 0.15s ease, background 0.15s ease;
+
+  &:hover,
+  &:focus-visible {
+    border-color: var(--six7-accent);
     color: var(--primary);
     background: var(--primary-soft);
+    outline: none;
   }
 }
 
@@ -43,11 +47,19 @@ fieldset {
 }
 
 legend {
+  display: flex;
+  align-items: center;
+  gap: 7px;
   margin-bottom: 8px;
   padding: 0;
   color: var(--text-primary);
   font-size: 12px;
   font-weight: 750;
+
+  app-icon {
+    color: var(--six7-accent);
+    font-size: 15px;
+  }
 }
 
 .grid {

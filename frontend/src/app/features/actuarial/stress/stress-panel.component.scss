@@ -1,0 +1,112 @@
+@use '../actuarial-ui';
+
+:host {
+  display: block;
+}
+
+.controls {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(180px, 220px);
+  align-items: end;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.slider input[type='range'] {
+  min-height: auto;
+  padding: 0;
+  border: 0;
+  accent-color: var(--primary);
+}
+
+.results {
+  transition: opacity 0.15s ease;
+
+  &.stale {
+    opacity: 0.6;
+  }
+}
+
+.summary {
+  margin: 14px 0 10px;
+  color: var(--text-primary);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.tile-value.negative,
+td.negative {
+  color: var(--danger);
+}
+
+.ratio {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 170px;
+}
+
+.ratio-track {
+  position: relative;
+  flex: 1;
+  height: 10px;
+  border-radius: 999px;
+  background: var(--bg-muted);
+}
+
+.ratio-bar {
+  position: absolute;
+  inset: 0 auto 0 0;
+  border-radius: 999px;
+  background: var(--primary);
+
+  &.over {
+    background: var(--danger);
+  }
+}
+
+// Repère S/P = 100 % (2/3 de la piste, qui va jusqu'à 150 %).
+.ratio-limit {
+  position: absolute;
+  top: -3px;
+  bottom: -3px;
+  left: calc(100% / 1.5);
+  width: 2px;
+  background: var(--text-primary);
+}
+
+.ratio-value {
+  min-width: 44px;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.status {
+  font-weight: 700;
+
+  &.ok {
+    color: var(--success);
+  }
+
+  &.ko {
+    color: var(--danger);
+  }
+}
+
+th small {
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+@media (max-width: 760px) {
+  .controls {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.method {
+  margin: 0 0 14px;
+  color: var(--text-secondary);
+  font-size: 12.5px;
+  line-height: 1.55;
+}

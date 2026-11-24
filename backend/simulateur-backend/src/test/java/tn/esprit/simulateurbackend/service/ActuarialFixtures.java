@@ -19,6 +19,8 @@ public final class ActuarialFixtures {
               "assumptions": {"expenseRatio": 0.25, "profitRatio": 0.05, "safetyLoading": 0.03,
                               "commercialFactor": 1.471429},
               "modelVersions": {"frequency": "20261124162401", "severity": "20261124162402"},
+              "currency": {"code": "TND", "label": "dinar tunisien", "rateFromModel": 3.36,
+                           "modelCurrency": "EUR", "source": "Cours moyen BCT"},
               "explanation": {
                 "basePremium": 135.08, "purePremium": 600.23,
                 "contributions": [
@@ -54,7 +56,8 @@ public final class ActuarialFixtures {
                 600.23, 883.19, 282.96, 0.679612,
                 new PricingAssumptionsDto(0.25, 0.05, 0.03, 1.471429),
                 new QuoteResponse.ModelVersions("20261124162401", "20261124162402"),
-                new QuoteResponse.Explanation(135.08, 600.23, List.of())
+                new QuoteResponse.Explanation(135.08, 600.23, List.of()),
+                new QuoteResponse.Currency("TND", "dinar tunisien", 3.36, "EUR", "Cours moyen BCT")
         );
     }
 }

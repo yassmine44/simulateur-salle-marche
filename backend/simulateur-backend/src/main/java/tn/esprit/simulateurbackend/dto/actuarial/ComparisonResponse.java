@@ -10,7 +10,8 @@ public record ComparisonResponse(
         double premiumA,
         double premiumB,
         double premiumRatio,
-        List<Contribution> contributions
+        List<Contribution> contributions,
+        QuoteResponse.Currency currency
 ) {
 
     public record Contribution(

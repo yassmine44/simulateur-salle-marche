@@ -263,6 +263,7 @@ def train_pipeline(
         "severity_model_version": sev_card.version,
         "large_claim_cap": cap.to_dict(),
         "assumptions": assumptions.to_dict(),
+        "currency": dict(config.DEFAULT_CURRENCY),
     }
     _write_json(artifacts_dir / PRICING_CONFIG_NAME, pricing_config)
 

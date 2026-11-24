@@ -6,26 +6,42 @@
 
 .layout {
   display: grid;
-  grid-template-columns: minmax(320px, 440px) minmax(0, 1fr);
+  grid-template-columns: minmax(320px, 430px) minmax(0, 1fr);
   align-items: start;
-  gap: 18px;
+  gap: 20px;
+}
+
+// Le formulaire reste visible pendant la lecture des résultats (sous l'en-tête de l'application).
+.form-panel {
+  position: sticky;
+  top: 88px;
 }
 
 .results {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  gap: 18px;
+  gap: 20px;
   min-width: 0;
 }
 
+// --- Formulaire ---------------------------------------------------------------------
 .assumptions {
   margin: 4px 0 14px;
   padding-top: 12px;
-  border-top: 1px solid var(--border-color);
+  border-top: 1px solid var(--glass-border);
 }
 
 .disclosure {
+  gap: 8px;
   padding-left: 0;
+
+  .chevron {
+    transition: transform 0.15s ease;
+
+    &.open {
+      transform: rotate(180deg);
+    }
+  }
 }
 
 .assumptions-grid {
@@ -51,64 +67,183 @@
   line-height: 1.5;
 }
 
-.submit-row {
-  display: flex;
-  justify-content: flex-end;
-  margin-top: 12px;
+.alert {
+  margin: 12px 0;
+}
 
-  .button {
-    min-width: 180px;
+.cta {
+  width: 100%;
+  min-height: 46px;
+  margin-top: 6px;
+  border-radius: 12px;
+  background: var(--six7-gradient) !important;
+  box-shadow: 0 10px 24px var(--six7-glow);
+  font-size: 14px;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+
+  &:hover:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow: 0 14px 30px var(--six7-glow);
   }
 }
 
-.alert {
-  margin-top: 12px;
+// --- Carte tarif ------------------------------------------------------------------------
+.premium-card {
+  // Liseré dégradé : bordure transparente + fond en double couche.
+  border: 1.5px solid transparent;
+  background:
+    linear-gradient(var(--bg-card), var(--bg-card)) padding-box,
+    var(--six7-gradient) border-box;
 }
 
-.hero {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  gap: 10px;
-  margin-bottom: 16px;
+.premium-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(200px, 260px);
+  gap: 24px;
+  align-items: start;
 }
 
-.hero-value {
-  color: var(--text-primary);
-  font-size: clamp(34px, 4vw, 44px);
-  font-weight: 800;
-  letter-spacing: -0.03em;
+.premium-label {
+  display: block;
+  color: var(--text-secondary);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
 }
 
-.hero-unit {
+.premium-value {
+  display: block;
+  margin-top: 6px;
+  background: var(--six7-gradient);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  font-size: clamp(40px, 5vw, 56px);
+  font-weight: 850;
+  letter-spacing: -0.04em;
+  line-height: 1.05;
+}
+
+.premium-sub {
+  display: block;
+  margin-top: 4px;
   color: var(--text-secondary);
   font-size: 13px;
+}
+
+.breakdown-title {
+  margin: 22px 0 10px;
+  font-size: 13.5px;
+}
+
+.premium-side {
+  padding: 16px;
+  border: 1px solid var(--glass-border);
+  border-radius: 16px;
+  background: var(--bg-muted);
+  text-align: center;
+
+  .premium-label {
+    margin-bottom: 6px;
+  }
+}
+
+.side-note {
+  margin: 8px 0 0;
+  color: var(--text-muted);
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+.stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin-top: 22px;
+  border-top: 1px solid var(--glass-border);
+}
+
+.stat {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 16px 14px 0;
+
+  & + .stat {
+    border-left: 1px solid var(--glass-border);
+  }
+}
+
+.stat-label {
+  color: var(--text-secondary);
+  font-size: 11px;
+  font-weight: 650;
+}
+
+.stat-value {
+  color: var(--text-primary);
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.stat-hint {
+  color: var(--text-muted);
+  font-size: 11px;
+}
+
+// --- Explication -------------------------------------------------------------------------
+.lead {
+  margin: -4px 0 14px;
+  color: var(--text-secondary);
+  font-size: 13px;
+  line-height: 1.6;
 }
 
 .reading {
   display: grid;
   gap: 6px;
-  margin: 0 0 14px;
+  margin: 0 0 16px;
   padding: 12px 14px 12px 30px;
-  border-radius: var(--radius-md);
+  border-left: 3px solid var(--six7-accent);
+  border-radius: 0 12px 12px 0;
   color: var(--text-primary);
-  background: var(--bg-muted);
+  background: color-mix(in srgb, var(--six7-accent) 7%, transparent);
   font-size: 13px;
   line-height: 1.5;
 }
 
+// --- État vide ---------------------------------------------------------------------------
 .empty {
+  display: grid;
+  justify-items: center;
+  padding: 44px 24px;
+  text-align: center;
+
   h2 {
-    margin: 0 0 6px;
-    font-size: 16px;
+    margin: 14px 0 6px;
+    font-size: 18px;
   }
 
   p {
+    max-width: 460px;
     margin: 0;
     color: var(--text-secondary);
     font-size: 13px;
-    line-height: 1.55;
+    line-height: 1.6;
   }
+}
+
+.empty-icon {
+  display: grid;
+  width: 64px;
+  height: 64px;
+  place-items: center;
+  border-radius: 20px;
+  color: #fff;
+  background: var(--six7-gradient);
+  box-shadow: 0 14px 30px var(--six7-glow);
+  font-size: 30px;
 }
 
 .muted {
@@ -117,10 +252,31 @@
   font-size: 13px;
 }
 
-@media (max-width: 1080px) {
+@media (max-width: 1180px) {
   .layout {
-    // minmax(0, …) et non 1fr : sinon la largeur minimale du contenu (tableau
-    // d'historique) élargit la colonne et la page déborde sur mobile.
     grid-template-columns: minmax(0, 1fr);
+  }
+
+  .form-panel {
+    position: static;
+  }
+}
+
+@media (max-width: 720px) {
+  .premium-grid,
+  .stats {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .stat + .stat {
+    border-left: 0;
+    border-top: 1px solid var(--glass-border);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cta,
+  .disclosure .chevron {
+    transition: none;
   }
 }

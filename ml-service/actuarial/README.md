@@ -241,6 +241,84 @@ reconnue).
 python -m actuarial.reserving_report   # télécharge Schedule P (1 Mo) et génère le rapport
 ```
 
+## Devise d'affichage (dinar tunisien)
+
+Les modèles calculent en **euros**, l'unité de leurs données d'entraînement
+(contrats français). L'API convertit tous les montants de tarification
+(devis, comparaison, stress test, rapports de tarification et
+d'explicabilité) dans la devise d'affichage, à **un seul endroit**
+(`api.py`, `_convert` / `_money`) ; les ratios, probabilités et
+multiplicateurs ne sont pas touchés.
+
+* Par défaut : **TND**, taux **3,36 DT pour 1 €** (cours moyen BCT,
+  novembre 2026, indicatif), bloc `currency` de `pricing_config.json`.
+* Modifiable par l'administrateur (*Admin → Actuariat → Devise*), écriture
+  atomique, effet immédiat, action tracée.
+* Chaque devis enregistre sa devise (colonne `actuarial_quotes.currency`).
+* Le **provisionnement reste en dollars US** : ce sont les montants réels
+  d'assureurs américains (Schedule P), les convertir serait trompeur.
+* Affichage tunisien (`fr-TN`) : « 2 968 DT », millimes en mode précis.
+
+Limite assumée et affichée dans l'interface : c'est un **tarif français
+converti**, pas un tarif du marché tunisien (voir « Ce qui manque »).
+
+## Interface (design SIX7)
+
+Bannière en dégradé SIX7 avec rappel de la devise, onglets en pilule avec
+icônes, cartes en verre dépoli (jetons `--glass-*`, `--six7-gradient` de
+l'application), et deux visualisations nouvelles sur la tarification :
+
+* **« Où va votre prime ? »** : barre segmentée sinistres attendus / frais /
+  sécurité / bénéfice, dont la somme est exactement la prime commerciale.
+  Palette catégorielle validée (ordre sans couple adjacent indiscernable,
+  y compris daltonisme), montants et pourcentages affichés en clair.
+* **Indice de risque** : jauge logarithmique (×0,25 à ×8) de la prime pure
+  rapportée à celle de l'assuré moyen, avec niveau de risque libellé.
+
+## Administration, stress test et formation
+
+### Administration (cahier des charges §5)
+
+Page **Admin → Actuariat** (`/app/admin/actuarial`, rôle ADMIN : règle
+`/api/admin/**` de `SecurityConfig` doublée d'un `@PreAuthorize`).
+
+| Besoin du cahier | Fonction |
+|---|---|
+| Gérer les modèles d'IA | État du moteur, fiches des modèles (algorithme, version, Gini, D², calibration, empreinte des données), rechargement après réentraînement sans redémarrage |
+| Gérer les paramètres des simulations | Hypothèses commerciales par défaut (frais, bénéfice, sécurité) avec aperçu du coefficient ; enregistrement atomique dans `pricing_config.json`, effet immédiat, sans réentraîner |
+| Superviser, statistiques globales | Devis : total, 30 derniers jours, utilisateurs, volume et prime moyenne par version de modèle |
+| Traçabilité (§4) | Derniers devis de tous les utilisateurs ; journal des actions d'administration avec l'avant/après des hypothèses (table `actuarial_admin_actions`) |
+
+Le journal utilise sa propre table plutôt que `security_audit_logs` :
+`event_type` y est un `enum` dont Hibernate 6 fige les valeurs dans une
+contrainte CHECK que `ddl-auto=update` ne met pas à jour ; ajouter des types
+d'événements aurait fait échouer les insertions (cf.
+`database/update-scenario-types.sql`, même problème rencontré par l'équipe).
+Ici le type passe par un `AttributeConverter`, sans contrainte figée.
+
+### Stress test du portefeuille (lien avec le module de stress testing)
+
+Onglet **Portefeuille et modèles → Et si les sinistres dérapaient ?** :
+chocs de fréquence et de coût (curseurs), primes inchangées ; S/P, marge,
+choc qui annule la marge, segments en perte.
+
+Le choc s'applique aux sinistres **réalisés** du portefeuille de test et non
+aux sinistres attendus : la prime étant proportionnelle au risque, le S/P
+*attendu* vaut 68 % dans chaque segment et le stress déplacerait tous les
+segments à l'identique (vérifié puis corrigé lors des tests visuels). Le S/P
+réalisé, lui, varie de 41 % à 83 % : à +30 % de fréquence et +10 % de coût,
+la classe de risque 6 passe en perte (marge tolérée : +20 %) tandis que la
+classe 7 tolérerait +142 %.
+
+### Formation
+
+Cours **« Assurance et actuariat »** (3 leçons, 5 questions de quiz :
+prime pure, explicabilité, Chain-Ladder) ajouté au module Formation par
+`ActuarialFormationInitializer` : idempotent (recherche par titre, y compris
+sur une base existante) et exécuté sur `ApplicationReadyEvent`, après
+l'initialiseur du catalogue de l'équipe, qui ne s'exécute que sur une base
+vide.
+
 ## Intégration (API)
 
 ```
@@ -333,11 +411,11 @@ les tests et les styles.
 
 * Python : 27 tests d'API (`tests/actuarial/test_api.py`) — cas nominaux,
   9 cas de validation, plafonnement, 503 sans modèles, rechargement.
-* Angular : 56 tests (`ng test --include='src/app/features/actuarial/**/*.spec.ts'`) —
+* Angular : 77 tests (`ng test --include='src/app/features/actuarial/**/*.spec.ts'`) —
   échelles des graphiques, formats, service HTTP et cache, formulaire,
   composants graphiques, page de tarification (soumission par le vrai bouton,
   conversion des hypothèses, erreurs).
-* Java : 29 tests — client HTTP avec `MockRestServiceServer` (traduction de
+* Java : 47 tests — client HTTP avec `MockRestServiceServer` (traduction de
   chaque erreur, champs transmis), service (traçabilité, historique borné),
   contrôleur (authentification sur chaque route), validation des DTO. Le
   JSON de test du client est la réponse réelle du ml-service.
@@ -351,7 +429,7 @@ python -m pip install -r requirements-dev.txt
 
 python -m actuarial.train                  # pipeline complet (~1 min)
 python -m actuarial.train --sample 100000  # exécution rapide
-python -m pytest tests/actuarial           # 129 tests, données synthétiques
+python -m pytest tests/actuarial           # 156 tests, données synthétiques
 ```
 
 ```python
@@ -400,10 +478,11 @@ actuarial/
 ├── reserving.py      triangle, Chain-Ladder, erreurs de Mack, intervalles
 ├── schedule_p.py     données CAS Schedule P, portefeuilles, triangle connu / réalisé
 ├── reserving_report.py rapport de provisionnement et backtest
+├── stress.py         stress test des marges (chocs fréquence × coût)
 ├── registry.py       persistance versionnée + fiche modèle
 ├── train.py          pipeline d'entraînement de bout en bout
 └── api.py            API FastAPI (contrat camelCase, validation, chargement thread-safe)
-tests/actuarial/      129 tests (données synthétiques, triangle de référence)
+tests/actuarial/      156 tests (données synthétiques, triangle de référence)
 ```
 
 ## Feuille de route
@@ -414,4 +493,4 @@ tests/actuarial/      129 tests (données synthétiques, triangle de référence
 4. ~~API FastAPI + endpoints Spring Boot~~
 5. ~~Écrans Angular~~
 6. ~~Provisionnement Chain-Ladder~~
-7. Administration et intégration (stress test, formation)
+7. ~~Administration et intégration (stress test, formation)~~

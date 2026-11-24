@@ -351,6 +351,15 @@ export const routes: Routes = [
             )
       },
 
+      {
+        // Administration du module d'actuariat (cahier des charges §5)
+        path: 'admin/actuarial',
+        canActivate: [adminGuard],
+        loadComponent: () =>
+          import('./features/actuarial/admin/actuarial-admin.component')
+            .then(module => module.ActuarialAdminComponent)
+      },
+
 
       // =====================
       // ADMIN SECURITY CENTER

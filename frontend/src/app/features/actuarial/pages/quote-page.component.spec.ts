@@ -56,10 +56,23 @@ describe('QuotePageComponent', () => {
     fixture.componentInstance.submit();
     fixture.detectChanges();
 
-    expect(text()).toContain('883 €');
+    expect(text()).toContain('883 DT');
+    expect(text()).toContain('Où va votre prime ?');
+    expect(fixture.nativeElement.querySelector('app-risk-gauge')).not.toBeNull();
     expect(text()).toContain('Coefficient bonus-malus (100) augmente la prime : ×2,18');
     expect(fixture.nativeElement.querySelectorAll('app-relativity-chart .row').length).toBe(3);
     expect(service.history).toHaveBeenCalledTimes(2);
+  });
+
+  it('still renders a quote from an engine that does not send a currency yet', () => {
+    const { currency: _ignored, ...legacy } = QUOTE;
+    service.quote.and.returnValue(of(legacy as typeof QUOTE));
+    fixture.componentInstance.submit();
+    fixture.detectChanges();
+
+    expect(text()).toContain('883 €');
+    expect(text()).toContain('Où va votre prime ?');
+    expect(fixture.nativeElement.querySelectorAll('app-relativity-chart .row').length).toBe(3);
   });
 
   it('does not call the engine while the profile is invalid', () => {

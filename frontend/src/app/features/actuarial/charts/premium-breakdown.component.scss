@@ -1,0 +1,101 @@
+// Couleurs : 4 premiers emplacements de la palette catégorielle de référence,
+// dans leur ordre validé (sinistres, frais, sécurité, bénéfice) — aucun couple
+// adjacent indiscernable, y compris pour les daltoniens. Le vert et le jaune
+// étant sous 3:1 sur fond clair, chaque segment a son étiquette chiffrée.
+:host {
+  display: block;
+  --part-claims: #2a78d6;
+  --part-expenses: #eb6834;
+  --part-safety: #1baf7a;
+  --part-profit: #eda100;
+}
+
+:host-context([data-theme='dark']) {
+  --part-claims: #3987e5;
+  --part-expenses: #d95926;
+  --part-safety: #199e70;
+  --part-profit: #c98500;
+}
+
+.breakdown {
+  margin: 0;
+}
+
+.bar {
+  display: flex;
+  gap: 2px; // espace de surface entre segments
+  height: 14px;
+  overflow: hidden;
+  border-radius: 999px;
+}
+
+.segment {
+  min-width: 3px;
+  flex-basis: 0;
+}
+
+.claims { background: var(--part-claims); }
+.expenses { background: var(--part-expenses); }
+.safety { background: var(--part-safety); }
+.profit { background: var(--part-profit); }
+
+.legend {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px 18px;
+  margin: 14px 0 0;
+  padding: 0;
+  list-style: none;
+
+  li {
+    display: grid;
+    grid-template-columns: 10px minmax(0, 1fr) auto;
+    align-items: start;
+    gap: 9px;
+  }
+}
+
+.swatch {
+  width: 10px;
+  height: 10px;
+  margin-top: 4px;
+  border-radius: 3px;
+}
+
+.text {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+}
+
+.label {
+  color: var(--text-primary);
+  font-size: 12.5px;
+  font-weight: 650;
+}
+
+.hint {
+  color: var(--text-muted);
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+.figures {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  color: var(--text-secondary);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+
+  strong {
+    color: var(--text-primary);
+    font-size: 13px;
+  }
+}
+
+@media (max-width: 560px) {
+  .legend {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

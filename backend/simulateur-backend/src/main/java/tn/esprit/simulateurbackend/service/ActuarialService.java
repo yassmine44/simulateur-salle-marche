@@ -21,6 +21,7 @@ import tn.esprit.simulateurbackend.dto.actuarial.ComparisonResponse;
 import tn.esprit.simulateurbackend.dto.actuarial.QuoteHistoryItem;
 import tn.esprit.simulateurbackend.dto.actuarial.QuoteRequest;
 import tn.esprit.simulateurbackend.dto.actuarial.QuoteResponse;
+import tn.esprit.simulateurbackend.dto.actuarial.StressRequest;
 import tn.esprit.simulateurbackend.entity.ActuarialQuote;
 import tn.esprit.simulateurbackend.repository.ActuarialQuoteRepository;
 
@@ -72,6 +73,11 @@ public class ActuarialService {
 
     public ComparisonResponse compare(ComparisonRequest request) {
         return client.compare(request);
+    }
+
+    /** Stress test du portefeuille tarifé (chocs sur les sinistres). */
+    public JsonNode stress(StressRequest request) {
+        return client.stress(request);
     }
 
     /** Simulation de provisionnement sur un triangle fourni par l'utilisateur. */

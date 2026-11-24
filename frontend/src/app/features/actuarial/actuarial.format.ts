@@ -34,6 +34,48 @@ const COMPACT_USD = new Intl.NumberFormat('fr-FR', {
   maximumFractionDigits: 1
 });
 
+/** Devise de calcul des modèles (données françaises). */
+export const MODEL_CURRENCY = 'EUR';
+
+/**
+ * Code de la devise des montants reçus. Une réponse sans devise vient d'un
+ * moteur qui ne convertit pas : ses montants sont dans la devise des modèles.
+ * L'affichage reste ainsi correct même si un service n'a pas été redémarré.
+ */
+export function currencyCodeOf(currency: { code?: string } | string | null | undefined): string {
+  if (typeof currency === 'string') {
+    return currency || MODEL_CURRENCY;
+  }
+  return currency?.code || MODEL_CURRENCY;
+}
+
+/** Locale d'affichage d'une devise : notation tunisienne (« 2 988 DT ») pour le dinar. */
+function moneyLocale(currency: string): string {
+  return currency === 'TND' ? 'fr-TN' : 'fr-FR';
+}
+
+/**
+ * Montant dans la devise d'affichage : « 2 988 DT », ou « 2 988,390 DT » en
+ * mode précis (le dinar se divise en 1 000 millimes).
+ */
+export function formatMoney(value: number, currency = MODEL_CURRENCY, precise = false): string {
+  return new Intl.NumberFormat(moneyLocale(currency), {
+    style: 'currency',
+    currency,
+    ...(precise ? {} : { maximumFractionDigits: 0 })
+  }).format(value);
+}
+
+/** Montant compact dans la devise d'affichage (ex. « 31 M DT »). */
+export function formatCompactMoney(value: number, currency = MODEL_CURRENCY): string {
+  return new Intl.NumberFormat(moneyLocale(currency), {
+    style: 'currency',
+    currency,
+    notation: 'compact',
+    maximumFractionDigits: 1
+  }).format(value);
+}
+
 /** Montant en dollars, notation compacte (ex. « 17 Md $US »). */
 export function formatCompactUsd(value: number): string {
   return COMPACT_USD.format(value);

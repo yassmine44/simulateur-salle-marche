@@ -13,5 +13,11 @@
     "profit_ratio": 0.05,
     "safety_loading": 0.03,
     "commercial_factor": 1.471429
+  },
+  "currency": {
+    "code": "TND",
+    "label": "dinar tunisien",
+    "rate_from_model": 3.36,
+    "source": "Cours moyen BCT, novembre 2026 (indicatif)"
   }
 }

@@ -1,0 +1,251 @@
+<section class="admin">
+  <header class="page-heading">
+    <span class="eyebrow">Administration</span>
+    <h1>Module d'actuariat</h1>
+    <p>État des modèles, hypothèses de tarification, usage et traçabilité des devis.</p>
+  </header>
+
+  @if (message(); as m) {
+    <div class="alert" [class.info]="m.kind === 'ok'" role="status">
+      {{ m.kind === 'ok' ? '✓' : '✗' }} {{ m.text }}
+    </div>
+  }
+
+  @if (loadError(); as error) {
+    <div class="alert" role="alert"><strong>Administration indisponible.</strong> {{ error }}</div>
+  } @else if (!overview()) {
+    <div class="alert info"><span class="spinner"></span> Chargement…</div>
+  } @else {
+    @let o = overview()!;
+
+    <div class="grid">
+      <!-- Moteur et modèles ---------------------------------------------------- -->
+      <section class="panel wide">
+        <div class="panel-heading">
+          <div>
+            <span class="eyebrow">Moteur actuariel</span>
+            <h2>
+              @if (o.engine) {
+                <span class="state ok">✓ En service</span>
+              } @else {
+                <span class="state ko">✗ Indisponible</span>
+              }
+            </h2>
+            @if (o.engineError) { <p>{{ o.engineError }}</p> }
+          </div>
+          <button type="button" class="button secondary" (click)="reloadModels()" [disabled]="reloading()">
+            @if (reloading()) { <span class="spinner"></span> Rechargement… } @else { Recharger les modèles }
+          </button>
+        </div>
+        <p class="hint">
+          Après un réentraînement (<code>python -m actuarial.train</code> dans <code>ml-service</code>),
+          rechargez les modèles pour qu'ils soient servis sans redémarrer le service.
+        </p>
+
+        @if (cards().length > 0) {
+          <div class="table-scroll">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Modèle</th><th>Algorithme retenu</th><th>Version</th><th>Entraîné le</th>
+                  <th class="num">Gini</th><th class="num">D²</th><th class="num">Calibration</th>
+                  <th>Données</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (card of cards(); track card.name) {
+                  <tr>
+                    <td>{{ card.task === 'frequency' ? 'Fréquence' : 'Coût moyen' }}</td>
+                    <td>{{ card.algorithm }}</td>
+                    <td><code>{{ card.version }}</code></td>
+                    <td>{{ card.created_at | date: 'dd/MM/yyyy HH:mm' }}</td>
+                    <td class="num">{{ number(card.metrics.gini, 3) }}</td>
+                    <td class="num">{{ percent(card.metrics.d2_explained, 1) }}</td>
+                    <td class="num">{{ number(card.metrics.calibration_ratio, 3) }}</td>
+                    <td><span title="Empreinte des données d'entraînement">{{ card.data_fingerprint }}</span></td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+      </section>
+
+      <!-- Hypothèses commerciales ---------------------------------------------- -->
+      <section class="panel">
+        <div class="panel-heading">
+          <div>
+            <span class="eyebrow">Paramètres des simulations</span>
+            <h2>Hypothèses commerciales</h2>
+            <p>Appliquées par défaut à tous les devis. Elles ne nécessitent pas de réentraîner les modèles.</p>
+          </div>
+        </div>
+        <form [formGroup]="form" (submit)="$event.preventDefault(); saveAssumptions()" novalidate>
+          <div class="form-grid">
+            <label class="field">
+              <span>Frais (% de la prime)</span>
+              <input type="number" formControlName="expensePct" min="0" max="99" step="0.5">
+            </label>
+            <label class="field">
+              <span>Bénéfice visé (%)</span>
+              <input type="number" formControlName="profitPct" min="0" max="99" step="0.5">
+            </label>
+            <label class="field">
+              <span>Chargement de sécurité (%)</span>
+              <input type="number" formControlName="safetyPct" min="0" max="100" step="0.5">
+            </label>
+          </div>
+          @if (form.hasError('ratioSum')) {
+            <p class="field-error">Frais + bénéfice doivent rester sous 100 % de la prime.</p>
+          }
+          <p class="hint">
+            Prime commerciale = prime pure ×
+            <strong>{{ previewFactor() !== null ? number(previewFactor()!, 3) : '—' }}</strong>
+            @if (o.engine) { (actuellement × {{ number(o.engine.assumptions.commercialFactor ?? 0, 3) }}) }
+          </p>
+          <button type="submit" class="button primary" [disabled]="saving() || !o.engine || unchanged()">
+            @if (saving()) { <span class="spinner"></span> Enregistrement… } @else { Enregistrer }
+          </button>
+        </form>
+      </section>
+
+      <!-- Devise ----------------------------------------------------------------- -->
+      <section class="panel">
+        <div class="panel-heading">
+          <div>
+            <span class="eyebrow">Devise d'affichage</span>
+            <h2>Monnaie et taux de conversion</h2>
+            <p>
+              Les modèles calculent en euros (données françaises). Les montants sont convertis à ce taux :
+              c'est une conversion, pas un tarif du marché local.
+            </p>
+          </div>
+        </div>
+        <form [formGroup]="currencyForm" (submit)="$event.preventDefault(); saveCurrency()" novalidate>
+          <div class="form-grid currency-grid">
+            <label class="field">
+              <span>Code ISO</span>
+              <select formControlName="code">
+                <option value="TND">TND — dinar tunisien</option>
+                <option value="EUR">EUR — euro</option>
+                <option value="USD">USD — dollar américain</option>
+              </select>
+            </label>
+            <label class="field">
+              <span>Libellé</span>
+              <input type="text" formControlName="label" maxlength="60">
+            </label>
+            <label class="field">
+              <span>Unités pour 1 €</span>
+              <input type="number" formControlName="rateFromModel" min="0.0001" step="0.0001">
+            </label>
+            <label class="field wide">
+              <span>Source du taux</span>
+              <input type="text" formControlName="source" maxlength="200" placeholder="ex. cours moyen BCT du jour">
+            </label>
+          </div>
+          <button type="submit" class="button primary" [disabled]="savingCurrency() || !o.engine || currencyForm.pristine">
+            @if (savingCurrency()) { <span class="spinner"></span> Enregistrement… } @else { Enregistrer la devise }
+          </button>
+        </form>
+      </section>
+
+      <!-- Usage ------------------------------------------------------------------ -->
+      <section class="panel">
+        <div class="panel-heading">
+          <div>
+            <span class="eyebrow">Usage</span>
+            <h2>Devis enregistrés</h2>
+          </div>
+        </div>
+        <div class="tile-grid">
+          <div class="tile"><div class="tile-label">Total</div><div class="tile-value">{{ o.usage.totalQuotes }}</div></div>
+          <div class="tile"><div class="tile-label">30 derniers jours</div><div class="tile-value">{{ o.usage.quotesLast30Days }}</div></div>
+          <div class="tile"><div class="tile-label">Utilisateurs</div><div class="tile-value">{{ o.usage.distinctUsers }}</div></div>
+        </div>
+        @if (o.usage.byModelVersion.length > 0) {
+          <table class="data-table versions">
+            <thead><tr><th>Version du modèle</th><th class="num">Devis</th><th class="num">Prime moyenne</th></tr></thead>
+            <tbody>
+              @for (v of o.usage.byModelVersion; track v.version) {
+                <tr>
+                  <td><code>{{ v.version }}</code></td>
+                  <td class="num">{{ v.quotes }}</td>
+                  <td class="num">{{ v.averageCommercialPremium !== null ? money(v.averageCommercialPremium, engineCurrency()) : '—' }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        }
+      </section>
+
+      <!-- Derniers devis ------------------------------------------------------------ -->
+      <section class="panel wide">
+        <div class="panel-heading">
+          <div>
+            <span class="eyebrow">Traçabilité</span>
+            <h2>Derniers devis</h2>
+            <p>Chaque devis conserve son profil, ses hypothèses et la version des modèles : il est reproductible.</p>
+          </div>
+        </div>
+        @if (quotes().length === 0) {
+          <p class="hint">Aucun devis pour l'instant.</p>
+        } @else {
+          <div class="table-scroll">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Date</th><th>Utilisateur</th><th>Profil</th>
+                  <th class="num">Prime pure</th><th class="num">Prime commerciale</th>
+                  <th class="num">Frais / bénéfice</th><th>Modèle</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (q of quotes(); track q.id) {
+                  <tr>
+                    <td>{{ q.createdAt | date: 'dd/MM/yyyy HH:mm' }}</td>
+                    <td>{{ q.userEmail }}</td>
+                    <td>{{ q.driverAge }} ans · BM {{ q.bonusMalus }} · zone {{ q.area }}</td>
+                    <td class="num">{{ money(q.purePremium, q.currency) }}</td>
+                    <td class="num">{{ money(q.commercialPremium, q.currency) }}</td>
+                    <td class="num">{{ percent(q.expenseRatio, 0) }} / {{ percent(q.profitRatio, 0) }}</td>
+                    <td><code>{{ q.frequencyModelVersion }}</code></td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+      </section>
+
+      <!-- Journal ---------------------------------------------------------------------- -->
+      <section class="panel wide">
+        <div class="panel-heading">
+          <div>
+            <span class="eyebrow">Journal</span>
+            <h2>Actions d'administration</h2>
+          </div>
+        </div>
+        @if (o.recentActions.length === 0) {
+          <p class="hint">Aucune action enregistrée.</p>
+        } @else {
+          <div class="table-scroll">
+            <table class="data-table">
+              <thead><tr><th>Date</th><th>Administrateur</th><th>Action</th><th>Détail</th></tr></thead>
+              <tbody>
+                @for (a of o.recentActions; track a.id) {
+                  <tr>
+                    <td>{{ a.createdAt | date: 'dd/MM/yyyy HH:mm' }}</td>
+                    <td>{{ a.actorEmail }}</td>
+                    <td>{{ actionLabel(a) }}</td>
+                    <td class="detail">{{ describeAction(a) }}</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+      </section>
+    </div>
+  }
+</section>

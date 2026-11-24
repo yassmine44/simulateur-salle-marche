@@ -51,6 +51,8 @@ class ActuarialPricingClientTest {
         assertEquals(883.19, response.commercialPremium());
         assertEquals("20261124162401", response.modelVersions().frequency());
         assertEquals(2, response.explanation().contributions().size());
+        assertEquals("TND", response.currency().code());
+        assertEquals(3.36, response.currency().rateFromModel());
         assertEquals("hausse", response.explanation().contributions().get(0).direction());
         assertEquals("B12", response.explanation().contributions().get(1).value());
         server.verify();
@@ -171,6 +173,39 @@ class ActuarialPricingClientTest {
 
         assertEquals(HttpStatus.BAD_REQUEST, error.getStatusCode());
         assertTrue(error.getReason().contains("après la diagonale"));
+    }
+
+    @Test
+    void shouldCallTheAdministrationRoutes() {
+        server.expect(requestTo(ROOT + "/admin/assumptions"))
+                .andExpect(method(HttpMethod.PUT))
+                .andExpect(content().string(not(containsString("commercialFactor"))))
+                .andRespond(withSuccess("{\"current\": {}}", MediaType.APPLICATION_JSON));
+        server.expect(requestTo(ROOT + "/admin/reload"))
+                .andExpect(method(HttpMethod.POST))
+                .andRespond(withSuccess("{\"status\": \"ok\"}", MediaType.APPLICATION_JSON));
+        server.expect(requestTo(ROOT + "/stress"))
+                .andExpect(method(HttpMethod.POST))
+                .andExpect(content().string(containsString("\"frequencyShock\":0.2")))
+                .andRespond(withSuccess("{\"segments\": []}", MediaType.APPLICATION_JSON));
+
+        client.updateAssumptions(new PricingAssumptionsDto(0.2, 0.05, 0.02, 1.4));
+        assertEquals("ok", client.reload().path("status").asString());
+        client.stress(new tn.esprit.simulateurbackend.dto.actuarial.StressRequest(0.2, 0.0, "by_area"));
+        server.verify();
+    }
+
+    @Test
+    void shouldPutTheDisplayCurrency() {
+        server.expect(requestTo(ROOT + "/admin/currency"))
+                .andExpect(method(HttpMethod.PUT))
+                .andExpect(content().string(containsString("\"code\":\"TND\"")))
+                .andExpect(content().string(containsString("\"rateFromModel\":3.36")))
+                .andRespond(withSuccess("{\"current\": {\"code\": \"TND\"}}", MediaType.APPLICATION_JSON));
+
+        client.updateCurrency(new tn.esprit.simulateurbackend.dto.actuarial.CurrencyRequest(
+                "TND", "dinar tunisien", 3.36, "BCT"));
+        server.verify();
     }
 
     @Test

@@ -13,7 +13,8 @@ import { finalize } from 'rxjs';
 
 import {
   apiErrorMessage,
-  formatEuros,
+  currencyCodeOf,
+  formatMoney,
   formatNumber,
   formatPercent,
   formatRelativity,
@@ -28,9 +29,12 @@ import {
   QuoteResponse
 } from '../actuarial.models';
 import { ActuarialService } from '../actuarial.service';
+import { PremiumBreakdownComponent } from '../charts/premium-breakdown.component';
 import { RelativityChartComponent, RelativityRow } from '../charts/relativity-chart.component';
+import { RiskGaugeComponent } from '../charts/risk-gauge.component';
 import { createProfileForm, ProfileForm, profileValue } from '../profile-form/profile-form';
 import { ProfileFormComponent } from '../profile-form/profile-form.component';
+import { IconComponent } from '../ui/icon.component';
 
 type AssumptionsForm = FormGroup<{
   expensePct: FormControl<number | null>;
@@ -48,7 +52,15 @@ function ratiosBelowHundred(group: AbstractControl): ValidationErrors | null {
 @Component({
   selector: 'app-quote-page',
   standalone: true,
-  imports: [ReactiveFormsModule, DatePipe, ProfileFormComponent, RelativityChartComponent],
+  imports: [
+    ReactiveFormsModule,
+    DatePipe,
+    IconComponent,
+    PremiumBreakdownComponent,
+    ProfileFormComponent,
+    RelativityChartComponent,
+    RiskGaugeComponent
+  ],
   templateUrl: './quote-page.component.html',
   styleUrl: './quote-page.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush
@@ -93,7 +105,18 @@ export class QuotePageComponent {
     return contributions.slice(0, 2).map(c => this.describe(c));
   });
 
-  readonly format = { euros: formatEuros, percent: formatPercent, number: formatNumber };
+  /** Prime pure de l'assuré ÷ prime pure de l'assuré moyen (indice de risque). */
+  readonly relativeRisk = computed(() => {
+    const explanation = this.quote()?.explanation;
+    return explanation && explanation.basePremium > 0
+      ? explanation.purePremium / explanation.basePremium
+      : null;
+  });
+
+  readonly format = { percent: formatPercent, number: formatNumber };
+  /** Devise du devis affiché (euro si le moteur ne l'indique pas). */
+  readonly currency = computed(() => currencyCodeOf(this.quote()?.currency));
+  readonly money = (value: number, currency?: string | null) => formatMoney(value, currencyCodeOf(currency));
 
   constructor() {
     this.service

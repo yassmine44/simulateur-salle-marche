@@ -45,7 +45,11 @@ from actuarial.pricing import (
     PricingAssumptions,
     PricingEngine,
     load_pricing_engine,
+    load_currency,
+    save_assumptions,
+    save_currency,
 )
+from actuarial.stress import MAX_SHOCK, MIN_SHOCK, Shock, stress_margins
 from actuarial.registry import model_paths
 from actuarial.reserving import Triangle, TriangleError, chain_ladder
 
@@ -160,7 +164,28 @@ class ModelVersions(BaseModel):
     severity: str
 
 
+class CurrencyView(BaseModel):
+    """Display currency. Models compute in `modelCurrency`; amounts are converted
+    at `rateFromModel` (e.g. 3.36 TND per EUR)."""
+
+    code: str
+    label: str
+    rateFromModel: float
+    modelCurrency: str
+    source: str | None = None
+
+
+class CurrencyRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    code: str = Field(pattern=r"^[A-Z]{3}$", description="Code ISO 4217, ex. TND")
+    label: str = Field(min_length=1, max_length=60)
+    rateFromModel: float = Field(gt=0, lt=100_000, description="Unités de devise pour 1 EUR")
+    source: str | None = Field(None, max_length=200)
+
+
 class QuoteResponse(BaseModel):
+    currency: CurrencyView
     years: float
     frequency: float = Field(description="Sinistres indemnisés attendus par an")
     claimProbability: float = Field(description="P(au moins un sinistre sur `years` ans)")
@@ -193,6 +218,7 @@ class ComparisonContribution(BaseModel):
 
 
 class ComparisonResponse(BaseModel):
+    currency: CurrencyView
     premiumA: float
     premiumB: float
     premiumRatio: float
@@ -227,6 +253,19 @@ class ChainLadderRequest(BaseModel):
             values.append([float("nan") if v is None else float(v) for v in row] + [float("nan")] * (n - len(row)))
         origins = tuple(self.origins) if self.origins else tuple(range(1, n + 1))
         return Triangle(origins, values)
+
+
+Segmentation = Literal["by_risk_class", "by_area", "by_bonus_malus"]
+
+
+class StressRequest(BaseModel):
+    """Claims shocks applied to the priced portfolio (premiums unchanged)."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    frequencyShock: float = Field(0.0, ge=MIN_SHOCK, le=MAX_SHOCK, description="+0.2 = 20 % de sinistres en plus")
+    severityShock: float = Field(0.0, ge=MIN_SHOCK, le=MAX_SHOCK, description="+0.1 = sinistres 10 % plus chers")
+    segmentation: Segmentation = "by_risk_class"
 
 
 # ----------------------------------------------------------------------------
@@ -284,6 +323,25 @@ class ActuarialService:
             severity=self._config["severity_model_version"],  # type: ignore[index]
         )
 
+    # -- currency ----------------------------------------------------------------
+    def currency(self) -> CurrencyView:
+        """Display currency; readable even before the models are trained."""
+        stored = (
+            {**config.DEFAULT_CURRENCY, **self._config.get("currency", {})}
+            if self._config is not None
+            else load_currency(self.directory)
+        )
+        return CurrencyView(
+            code=stored["code"],
+            label=stored["label"],
+            rateFromModel=float(stored["rate_from_model"]),
+            modelCurrency=config.MODEL_CURRENCY,
+            source=stored.get("source"),
+        )
+
+    def _money(self, amount: float) -> float:
+        return round(float(amount) * self.currency().rateFromModel, 2)
+
     # -- use cases -------------------------------------------------------------
     def status(self) -> dict[str, Any]:
         engine = self.engine
@@ -292,6 +350,7 @@ class ActuarialService:
             "modelVersions": self.versions.model_dump(),
             "largeClaimLoading": engine.large_claim_loading,
             "assumptions": _assumptions_view(engine.assumptions).model_dump(),
+            "currency": self.currency().model_dump(),
         }
 
     def quote(self, request: QuoteRequest) -> QuoteResponse:
@@ -305,8 +364,8 @@ class ActuarialService:
         if request.explain:
             explained = self.explainer.explain(profile)[0].to_dict(top=request.top)
             explanation = Explanation(
-                basePremium=explained["base_premium"],
-                purePremium=explained["pure_premium"],
+                basePremium=self._money(explained["base_premium"]),
+                purePremium=self._money(explained["pure_premium"]),
                 contributions=[
                     Contribution(
                         feature=row["feature"],
@@ -324,14 +383,15 @@ class ActuarialService:
             )
 
         return QuoteResponse(
+            currency=self.currency(),
             years=request.years,
             frequency=round(float(quote["frequency"]), 6),
             claimProbability=round(float(quote["claim_probability"]), 6),
-            severity=round(float(quote["severity"]), 2),
+            severity=self._money(quote["severity"]),
             largeClaimLoading=round(engine.large_claim_loading, 6),
-            purePremium=round(float(quote["pure_premium"]), 2),
-            commercialPremium=round(float(quote["commercial_premium"]), 2),
-            premiumMargin=round(float(quote["premium_margin"]), 2),
+            purePremium=self._money(quote["pure_premium"]),
+            commercialPremium=self._money(quote["commercial_premium"]),
+            premiumMargin=self._money(quote["premium_margin"]),
             expectedLossRatio=round(float(quote["expected_loss_ratio"]), 6),
             assumptions=_assumptions_view(engine.assumptions),
             modelVersions=self.versions,
@@ -344,8 +404,9 @@ class ActuarialService:
             pd.DataFrame([request.profileB.to_row()]),
         )
         return ComparisonResponse(
-            premiumA=round(result["premium_a"], 2),
-            premiumB=round(result["premium_b"], 2),
+            currency=self.currency(),
+            premiumA=self._money(result["premium_a"]),
+            premiumB=self._money(result["premium_b"]),
             premiumRatio=result["premium_ratio"],
             contributions=[
                 ComparisonContribution(
@@ -361,7 +422,51 @@ class ActuarialService:
             ],
         )
 
+    def update_assumptions(self, assumptions: Assumptions) -> dict[str, Any]:
+        """Persist new commercial assumptions and serve them immediately."""
+        self._ensure_loaded()
+        with self._lock:
+            change = save_assumptions(assumptions.to_domain(), self.directory)
+        self.reload()
+        return {**change, "status": self.status()}
+
+    def update_currency(self, request: CurrencyRequest) -> dict[str, Any]:
+        """Persist a new display currency and serve it immediately."""
+        self._ensure_loaded()
+        currency = {
+            "code": request.code,
+            "label": request.label,
+            "rate_from_model": request.rateFromModel,
+            "source": request.source,
+        }
+        with self._lock:
+            change = save_currency(currency, self.directory)
+        self.reload()
+        return {**change, "status": self.status()}
+
+    def stress(self, request: StressRequest) -> dict[str, Any]:
+        # The stress works on the stored report (model currency), then converts.
+        margins = self._raw_report("pricing")["margin"]
+        result = stress_margins(
+            segments=margins[request.segmentation],
+            portfolio=margins["portfolio"][0],
+            shock=Shock(frequency=request.frequencyShock, severity=request.severityShock),
+        )
+        return {**_convert(result, STRESS_MONEY_KEYS, self.currency().rateFromModel),
+                "currency": self.currency().model_dump()}
+
     def report(self, name: ReportName) -> dict[str, Any]:
+        """Evaluation report; premiums and claims are converted to the display
+        currency. The reserving report keeps its own currency (US dollars of
+        the Schedule P data)."""
+        raw = self._raw_report(name)
+        money_keys = REPORT_MONEY_KEYS.get(name)
+        if not money_keys:
+            return raw
+        return {**_convert(raw, money_keys, self.currency().rateFromModel),
+                "currency": self.currency().model_dump()}
+
+    def _raw_report(self, name: ReportName) -> dict[str, Any]:
         path = self.directory / f"{name}_report.json"
         if not path.exists():
             command = "actuarial.reserving_report" if name == "reserving" else "actuarial.train"
@@ -378,6 +483,29 @@ class ActuarialService:
                 )
             cards[name] = json.loads(card_path.read_text(encoding="utf-8"))
         return cards
+
+
+# Monetary keys of each payload (everything else — rates, counts, ratios — is unit-free).
+_MARGIN_KEYS = frozenset({"premiums", "expected_claims", "actual_claims", "expected_margin", "actual_margin"})
+STRESS_MONEY_KEYS = _MARGIN_KEYS | {"stressed_claims", "stressed_margin"}
+REPORT_MONEY_KEYS: dict[str, frozenset[str]] = {
+    "pricing": _MARGIN_KEYS | {
+        "severity", "pure_premium", "commercial_premium", "premium_margin",
+        "threshold", "largest_train_claims", "largest_test_claims",
+    },
+    "explainability": frozenset({"base_premium", "pure_premium", "premium_a", "premium_b"}),
+}
+
+
+def _convert(value: Any, keys: frozenset[str], rate: float, convert: bool = False) -> Any:
+    """Copy of a JSON payload where the values under `keys` are multiplied by `rate`."""
+    if isinstance(value, dict):
+        return {k: _convert(v, keys, rate, k in keys) for k, v in value.items()}
+    if isinstance(value, list):
+        return [_convert(v, keys, rate, convert) for v in value]
+    if convert and isinstance(value, (int, float)) and not isinstance(value, bool):
+        return round(value * rate, 2)
+    return value
 
 
 def _assumptions_view(assumptions: PricingAssumptions) -> AssumptionsView:
@@ -443,8 +571,8 @@ def status(service: ActuarialService = Depends(get_service)) -> dict[str, Any]:
 
 
 @router.get("/metadata")
-def get_metadata() -> dict[str, Any]:
-    return metadata()
+def get_metadata(service: ActuarialService = Depends(get_service)) -> dict[str, Any]:
+    return {**metadata(), "currency": service.currency().model_dump()}
 
 
 @router.post("/quote", response_model=QuoteResponse)
@@ -469,6 +597,48 @@ def compare(
 def report(name: ReportName, service: ActuarialService = Depends(get_service)) -> dict[str, Any]:
     try:
         return service.report(name)
+    except ModelsNotAvailable as error:
+        raise _unavailable(error) from error
+
+
+@router.post("/stress")
+def stress(request: StressRequest, service: ActuarialService = Depends(get_service)) -> dict[str, Any]:
+    """Premium margins of the priced portfolio under claims shocks."""
+    try:
+        return service.stress(request)
+    except ModelsNotAvailable as error:
+        raise _unavailable(error) from error
+
+
+# --- Administration (appelée uniquement par Spring, qui vérifie le rôle ADMIN) ---
+@router.put("/admin/assumptions")
+def update_assumptions(
+    assumptions: Assumptions, service: ActuarialService = Depends(get_service)
+) -> dict[str, Any]:
+    """Replace the commercial assumptions used by default for every quote."""
+    try:
+        return service.update_assumptions(assumptions)
+    except ModelsNotAvailable as error:
+        raise _unavailable(error) from error
+
+
+@router.put("/admin/currency")
+def update_currency(
+    request: CurrencyRequest, service: ActuarialService = Depends(get_service)
+) -> dict[str, Any]:
+    """Replace the display currency and its conversion rate from the model currency (EUR)."""
+    try:
+        return service.update_currency(request)
+    except ModelsNotAvailable as error:
+        raise _unavailable(error) from error
+
+
+@router.post("/admin/reload")
+def reload_models(service: ActuarialService = Depends(get_service)) -> dict[str, Any]:
+    """Reload models and configuration after a retraining (python -m actuarial.train)."""
+    try:
+        service.reload()
+        return service.status()
     except ModelsNotAvailable as error:
         raise _unavailable(error) from error
 

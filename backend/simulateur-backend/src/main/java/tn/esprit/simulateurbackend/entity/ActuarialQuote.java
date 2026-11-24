@@ -99,6 +99,10 @@ public class ActuarialQuote {
     @Column(name = "severity_model_version", nullable = false, length = 32)
     private String severityModelVersion;
 
+    /** Devise des montants (null pour les devis antérieurs à son introduction : euros). */
+    @Column(length = 3)
+    private String currency;
+
     protected ActuarialQuote() {
         // Constructeur requis par JPA.
     }
@@ -136,6 +140,7 @@ public class ActuarialQuote {
         entity.safetyLoading = quote.assumptions().safetyLoading();
         entity.frequencyModelVersion = quote.modelVersions().frequency();
         entity.severityModelVersion = quote.modelVersions().severity();
+        entity.currency = quote.currency() == null ? null : quote.currency().code();
         return entity;
     }
 
@@ -167,4 +172,6 @@ public class ActuarialQuote {
     public double getSafetyLoading() { return safetyLoading; }
     public String getFrequencyModelVersion() { return frequencyModelVersion; }
     public String getSeverityModelVersion() { return severityModelVersion; }
+    /** Devise des montants ; les devis antérieurs à la conversion étaient en euros. */
+    public String getCurrency() { return currency == null ? "EUR" : currency; }
 }

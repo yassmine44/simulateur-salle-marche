@@ -1,4 +1,6 @@
-import { ActuarialMetadata, QuoteResponse } from '../actuarial.models';
+import { ActuarialMetadata, Currency, QuoteResponse } from '../actuarial.models';
+
+export const TND: Currency = { code: 'TND', label: 'dinar tunisien', rateFromModel: 3.36, modelCurrency: 'EUR', source: 'Cours moyen BCT' };
 
 /** Métadonnées réelles renvoyées par le moteur (GET /api/actuarial/metadata). */
 export const METADATA: ActuarialMetadata = {
@@ -16,11 +18,13 @@ export const METADATA: ActuarialMetadata = {
     { field: 'density', feature: 'Density', label: 'Densité de population', type: 'integer', min: 1, max: 30000 },
     { field: 'region', feature: 'Region', label: 'Région', type: 'category', values: ['R11', 'R24', 'R82'] }
   ],
-  defaultAssumptions: { expenseRatio: 0.25, profitRatio: 0.05, safetyLoading: 0.03 }
+  defaultAssumptions: { expenseRatio: 0.25, profitRatio: 0.05, safetyLoading: 0.03 },
+  currency: TND
 };
 
 /** Devis réel du ml-service pour le jeune conducteur urbain en malus. */
 export const QUOTE: QuoteResponse = {
+  currency: TND,
   years: 1,
   frequency: 0.255324,
   claimProbability: 0.225334,

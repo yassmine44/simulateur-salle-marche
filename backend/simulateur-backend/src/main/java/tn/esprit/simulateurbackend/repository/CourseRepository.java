@@ -13,4 +13,7 @@ public interface CourseRepository
 
     // Vue admin : toutes les formations, publiées ou non.
     List<Course> findAllByOrderByDisplayOrderAsc();
+
+    // Initialisation idempotente des cours ajoutés par les modules.
+    boolean existsByTitle(String title);
 }

@@ -7,11 +7,14 @@
 } @else {
   <div class="layout">
     <!-- Profil et hypothèses ------------------------------------------------ -->
-    <form class="panel" (submit)="onSubmit($event)" novalidate>
+    <form class="panel form-panel" (submit)="onSubmit($event)" novalidate>
       <div class="panel-heading">
-        <div>
-          <span class="eyebrow">1. Profil</span>
-          <h2>Assuré et véhicule</h2>
+        <div class="panel-title">
+          <span class="section-icon"><app-icon name="user" /></span>
+          <div>
+            <span class="eyebrow">Étape 1</span>
+            <h2>Profil de l'assuré</h2>
+          </div>
         </div>
       </div>
 
@@ -20,7 +23,8 @@
       <div class="assumptions" [formGroup]="assumptionsForm">
         <button type="button" class="button ghost disclosure" (click)="showAssumptions.set(!showAssumptions())"
                 [attr.aria-expanded]="showAssumptions()" aria-controls="assumptions-panel">
-          {{ showAssumptions() ? '▾' : '▸' }} Hypothèses commerciales et horizon
+          <app-icon name="sliders" /> Hypothèses commerciales et horizon
+          <span class="chevron" [class.open]="showAssumptions()" aria-hidden="true">▾</span>
         </button>
 
         @if (showAssumptions()) {
@@ -56,52 +60,64 @@
         <div class="alert" role="alert">{{ message }}</div>
       }
 
-      <div class="submit-row">
-        <button type="submit" class="button primary" [disabled]="submitting()">
-          @if (submitting()) { <span class="spinner"></span> Calcul… } @else { Calculer la prime }
-        </button>
-      </div>
+      <button type="submit" class="button primary cta" [disabled]="submitting()">
+        @if (submitting()) { <span class="spinner"></span> Calcul en cours… } @else { <app-icon name="sparkles" /> Calculer la prime }
+      </button>
     </form>
 
     <!-- Résultat ------------------------------------------------------------- -->
     <div class="results" aria-live="polite">
       @if (quote(); as q) {
-        <section class="panel">
+        <section class="panel premium-card">
           <div class="panel-heading">
-            <div>
-              <span class="eyebrow">2. Tarif</span>
-              <h2>Prime annuelle</h2>
+            <div class="panel-title">
+              <span class="section-icon"><app-icon name="wallet" /></span>
+              <div>
+                <span class="eyebrow">Étape 2</span>
+                <h2>Votre tarif</h2>
+              </div>
             </div>
-            <span class="badge" title="Versions des modèles fréquence / sévérité">
-              Modèles {{ q.modelVersions.frequency }}
-            </span>
+            <span class="badge" title="Version du modèle de fréquence utilisée">Modèle {{ q.modelVersions.frequency }}</span>
           </div>
 
-          <div class="hero">
-            <span class="hero-value">{{ format.euros(q.commercialPremium) }}</span>
-            <span class="hero-unit">par an, prime commerciale</span>
+          <div class="premium-grid">
+            <div class="premium-main">
+              <span class="premium-label">Prime commerciale annuelle</span>
+              <span class="premium-value">{{ money(q.commercialPremium, currency()) }}</span>
+              <span class="premium-sub">soit {{ money(q.commercialPremium / 12, currency()) }} par mois</span>
+
+              <h3 class="breakdown-title">Où va votre prime ?</h3>
+              <app-premium-breakdown
+                [purePremium]="q.purePremium"
+                [commercialPremium]="q.commercialPremium"
+                [assumptions]="q.assumptions"
+                [currency]="currency()" />
+            </div>
+
+            @if (relativeRisk(); as risk) {
+              <div class="premium-side">
+                <span class="premium-label">Indice de risque</span>
+                <app-risk-gauge [relativeRisk]="risk" />
+                <p class="side-note">Prime pure comparée à celle de l'assuré moyen du portefeuille.</p>
+              </div>
+            }
           </div>
 
-          <div class="tile-grid">
-            <div class="tile">
-              <div class="tile-label">Prime pure</div>
-              <div class="tile-value">{{ format.euros(q.purePremium) }}</div>
-              <div class="tile-hint">Coût attendu des sinistres</div>
+          <div class="stats">
+            <div class="stat">
+              <span class="stat-label">Probabilité de sinistre</span>
+              <span class="stat-value">{{ format.percent(q.claimProbability) }}</span>
+              <span class="stat-hint">au moins un sinistre sur {{ format.number(q.years, 1) }} an{{ q.years > 1 ? 's' : '' }}</span>
             </div>
-            <div class="tile">
-              <div class="tile-label">Marge de prime</div>
-              <div class="tile-value">{{ format.euros(q.premiumMargin) }}</div>
-              <div class="tile-hint">Frais, bénéfice et sécurité · S/P attendu {{ format.percent(q.expectedLossRatio, 0) }}</div>
+            <div class="stat">
+              <span class="stat-label">Fréquence attendue</span>
+              <span class="stat-value">{{ format.number(q.frequency, 3) }}</span>
+              <span class="stat-hint">sinistre par an</span>
             </div>
-            <div class="tile">
-              <div class="tile-label">Probabilité de sinistre</div>
-              <div class="tile-value">{{ format.percent(q.claimProbability) }}</div>
-              <div class="tile-hint">Au moins un sinistre sur {{ format.number(q.years, 1) }} an{{ q.years > 1 ? 's' : '' }}</div>
-            </div>
-            <div class="tile">
-              <div class="tile-label">Fréquence attendue</div>
-              <div class="tile-value">{{ format.number(q.frequency, 3) }}</div>
-              <div class="tile-hint">Sinistres par an · coût moyen {{ format.euros(q.severity) }}</div>
+            <div class="stat">
+              <span class="stat-label">Coût moyen d'un sinistre</span>
+              <span class="stat-value">{{ money(q.severity, currency()) }}</span>
+              <span class="stat-hint">S/P attendu {{ format.percent(q.expectedLossRatio, 0) }}</span>
             </div>
           </div>
         </section>
@@ -109,16 +125,19 @@
         @if (q.explanation; as explanation) {
           <section class="panel">
             <div class="panel-heading">
-              <div>
-                <span class="eyebrow">3. Explication</span>
-                <h2>Pourquoi cette prime ?</h2>
-                <p>
-                  Partant de la prime pure moyenne du portefeuille
-                  ({{ format.euros(explanation.basePremium) }}), chaque facteur multiplie la prime :
-                  le produit des multiplicateurs donne exactement {{ format.euros(explanation.purePremium) }}.
-                </p>
+              <div class="panel-title">
+                <span class="section-icon"><app-icon name="sparkles" /></span>
+                <div>
+                  <span class="eyebrow">Étape 3 · IA explicable</span>
+                  <h2>Pourquoi cette prime ?</h2>
+                </div>
               </div>
             </div>
+            <p class="lead">
+              Partant de la prime pure de l'assuré moyen ({{ money(explanation.basePremium, currency()) }}),
+              chaque facteur multiplie la prime : le produit des multiplicateurs donne exactement
+              {{ money(explanation.purePremium, currency()) }}.
+            </p>
 
             @if (reading().length > 0) {
               <ul class="reading">
@@ -133,20 +152,23 @@
         }
       } @else {
         <section class="panel empty">
-          <h2>Aucun devis pour l'instant</h2>
+          <span class="empty-icon"><app-icon name="receipt" /></span>
+          <h2>Prêt à tarifer</h2>
           <p>
-            Choisissez un profil type ou saisissez un profil, puis lancez le calcul :
-            la prime, la probabilité de sinistre et l'explication de chaque facteur s'afficheront ici.
+            Choisissez un profil type ou saisissez un profil, puis lancez le calcul : la prime, sa décomposition,
+            l'indice de risque et l'explication de chaque facteur s'afficheront ici.
           </p>
         </section>
       }
 
       <section class="panel">
         <div class="panel-heading">
-          <div>
-            <span class="eyebrow">Historique</span>
-            <h2>Mes derniers devis</h2>
-            <p>Chaque devis est enregistré avec les versions des modèles utilisés.</p>
+          <div class="panel-title">
+            <span class="section-icon"><app-icon name="history" /></span>
+            <div>
+              <span class="eyebrow">Historique</span>
+              <h2>Mes derniers devis</h2>
+            </div>
           </div>
         </div>
         @if (history().length === 0) {
@@ -165,8 +187,8 @@
                   <tr>
                     <td>{{ item.createdAt | date: 'dd/MM/yyyy HH:mm' }}</td>
                     <td>{{ item.driverAge }} ans · BM {{ item.bonusMalus }} · zone {{ item.area }} · {{ item.vehicleBrand }}</td>
-                    <td class="num">{{ format.euros(item.commercialPremium) }}</td>
-                    <td class="num">{{ format.euros(item.purePremium) }}</td>
+                    <td class="num">{{ money(item.commercialPremium, item.currency) }}</td>
+                    <td class="num">{{ money(item.purePremium, item.currency) }}</td>
                     <td class="num">{{ format.percent(item.claimProbability) }}</td>
                   </tr>
                 }

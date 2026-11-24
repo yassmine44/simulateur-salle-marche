@@ -22,9 +22,90 @@
   margin-bottom: 16px;
 }
 
-.result .tile-grid {
-  max-width: 420px;
-  margin-bottom: 18px;
+.avatar {
+  font-size: 15px;
+  font-weight: 800;
+}
+
+.cta {
+  min-height: 42px;
+  padding: 0 20px;
+  border-radius: 12px;
+  background: var(--six7-gradient) !important;
+  box-shadow: 0 10px 24px var(--six7-glow);
+}
+
+// Face-à-face des deux primes, rapport au centre.
+.versus {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center;
+  gap: 16px;
+  margin: 4px 0 22px;
+}
+
+.side {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 16px 18px;
+  border: 1px solid var(--glass-border);
+  border-radius: 16px;
+  background: var(--bg-muted);
+
+  &.b {
+    align-items: flex-end;
+    text-align: right;
+  }
+}
+
+.who {
+  color: var(--text-secondary);
+  font-size: 11px;
+  font-weight: 750;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.amount {
+  color: var(--text-primary);
+  font-size: clamp(24px, 3vw, 32px);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+}
+
+.unit {
+  color: var(--text-muted);
+  font-size: 11px;
+}
+
+.ratio-badge {
+  display: grid;
+  width: 76px;
+  height: 76px;
+  place-items: center;
+  border-radius: 50%;
+  color: #fff;
+  background: var(--six7-gradient);
+  box-shadow: 0 12px 28px var(--six7-glow);
+  font-size: 18px;
+  font-weight: 850;
+}
+
+@media (max-width: 640px) {
+  .versus {
+    grid-template-columns: minmax(0, 1fr);
+    justify-items: stretch;
+  }
+
+  .ratio-badge {
+    justify-self: center;
+  }
+
+  .side.b {
+    align-items: flex-start;
+    text-align: left;
+  }
 }
 
 @media (max-width: 960px) {

@@ -25,6 +25,7 @@ import tn.esprit.simulateurbackend.dto.actuarial.ComparisonResponse;
 import tn.esprit.simulateurbackend.dto.actuarial.QuoteHistoryItem;
 import tn.esprit.simulateurbackend.dto.actuarial.QuoteRequest;
 import tn.esprit.simulateurbackend.dto.actuarial.QuoteResponse;
+import tn.esprit.simulateurbackend.dto.actuarial.StressRequest;
 import tn.esprit.simulateurbackend.service.ActuarialService;
 
 /**
@@ -82,6 +83,16 @@ public class ActuarialController {
     ) {
         requireUser(authentication);
         return ResponseEntity.ok(actuarialService.compare(request));
+    }
+
+    /** Stress test du portefeuille : marges sous chocs de fréquence et de coût. */
+    @PostMapping("/stress")
+    public ResponseEntity<JsonNode> stress(
+            Authentication authentication,
+            @Valid @RequestBody StressRequest request
+    ) {
+        requireUser(authentication);
+        return ResponseEntity.ok(actuarialService.stress(request));
     }
 
     /** Provisionnement Chain-Ladder (avec erreurs de Mack) d'un triangle fourni. */

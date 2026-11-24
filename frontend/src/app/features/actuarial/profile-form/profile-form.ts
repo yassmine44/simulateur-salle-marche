@@ -1,14 +1,15 @@
 import { FormControl, FormGroup, Validators } from '@angular/forms';
 
 import { MetadataField, PolicyProfile, ProfileField } from '../actuarial.models';
+import { IconName } from '../ui/icon.component';
 
 export type ProfileForm = FormGroup<{ [K in ProfileField]: FormControl<PolicyProfile[K] | null> }>;
 
 /** Regroupement métier des facteurs dans le formulaire. */
-export const PROFILE_SECTIONS: ReadonlyArray<{ title: string; fields: ProfileField[] }> = [
-  { title: 'Conducteur', fields: ['driverAge', 'bonusMalus'] },
-  { title: 'Véhicule', fields: ['vehiclePower', 'vehicleAge', 'vehicleBrand', 'vehicleGas'] },
-  { title: 'Localisation', fields: ['area', 'region', 'density'] }
+export const PROFILE_SECTIONS: ReadonlyArray<{ title: string; icon: IconName; fields: ProfileField[] }> = [
+  { title: 'Conducteur', icon: 'user', fields: ['driverAge', 'bonusMalus'] },
+  { title: 'Véhicule', icon: 'car', fields: ['vehiclePower', 'vehicleAge', 'vehicleBrand', 'vehicleGas'] },
+  { title: 'Localisation', icon: 'pin', fields: ['area', 'region', 'density'] }
 ];
 
 /** Aides contextuelles affichées sous certains champs. */

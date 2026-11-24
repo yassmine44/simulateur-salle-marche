@@ -2,18 +2,19 @@ import { ChangeDetectionStrategy, Component, computed, DestroyRef, inject, signa
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { finalize } from 'rxjs';
 
-import { apiErrorMessage, formatEuros, formatNumber } from '../actuarial.format';
+import { apiErrorMessage, currencyCodeOf, formatMoney, formatNumber } from '../actuarial.format';
 import { ActuarialMetadata, ComparisonResponse, PROFILE_PRESETS } from '../actuarial.models';
 import { ActuarialService } from '../actuarial.service';
 import { RelativityChartComponent, RelativityRow } from '../charts/relativity-chart.component';
 import { createProfileForm, ProfileForm, profileValue } from '../profile-form/profile-form';
 import { ProfileFormComponent } from '../profile-form/profile-form.component';
+import { IconComponent } from '../ui/icon.component';
 
 /** Explique l'écart de prime entre deux assurés (XAI, cahier des charges §3.6). */
 @Component({
   selector: 'app-compare-page',
   standalone: true,
-  imports: [ProfileFormComponent, RelativityChartComponent],
+  imports: [IconComponent, ProfileFormComponent, RelativityChartComponent],
   templateUrl: './compare-page.component.html',
   styleUrl: './compare-page.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush
@@ -51,7 +52,9 @@ export class ComparePageComponent {
       : `L'assuré A paie ${formatNumber(1 / ratio, 2)} fois moins que l'assuré B.`;
   });
 
-  readonly euros = formatEuros;
+  readonly currency = computed(() => currencyCodeOf(this.result()?.currency));
+  readonly money = (value: number) => formatMoney(value, this.currency());
+  readonly ratio = (value: number) => `×${formatNumber(value, 2)}`;
 
   constructor() {
     this.service

@@ -1,0 +1,86 @@
+:host {
+  display: block;
+}
+
+.gauge {
+  position: relative;
+  margin: 0;
+}
+
+svg {
+  display: block;
+  width: 100%;
+  max-width: 260px;
+  margin: 0 auto;
+  overflow: visible;
+}
+
+.track,
+.value {
+  fill: none;
+  stroke-linecap: round;
+  stroke-width: 14;
+}
+
+.track {
+  stroke: var(--bg-muted);
+}
+
+// Une seule teinte (dégradé SIX7) : la jauge mesure une grandeur, pas un statut.
+.value {
+  stroke: var(--primary);
+}
+
+.average {
+  stroke: var(--text-secondary);
+  stroke-width: 2;
+}
+
+.needle {
+  fill: var(--bg-card);
+  stroke: var(--primary);
+  stroke-width: 4;
+}
+
+.end {
+  fill: var(--text-muted);
+  font-size: 9px;
+  text-anchor: start;
+}
+
+.reading {
+  position: absolute;
+  bottom: 6px;
+  left: 50%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  transform: translateX(-50%);
+  text-align: center;
+}
+
+.multiple {
+  color: var(--text-primary);
+  font-size: 26px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1;
+}
+
+.caption {
+  color: var(--text-secondary);
+  font-size: 11px;
+}
+
+.level {
+  margin-top: 4px;
+  padding: 2px 9px;
+  border-radius: 999px;
+  font-size: 10.5px;
+  font-weight: 750;
+
+  &.low { color: var(--success); background: var(--success-soft); }
+  &.average { color: var(--primary); background: var(--primary-soft); }
+  &.high { color: var(--warning); background: var(--warning-soft); }
+  &.very-high { color: var(--danger); background: var(--danger-soft); }
+}

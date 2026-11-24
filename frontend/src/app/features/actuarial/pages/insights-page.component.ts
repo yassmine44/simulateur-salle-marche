@@ -5,8 +5,9 @@ import { forkJoin } from 'rxjs';
 
 import {
   apiErrorMessage,
-  formatCompactEuros,
-  formatEuros,
+  currencyCodeOf,
+  formatCompactMoney,
+  formatMoney,
   formatNumber,
   formatPercent,
   formatRelativity
@@ -25,6 +26,7 @@ import { ImportanceChartComponent, ImportanceRow } from '../charts/importance-ch
 import { LineChartComponent, LineSeries } from '../charts/line-chart.component';
 import { RelativityChartComponent, RelativityRow } from '../charts/relativity-chart.component';
 import { Point } from '../charts/chart-scales';
+import { StressPanelComponent } from '../stress/stress-panel.component';
 
 interface Reports {
   frequency: ModelReport;
@@ -54,7 +56,7 @@ function lorenzPoints(curve: LorenzCurve): Point[] {
 @Component({
   selector: 'app-insights-page',
   standalone: true,
-  imports: [NgTemplateOutlet, ImportanceChartComponent, LineChartComponent, RelativityChartComponent],
+  imports: [NgTemplateOutlet, ImportanceChartComponent, LineChartComponent, RelativityChartComponent, StressPanelComponent],
   templateUrl: './insights-page.component.html',
   styleUrl: './insights-page.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush
@@ -197,9 +199,12 @@ export class InsightsPageComponent {
     () => this.reports()?.pricing.margin[this.segmentation()] ?? []
   );
 
+  /** Devise des montants du rapport de tarification (convertis par le moteur). */
+  readonly currencyCode = computed(() => currencyCodeOf(this.reports()?.pricing.currency));
+
   readonly format = {
-    euros: formatEuros,
-    compact: formatCompactEuros,
+    euros: (v: number) => formatMoney(v, this.currencyCode()),
+    compact: (v: number) => formatCompactMoney(v, this.currencyCode()),
     percent: formatPercent,
     number: formatNumber,
     relativity: formatRelativity,

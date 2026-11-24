@@ -1,0 +1,109 @@
+<div class="controls">
+  <label class="field slider">
+    <span>Choc de fréquence : <strong>{{ signedPercent(frequencyPct() / 100) }}</strong> de sinistres</span>
+    <input type="range" min="-20" max="100" step="5" [value]="frequencyPct()"
+           (input)="onSlider('frequency', $event)" aria-label="Choc de fréquence des sinistres en pourcentage">
+  </label>
+  <label class="field slider">
+    <span>Choc de coût : sinistres <strong>{{ signedPercent(severityPct() / 100) }}</strong> plus chers</span>
+    <input type="range" min="-20" max="100" step="5" [value]="severityPct()"
+           (input)="onSlider('severity', $event)" aria-label="Choc de coût moyen des sinistres en pourcentage">
+  </label>
+  <label class="field">
+    <span>Segmentation</span>
+    <select [value]="segmentation()" (change)="onSegmentation($event)">
+      @for (option of segmentations; track option.id) {
+        <option [value]="option.id">{{ option.label }}</option>
+      }
+    </select>
+  </label>
+</div>
+
+<p class="method">
+  Le choc s'applique aux sinistres <strong>réellement observés</strong> sur le portefeuille de test. La
+  sinistralité <em>attendue</em> vaut {{ result() ? percent(result()!.portfolio.expected_loss_ratio, 0) : '—' }}
+  dans chaque segment, puisque la prime est proportionnelle au risque : c'est la sinistralité réalisée qui
+  révèle les segments fragiles.
+</p>
+
+@if (state().error; as message) {
+  <div class="alert" role="alert">{{ message }}</div>
+}
+
+@if (result(); as r) {
+  <div class="results" [class.stale]="state().loading" aria-live="polite">
+    <div class="tile-grid">
+      <div class="tile">
+        <div class="tile-label">Multiplicateur des sinistres</div>
+        <div class="tile-value">{{ multiplier(r.shock.claims_multiplier) }}</div>
+        <div class="tile-hint">Fréquence et coût se cumulent : (1 + f) × (1 + c)</div>
+      </div>
+      <div class="tile">
+        <div class="tile-label">S/P du portefeuille</div>
+        <div class="tile-value">{{ percent(r.portfolio.actual_loss_ratio, 0) }} → {{ percent(r.portfolio.stressed_loss_ratio, 0) }}</div>
+        <div class="tile-hint">Sinistres ÷ primes, réalisé → sous stress</div>
+      </div>
+      <div class="tile">
+        <div class="tile-label">Marge de prime sous stress</div>
+        <div class="tile-value" [class.negative]="r.portfolio.stressed_margin < 0">{{ euros(r.portfolio.stressed_margin) }}</div>
+        <div class="tile-hint">Réalisée : {{ euros(r.portfolio.actual_margin) }}</div>
+      </div>
+      <div class="tile">
+        <div class="tile-label">Choc qui annule la marge</div>
+        <div class="tile-value">{{ r.portfolio.break_even_shock !== null ? signedPercent(r.portfolio.break_even_shock) : '—' }}</div>
+        <div class="tile-hint">Hausse des sinistres qui porte le S/P à 100 %</div>
+      </div>
+    </div>
+
+    <p class="summary">
+      @if (r.segments_in_loss === 0) {
+        ✓ Tous les segments restent rentables sous ce scénario.
+      } @else {
+        ✗ {{ r.segments_in_loss }} segment{{ r.segments_in_loss > 1 ? 's' : '' }} sur {{ r.segments.length }}
+        {{ r.segments_in_loss > 1 ? 'passent' : 'passe' }} en perte (S/P au-delà de 100 %).
+      }
+    </p>
+
+    <div class="table-scroll">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Segment</th>
+            <th class="num">S/P réalisé</th>
+            <th>S/P sous stress <small>(repère : 100 %)</small></th>
+            <th class="num">Marge sous stress</th>
+            <th class="num">Choc toléré</th>
+            <th>État</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (row of r.segments; track row.segment) {
+            <tr>
+              <td>{{ segmentLabel(row) }}</td>
+              <td class="num">{{ percent(row.actual_loss_ratio, 0) }}</td>
+              <td>
+                <div class="ratio">
+                  <span class="ratio-track">
+                    <span class="ratio-bar" [class.over]="row.stressed_loss_ratio > 1"
+                          [style.width.%]="barWidth(row.stressed_loss_ratio)"></span>
+                    <span class="ratio-limit"></span>
+                  </span>
+                  <span class="ratio-value">{{ percent(row.stressed_loss_ratio, 0) }}</span>
+                </div>
+              </td>
+              <td class="num" [class.negative]="row.stressed_margin < 0">{{ euros(row.stressed_margin) }}</td>
+              <td class="num">{{ row.break_even_shock !== null ? signedPercent(row.break_even_shock) : '—' }}</td>
+              <td>
+                <span class="status" [class.ok]="row.stressed_margin >= 0" [class.ko]="row.stressed_margin < 0">
+                  {{ row.stressed_margin >= 0 ? '✓ rentable' : '✗ en perte' }}
+                </span>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </div>
+} @else if (state().loading) {
+  <div class="alert info"><span class="spinner"></span> Calcul du scénario…</div>
+}

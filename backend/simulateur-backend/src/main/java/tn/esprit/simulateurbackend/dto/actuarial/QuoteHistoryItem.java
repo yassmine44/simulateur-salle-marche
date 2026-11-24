@@ -17,7 +17,8 @@ public record QuoteHistoryItem(
         BigDecimal purePremium,
         BigDecimal commercialPremium,
         BigDecimal premiumMargin,
-        String frequencyModelVersion
+        String frequencyModelVersion,
+        String currency
 ) {
 
     public static QuoteHistoryItem from(ActuarialQuote quote) {
@@ -32,7 +33,8 @@ public record QuoteHistoryItem(
                 quote.getPurePremium(),
                 quote.getCommercialPremium(),
                 quote.getPremiumMargin(),
-                quote.getFrequencyModelVersion()
+                quote.getFrequencyModelVersion(),
+                quote.getCurrency()
         );
     }
 }

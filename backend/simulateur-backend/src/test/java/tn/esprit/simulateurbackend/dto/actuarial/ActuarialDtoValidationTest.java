@@ -85,6 +85,23 @@ class ActuarialDtoValidationTest {
     }
 
     @Test
+    void shouldValidateStressRequests() {
+        assertTrue(invalidFields(new StressRequest(0.2, 0.1, "by_area")).isEmpty());
+        assertTrue(invalidFields(new StressRequest(null, null, null)).isEmpty());
+        assertEquals(Set.of("frequencyShock"), invalidFields(new StressRequest(3.0, 0.0, null)));
+        assertEquals(Set.of("severityShock"), invalidFields(new StressRequest(0.0, -0.9, null)));
+        assertEquals(Set.of("segmentation"), invalidFields(new StressRequest(0.0, 0.0, "by_colour")));
+    }
+
+    @Test
+    void shouldValidateCurrencyRequests() {
+        assertTrue(invalidFields(new CurrencyRequest("TND", "dinar tunisien", 3.36, "BCT")).isEmpty());
+        assertEquals(Set.of("code"), invalidFields(new CurrencyRequest("dinar", "dinar", 3.36, null)));
+        assertEquals(Set.of("label"), invalidFields(new CurrencyRequest("TND", " ", 3.36, null)));
+        assertEquals(Set.of("rateFromModel"), invalidFields(new CurrencyRequest("TND", "dinar", 0.0, null)));
+    }
+
+    @Test
     void shouldRejectOutOfRangeHorizonAndTop() {
         QuoteRequest request = new QuoteRequest(profile("E", "B12", 20), 0.0, null, true, 12);
         assertEquals(Set.of("years", "top"), invalidFields(request));

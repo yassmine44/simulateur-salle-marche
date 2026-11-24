@@ -60,6 +60,21 @@ LARGE_CLAIM_QUANTILE = 0.995
 # Defaults are typical orders of magnitude for French motor insurance and are
 # meant to be overridden by the platform administrator.
 # --------------------------------------------------------------------------
+# --------------------------------------------------------------------------
+# Display currency.
+# The models are trained on French contracts: every amount they produce is in
+# euros (MODEL_CURRENCY). The API converts amounts to the display currency at
+# a rate set by the administrator. This is a currency conversion of a French
+# tariff, not a tariff of the Tunisian market.
+# --------------------------------------------------------------------------
+MODEL_CURRENCY = "EUR"
+DEFAULT_CURRENCY = {
+    "code": "TND",
+    "label": "dinar tunisien",
+    "rate_from_model": 3.36,  # TND per EUR
+    "source": "Cours moyen BCT, novembre 2026 (indicatif)",
+}
+
 EXPENSE_RATIO = 0.25  # management + acquisition costs, share of the commercial premium
 PROFIT_RATIO = 0.05  # target profit, share of the commercial premium
 SAFETY_LOADING = 0.03  # prudence margin on the pure premium (model uncertainty)

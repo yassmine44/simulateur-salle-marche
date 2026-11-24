@@ -8,7 +8,7 @@
 <div [formGroup]="form()">
   @for (section of sections(); track section.title) {
     <fieldset>
-      <legend>{{ section.title }}</legend>
+      <legend><app-icon [name]="section.icon" /> {{ section.title }}</legend>
       <div class="grid">
         @for (field of section.fields; track field.field) {
           <label class="field" [attr.for]="idPrefix() + '-' + field.field">

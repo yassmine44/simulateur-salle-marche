@@ -1,12 +1,52 @@
 // Styles partagés du module d'actuariat.
 // S'appuie sur les jetons globaux (styles.scss) : clair/sombre automatiques.
 
+// Carte « verre » SIX7 : mêmes jetons que le tableau de bord de l'application.
 .panel {
+  position: relative;
   padding: clamp(18px, 2vw, 24px);
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-lg);
-  background: var(--bg-card);
-  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--glass-border);
+  border-radius: 18px;
+  background: var(--glass-bg);
+  box-shadow: var(--glass-shadow);
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(140%);
+  backdrop-filter: blur(var(--glass-blur)) saturate(140%);
+  transition: box-shadow 0.2s ease, border-color 0.2s ease;
+
+  &:hover {
+    border-color: color-mix(in srgb, var(--six7-accent) 25%, var(--glass-border));
+    box-shadow: var(--glass-shadow-hover);
+  }
+}
+
+// Icône de section dans un médaillon dégradé.
+.section-icon {
+  display: inline-grid;
+  width: 34px;
+  height: 34px;
+  flex: none;
+  place-items: center;
+  border-radius: 11px;
+  color: #fff;
+  background: var(--six7-gradient);
+  box-shadow: 0 6px 16px var(--six7-glow);
+
+  svg {
+    width: 18px;
+    height: 18px;
+  }
+}
+
+.panel-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .panel {
+    transition: none;
+  }
 }
 
 .panel-heading {
@@ -162,10 +202,22 @@
 }
 
 .tile {
+  position: relative;
+  overflow: hidden;
   padding: 14px 16px;
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-md);
-  background: var(--bg-muted);
+  border: 1px solid var(--glass-border);
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--bg-card) 70%, transparent);
+
+  // Fin liseré dégradé en tête de tuile.
+  &::before {
+    position: absolute;
+    inset: 0 0 auto;
+    height: 3px;
+    background: var(--six7-gradient);
+    content: '';
+    opacity: 0.85;
+  }
 
   .tile-label {
     color: var(--text-secondary);

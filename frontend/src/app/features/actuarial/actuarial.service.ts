@@ -10,7 +10,9 @@ import {
   QuoteHistoryItem,
   QuoteRequest,
   QuoteResponse,
-  ReportName
+  ReportName,
+  StressResult,
+  StressSegmentation
 } from './actuarial.models';
 
 /** Accès à l'API du module d'actuariat (Spring Boot, /api/actuarial). */
@@ -44,6 +46,15 @@ export class ActuarialService {
     return this.http.post<ComparisonResponse>(
       `${this.baseUrl}/comparisons`,
       { profileA, profileB },
+      this.options
+    );
+  }
+
+  /** Marges du portefeuille tarifé sous chocs de fréquence et de coût des sinistres. */
+  stress(frequencyShock: number, severityShock: number, segmentation: StressSegmentation): Observable<StressResult> {
+    return this.http.post<StressResult>(
+      `${this.baseUrl}/stress`,
+      { frequencyShock, severityShock, segmentation },
       this.options
     );
   }

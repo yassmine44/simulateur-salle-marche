@@ -60,6 +60,7 @@ class ActuarialServiceTest {
         assertEquals(0.25, quote.getExpenseRatio());
         assertEquals("20261124162401", quote.getFrequencyModelVersion());
         assertEquals("20261124162402", quote.getSeverityModelVersion());
+        assertEquals("TND", quote.getCurrency());
     }
 
     @Test

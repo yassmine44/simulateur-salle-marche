@@ -90,6 +90,45 @@ class PricingEngine:
         )
 
 
+def save_assumptions(
+    assumptions: PricingAssumptions, directory: Path = config.ARTIFACTS_DIR
+) -> dict[str, object]:
+    """Replace the commercial assumptions of the pricing config (administration).
+
+    The file is written to a temporary name and atomically renamed, so a
+    concurrent reader never sees a half-written configuration. Models and the
+    large-claim cap are untouched: changing expenses or profit does not
+    require retraining.
+    """
+    path = directory / PRICING_CONFIG_NAME
+    stored = json.loads(path.read_text(encoding="utf-8"))
+    previous = stored.get("assumptions")
+    stored["assumptions"] = assumptions.to_dict()
+    temporary = path.with_suffix(".json.tmp")
+    temporary.write_text(json.dumps(stored, indent=2, ensure_ascii=False), encoding="utf-8")
+    temporary.replace(path)
+    return {"previous": previous, "current": stored["assumptions"]}
+
+
+def load_currency(directory: Path = config.ARTIFACTS_DIR) -> dict[str, object]:
+    """Display currency of the pricing config (default: dinar, see config)."""
+    path = directory / PRICING_CONFIG_NAME
+    stored = json.loads(path.read_text(encoding="utf-8")) if path.exists() else {}
+    return {**config.DEFAULT_CURRENCY, **stored.get("currency", {})}
+
+
+def save_currency(currency: dict[str, object], directory: Path = config.ARTIFACTS_DIR) -> dict[str, object]:
+    """Replace the display currency (administration); atomic write like save_assumptions."""
+    path = directory / PRICING_CONFIG_NAME
+    stored = json.loads(path.read_text(encoding="utf-8"))
+    previous = {**config.DEFAULT_CURRENCY, **stored.get("currency", {})}
+    stored["currency"] = currency
+    temporary = path.with_suffix(".json.tmp")
+    temporary.write_text(json.dumps(stored, indent=2, ensure_ascii=False), encoding="utf-8")
+    temporary.replace(path)
+    return {"previous": previous, "current": currency}
+
+
 def load_pricing_engine(
     directory: Path = config.ARTIFACTS_DIR,
     assumptions: PricingAssumptions | None = None,

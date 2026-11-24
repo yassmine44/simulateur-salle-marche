@@ -1,0 +1,44 @@
+<section class="actuarial">
+  <header class="hero">
+    <div class="hero-glow" aria-hidden="true"></div>
+    <div class="hero-main">
+      <span class="hero-icon"><app-icon name="shield" /></span>
+      <div>
+        <span class="hero-eyebrow">Module d'actuariat</span>
+        <h1>Assurance automobile</h1>
+        <p>
+          Tarification par intelligence artificielle, explication de chaque prime et provisionnement des sinistres,
+          sur des données réelles d'assurance.
+        </p>
+      </div>
+    </div>
+
+    <ul class="hero-facts">
+      <li><app-icon name="database" /><span><strong>678 013</strong> contrats réels</span></li>
+      <li><app-icon name="sparkles" /><span>IA <strong>explicable</strong> (Shapley)</span></li>
+      <li><app-icon name="staircase" /><span>Provisions <strong>Chain-Ladder</strong> + Mack</span></li>
+    </ul>
+
+    @if (currency(); as c) {
+      <p class="currency-note">
+        <app-icon name="info" />
+        <span>
+          Montants en <strong>{{ c.label }}</strong> ({{ c.code }}), convertis depuis l'euro au taux de
+          <strong>{{ rate(c) }}</strong>{{ c.source ? ' — ' + c.source : '' }}. Les modèles sont entraînés sur des
+          contrats français : il s'agit d'un tarif converti, pas d'un tarif du marché tunisien.
+        </span>
+      </p>
+    }
+  </header>
+
+  <nav class="tabs" aria-label="Sections du module d'actuariat">
+    @for (tab of tabs; track tab.path) {
+      <a [routerLink]="tab.path" routerLinkActive="active" ariaCurrentWhenActive="page">
+        <app-icon [name]="tab.icon" />
+        <span>{{ tab.label }}</span>
+      </a>
+    }
+  </nav>
+
+  <router-outlet />
+</section>

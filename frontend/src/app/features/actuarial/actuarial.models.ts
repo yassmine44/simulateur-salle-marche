@@ -20,6 +20,18 @@ export interface PolicyProfile {
 
 export type ProfileField = keyof PolicyProfile;
 
+/**
+ * Devise d'affichage. Les modèles calculent en euros (données françaises) ;
+ * les montants sont convertis au taux `rateFromModel` (ex. 3,36 DT pour 1 €).
+ */
+export interface Currency {
+  code: string;
+  label: string;
+  rateFromModel: number;
+  modelCurrency: string;
+  source: string | null;
+}
+
 export interface PricingAssumptions {
   expenseRatio: number;
   profitRatio: number;
@@ -51,6 +63,7 @@ export interface Contribution {
 }
 
 export interface QuoteResponse {
+  currency: Currency;
   years: number;
   frequency: number;
   claimProbability: number;
@@ -80,6 +93,7 @@ export interface ComparisonContribution {
 }
 
 export interface ComparisonResponse {
+  currency: Currency;
   premiumA: number;
   premiumB: number;
   premiumRatio: number;
@@ -98,6 +112,7 @@ export interface QuoteHistoryItem {
   commercialPremium: number;
   premiumMargin: number;
   frequencyModelVersion: string;
+  currency: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -116,6 +131,7 @@ export interface MetadataField {
 export interface ActuarialMetadata {
   fields: MetadataField[];
   defaultAssumptions: PricingAssumptions;
+  currency: Currency;
 }
 
 // ---------------------------------------------------------------------------
@@ -177,6 +193,7 @@ export interface MarginRow {
 }
 
 export interface PricingReport {
+  currency: Currency;
   large_claim_cap: { quantile: number; threshold: number; loading: number; excess_share: number };
   assumptions: PricingAssumptions & { expense_ratio?: number };
   pure_premium_metrics: ModelMetrics;
@@ -215,6 +232,7 @@ export interface DependencePoint {
 }
 
 export interface ExplainabilityReport {
+  currency: Currency;
   method: string;
   base_premium: number;
   global_sample_size: number;
@@ -343,4 +361,82 @@ export interface ReservingReport {
     interval_coverage: number;
     totals_within_interval: number;
   };
+}
+
+// ---------------------------------------------------------------------------
+// Stress test du portefeuille
+// ---------------------------------------------------------------------------
+export type StressSegmentation = 'by_risk_class' | 'by_area' | 'by_bonus_malus';
+
+export interface StressRow {
+  segment: string | number;
+  policies: number;
+  premiums: number;
+  expected_claims: number;
+  /** Sinistres réellement observés sur le portefeuille de test (base du stress). */
+  actual_claims: number;
+  stressed_claims: number;
+  actual_margin: number;
+  stressed_margin: number;
+  expected_loss_ratio: number;
+  actual_loss_ratio: number;
+  stressed_loss_ratio: number;
+  break_even_shock: number | null;
+}
+
+export interface StressResult {
+  shock: { frequency: number; severity: number; claims_multiplier: number };
+  portfolio: StressRow;
+  segments: StressRow[];
+  segments_in_loss: number;
+  currency: Currency;
+}
+
+// ---------------------------------------------------------------------------
+// Administration
+// ---------------------------------------------------------------------------
+export interface ModelCard {
+  name: string;
+  task: string;
+  algorithm: string;
+  version: string;
+  created_at: string;
+  data_source: string;
+  data_fingerprint: string;
+  metrics: ModelMetrics;
+  environment: { python: string; scikit_learn: string };
+}
+
+export interface AdminOverview {
+  engine: {
+    status: string;
+    modelVersions: { frequency: string; severity: string };
+    largeClaimLoading: number;
+    assumptions: PricingAssumptions;
+    currency: Currency;
+  } | null;
+  modelCards: { frequency_model: ModelCard; severity_model: ModelCard } | null;
+  engineError: string | null;
+  usage: {
+    totalQuotes: number;
+    quotesLast30Days: number;
+    distinctUsers: number;
+    byModelVersion: Array<{ version: string; quotes: number; averageCommercialPremium: number | null; lastQuoteAt: string }>;
+  };
+  recentActions: Array<{ id: number; type: 'ASSUMPTIONS_UPDATED' | 'CURRENCY_UPDATED' | 'MODELS_RELOADED'; actorEmail: string; createdAt: string; details: string | null }>;
+}
+
+export interface AdminQuote {
+  id: number;
+  createdAt: string;
+  userEmail: string;
+  driverAge: number;
+  bonusMalus: number;
+  area: string;
+  purePremium: number;
+  commercialPremium: number;
+  expenseRatio: number;
+  profitRatio: number;
+  frequencyModelVersion: string;
+  currency: string;
 }

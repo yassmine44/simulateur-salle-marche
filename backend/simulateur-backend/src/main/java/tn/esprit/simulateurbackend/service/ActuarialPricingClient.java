@@ -25,9 +25,11 @@ import tn.esprit.simulateurbackend.config.ActuarialServiceProperties;
 import tn.esprit.simulateurbackend.dto.actuarial.ChainLadderRequest;
 import tn.esprit.simulateurbackend.dto.actuarial.ComparisonRequest;
 import tn.esprit.simulateurbackend.dto.actuarial.ComparisonResponse;
+import tn.esprit.simulateurbackend.dto.actuarial.CurrencyRequest;
 import tn.esprit.simulateurbackend.dto.actuarial.PricingAssumptionsDto;
 import tn.esprit.simulateurbackend.dto.actuarial.QuoteRequest;
 import tn.esprit.simulateurbackend.dto.actuarial.QuoteResponse;
+import tn.esprit.simulateurbackend.dto.actuarial.StressRequest;
 
 /**
  * Client HTTP du moteur actuariel Python (ml-service, /api/actuarial/*).
@@ -97,6 +99,44 @@ public class ActuarialPricingClient {
                 .body(request)
                 .retrieve()
                 .body(JsonNode.class));
+    }
+
+    /** Stress test du portefeuille tarifé. */
+    public JsonNode stress(StressRequest request) {
+        return call(() -> restClient.post()
+                .uri("/stress")
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(request)
+                .retrieve()
+                .body(JsonNode.class));
+    }
+
+    /** Administration : remplace les hypothèses commerciales par défaut. */
+    public JsonNode updateAssumptions(PricingAssumptionsDto assumptions) {
+        PricingAssumptionsDto input = PricingAssumptionsDto.of(
+                assumptions.expenseRatio(), assumptions.profitRatio(), assumptions.safetyLoading()
+        );
+        return call(() -> restClient.put()
+                .uri("/admin/assumptions")
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(input)
+                .retrieve()
+                .body(JsonNode.class));
+    }
+
+    /** Administration : remplace la devise d'affichage et son taux de conversion. */
+    public JsonNode updateCurrency(CurrencyRequest currency) {
+        return call(() -> restClient.put()
+                .uri("/admin/currency")
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(currency)
+                .retrieve()
+                .body(JsonNode.class));
+    }
+
+    /** Administration : recharge les modèles après un réentraînement. */
+    public JsonNode reload() {
+        return call(() -> restClient.post().uri("/admin/reload").retrieve().body(JsonNode.class));
     }
 
     public JsonNode status() {

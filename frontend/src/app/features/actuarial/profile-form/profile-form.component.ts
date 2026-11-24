@@ -2,6 +2,7 @@ import { Component, computed, input } from '@angular/core';
 import { ReactiveFormsModule } from '@angular/forms';
 
 import { MetadataField, PROFILE_PRESETS, ProfilePreset } from '../actuarial.models';
+import { IconComponent } from '../ui/icon.component';
 import { FIELD_HINTS, fieldError, PROFILE_SECTIONS, ProfileForm } from './profile-form';
 
 /**
@@ -12,7 +13,7 @@ import { FIELD_HINTS, fieldError, PROFILE_SECTIONS, ProfileForm } from './profil
 @Component({
   selector: 'app-profile-form',
   standalone: true,
-  imports: [ReactiveFormsModule],
+  imports: [ReactiveFormsModule, IconComponent],
   templateUrl: './profile-form.component.html',
   styleUrl: './profile-form.component.scss'
 })
@@ -29,6 +30,7 @@ export class ProfileFormComponent {
     const byName = new Map(this.fields().map(f => [f.field, f]));
     return PROFILE_SECTIONS.map(section => ({
       title: section.title,
+      icon: section.icon,
       fields: section.fields.map(name => byName.get(name)).filter((f): f is MetadataField => !!f)
     }));
   });

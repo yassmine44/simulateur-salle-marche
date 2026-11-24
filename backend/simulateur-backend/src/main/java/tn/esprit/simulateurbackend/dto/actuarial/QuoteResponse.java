@@ -14,6 +14,7 @@ import java.util.List;
  * @param premiumMargin     prime commerciale − prime pure
  * @param expectedLossRatio prime pure / prime commerciale (S/P attendu)
  * @param explanation       décomposition XAI de la prime pure, ou {@code null}
+ * @param currency          devise des montants
  */
 public record QuoteResponse(
         double years,
@@ -27,8 +28,16 @@ public record QuoteResponse(
         double expectedLossRatio,
         PricingAssumptionsDto assumptions,
         ModelVersions modelVersions,
-        Explanation explanation
+        Explanation explanation,
+        Currency currency
 ) {
+
+    /**
+     * Devise d'affichage : les modèles calculent en {@code modelCurrency} (EUR, données
+     * françaises) et les montants sont convertis au taux {@code rateFromModel}.
+     */
+    public record Currency(String code, String label, double rateFromModel, String modelCurrency, String source) {
+    }
 
     public record ModelVersions(String frequency, String severity) {
     }
