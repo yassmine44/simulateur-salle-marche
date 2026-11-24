@@ -1,0 +1,17 @@
+{
+  "created_at": "2026-11-24T16:16:11+00:00",
+  "frequency_model_version": "20261124161609",
+  "severity_model_version": "20261124161609",
+  "large_claim_cap": {
+    "quantile": 0.995,
+    "threshold": 34792.54,
+    "loading": 0.396423,
+    "excess_share": 0.283885
+  },
+  "assumptions": {
+    "expense_ratio": 0.25,
+    "profit_ratio": 0.05,
+    "safety_loading": 0.03,
+    "commercial_factor": 1.471429
+  }
+}

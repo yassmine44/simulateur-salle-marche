@@ -1,0 +1,126 @@
+{
+  "name": "severity_model",
+  "task": "severity",
+  "algorithm": "DummyRegressor(mean)",
+  "target": "Severity",
+  "weight": "ClaimNb",
+  "features": [
+    "VehPower",
+    "VehAge",
+    "DrivAge",
+    "BonusMalus",
+    "Density",
+    "Area",
+    "VehBrand",
+    "VehGas",
+    "Region"
+  ],
+  "data_source": "freMTPL2freq (OpenML 41214) + freMTPL2sev (OpenML 41215), sinistres indemnisés",
+  "data_fingerprint": "b448e279c7a45a70",
+  "train_summary": {
+    "rows": 18708,
+    "total_weight": 19816.0
+  },
+  "test_summary": {
+    "rows": 6236,
+    "total_weight": 6628.0
+  },
+  "metrics": {
+    "deviance_power": 2.0,
+    "mean_deviance": 1.154428,
+    "d2_explained": -0.000519,
+    "gini": -0.023366,
+    "observed_total": 11433377.85,
+    "predicted_total": 11158072.44717,
+    "calibration_ratio": 0.975921
+  },
+  "candidates": [
+    {
+      "name": "baseline",
+      "algorithm": "DummyRegressor(mean)",
+      "description": "Coût moyen unique d'un sinistre (référence minimale).",
+      "fit_seconds": 0.09,
+      "train": {
+        "deviance_power": 2.0,
+        "mean_deviance": 1.123378,
+        "d2_explained": 0.0,
+        "gini": 0.015457,
+        "observed_total": 33359741.04,
+        "predicted_total": 33359741.04,
+        "calibration_ratio": 1.0
+      },
+      "test": {
+        "deviance_power": 2.0,
+        "mean_deviance": 1.154428,
+        "d2_explained": -0.000519,
+        "gini": -0.023366,
+        "observed_total": 11433377.85,
+        "predicted_total": 11158072.44717,
+        "calibration_ratio": 0.975921
+      }
+    },
+    {
+      "name": "gamma_glm",
+      "algorithm": "GammaRegressor (GLM, lien log)",
+      "description": "GLM Gamma : modèle de référence du marché pour le coût des sinistres.",
+      "fit_seconds": 0.11,
+      "train": {
+        "deviance_power": 2.0,
+        "mean_deviance": 1.10741,
+        "d2_explained": 0.014214,
+        "gini": 0.080613,
+        "observed_total": 33359741.04,
+        "predicted_total": 33211323.778646,
+        "calibration_ratio": 0.995551
+      },
+      "test": {
+        "deviance_power": 2.0,
+        "mean_deviance": 1.155409,
+        "d2_explained": -0.001369,
+        "gini": 0.023162,
+        "observed_total": 11433377.85,
+        "predicted_total": 11098061.40747,
+        "calibration_ratio": 0.970672
+      }
+    },
+    {
+      "name": "gamma_gbm",
+      "algorithm": "HistGradientBoostingRegressor (loss=gamma)",
+      "description": "Gradient boosting à perte Gamma : capte non-linéarités et interactions.",
+      "fit_seconds": 0.12,
+      "train": {
+        "deviance_power": 2.0,
+        "mean_deviance": 1.062896,
+        "d2_explained": 0.053839,
+        "gini": 0.163431,
+        "observed_total": 33359741.04,
+        "predicted_total": 32535562.321648,
+        "calibration_ratio": 0.975294
+      },
+      "test": {
+        "deviance_power": 2.0,
+        "mean_deviance": 1.170238,
+        "d2_explained": -0.014221,
+        "gini": 0.016774,
+        "observed_total": 11433377.85,
+        "predicted_total": 10850610.944301,
+        "calibration_ratio": 0.949029
+      }
+    }
+  ],
+  "parameters": {
+    "large_claim_cap": {
+      "quantile": 0.995,
+      "threshold": 34792.54,
+      "loading": 0.396423,
+      "excess_share": 0.283885
+    }
+  },
+  "random_state": 42,
+  "version": "20261124161609",
+  "created_at": "2026-11-24T16:16:09+00:00",
+  "environment": {
+    "python": "3.12.7",
+    "scikit_learn": "1.5.2"
+  }
+}

@@ -4,17 +4,25 @@ Implémentation du **§3.7 du cahier des charges** : modélisation de produits
 d'assurance non-vie (tarification, survenance des sinistres, indemnisations,
 marge de prime, provisionnement).
 
+| Exigence du cahier des charges | Implémentation | État |
+|---|---|---|
+| Estimer les primes selon l'assuré et le risque | `pricing.PricingEngine` (prime pure et commerciale) | ✅ |
+| Prédire la marge de prime (primes − sinistres attendus) | `pricing.portfolio_margin`, `premium_margin` par contrat | ✅ |
+| Probabilité de survenance d'un sinistre | `frequency.claim_probability` | ✅ |
+| Montant des indemnisations / provisionnement | `severity` (coût par sinistre) · Chain-Ladder | ✅ / étape 6 |
+
 ## Approche : fréquence × sévérité
 
 ```
 Profil assuré + contrat
-   ├─► Fréquence  λ(x)  = nombre de sinistres attendu par an      ← étape 1 (fait)
-   ├─► Sévérité   μ(x)  = coût moyen d'un sinistre                ← étape 2
+   ├─► Fréquence  λ(x)   sinistres indemnisés attendus par an   (GLM / GBM Poisson)
+   ├─► Sévérité   μ(x)   coût moyen écrêté d'un sinistre        (GLM / GBM Gamma)
+   ├─► Surcharge  L      sinistres graves mutualisés            (écrêtement au 99,5ᵉ centile)
    │
-   ├─► Prime pure        = λ(x) × μ(x)
-   ├─► Prime commerciale = prime pure × (1 + chargements)
-   ├─► Marge de prime    = primes encaissées − sinistres attendus
-   └─► P(sinistre sur t) = 1 − exp(−λ(x)·t)
+   ├─► Prime pure         P₀ = λ(x) · μ(x) · (1 + L)
+   ├─► Prime commerciale  P  = P₀ · (1 + sécurité) / (1 − frais − bénéfice)
+   ├─► Marge de prime     M  = P − P₀
+   └─► P(sinistre sur t)     = 1 − exp(−λ(x)·t)
 ```
 
 ## Données
@@ -28,51 +36,84 @@ française (CASdatasets), jeu de référence de la littérature actuarielle
 | freMTPL2freq | 41214 | 678 013 contrats | profil, exposition, nombre de sinistres |
 | freMTPL2sev | 41215 | 26 639 sinistres | montant de chaque sinistre |
 
-Téléchargé automatiquement au premier entraînement dans `data/openml/` (ignoré par git).
+Téléchargées automatiquement au premier entraînement dans `data/openml/` (ignoré par git).
 
-**Nettoyage** (`data.py`, seuils justifiés dans `config.py`) : suppression
-des guillemets ARFF, nombre de sinistres plafonné à 4, exposition à 1 an,
-âge véhicule à 20, âge conducteur à 90, bonus-malus à 150. Validation stricte
-du schéma (colonnes, nulls, unicité des contrats).
+### Traitements (`data.py`, seuils justifiés dans `config.py`)
 
-**Découpage** : 75 % entraînement / 25 % test, stratifié sur « au moins un
-sinistre », graine fixe (reproductible).
+* **Nettoyage** : guillemets ARFF supprimés ; plafonds : 4 sinistres, exposition
+  1 an, âge véhicule 20, âge conducteur 90, bonus-malus 150. Validation stricte
+  du schéma (colonnes, nulls, unicité des contrats, montants positifs).
+* **Convention des sinistres indemnisés** : 9 116 contrats déclarent des
+  sinistres sans montant (défaut connu de freMTPL2) et 195 sinistres ne
+  correspondent à aucun contrat. Le nombre de sinistres est recalculé comme le
+  nombre de sinistres *avec un montant* (36 056 déclarés → 26 405 indemnisés),
+  sinon la prime pure serait surestimée d'environ un quart.
+* **Écrêtement des sinistres graves** : montant médian 1 172 €, maximum
+  4,07 M€. Chaque sinistre est écrêté au 99,5ᵉ centile des sinistres
+  d'entraînement (34 793 €) ; l'excédent (28,4 % du coût) est mutualisé sur
+  tout le portefeuille par une surcharge `L = excédent / coût écrêté = 39,6 %`.
+* **Découpage** : 75 % / 25 % au niveau des contrats, stratifié sur « au moins
+  un sinistre », graine fixe. Les sinistres, le seuil d'écrêtement et la table
+  de sévérité sont dérivés de ce découpage : aucune fuite vers le test.
 
-## Étape 1 — Modèle de fréquence
+## Résultats (jeu de test : 169 504 contrats, 6 625 sinistres)
 
-Cible : `Frequency = ClaimNb / Exposure`, pondérée par `Exposure`,
-perte de Poisson (équivalent au maximum de vraisemblance de
-`N ~ Poisson(λ(x)·exposition)`).
+Métriques : déviance de la loi du modèle et D² (part de déviance expliquée)
+pour l'ajustement ; **Gini** (courbe de Lorenz) pour la capacité à classer les
+risques ; **calibration** (total prédit / total observé) pour la solvabilité.
 
-### Candidats comparés
+### Fréquence (Poisson, pondération par l'exposition)
 
-| Modèle | Rôle |
-|---|---|
-| `baseline` | Fréquence moyenne unique — tout modèle doit la battre |
-| `poisson_glm` | GLM de Poisson, lien log — référence du marché, coefficients = relativités tarifaires |
-| `poisson_gbm` | Gradient boosting à perte de Poisson — non-linéarités et interactions |
-
-### Résultats (jeu de test, 169 504 contrats)
-
-| Modèle | Déviance Poisson ↓ | D² expliqué ↑ | Gini ↑ | Calibration (prédit/observé) |
+| Modèle | Déviance ↓ | D² ↑ | Gini ↑ | Calibration |
 |---|---|---|---|---|
-| baseline | 0.6245 | 0.000 | 0.00 | 0.999 |
-| poisson_glm | 0.5927 | 0.051 | 0.283 | 1.002 |
-| **poisson_gbm** (champion) | **0.5704** | **0.087** | **0.340** | 0.999 |
+| baseline (fréquence moyenne) | 0.4804 | 0.000 | 0.00 | 0.993 |
+| poisson_glm | 0.4601 | 0.042 | 0.278 | 0.992 |
+| **poisson_gbm** (champion) | **0.4512** | **0.061** | **0.320** | 0.992 |
 
-Lecture des métriques :
+### Sévérité (Gamma, pondération par le nombre de sinistres)
 
-* **Déviance de Poisson / D²** — qualité d'ajustement. Un D² de quelques %
-  est normal en assurance : la survenance d'un sinistre est majoritairement
-  aléatoire, seule une partie est expliquée par le profil.
-* **Gini** — capacité à classer les assurés du moins au plus risqué ; c'est
-  ce qui rend un tarif compétitif.
-* **Calibration** — le modèle prédit le bon nombre total de sinistres
-  (solvabilité). Vérifiée aussi par décile de risque dans le rapport.
+| Modèle | Déviance ↓ | D² ↑ | Gini ↑ | Calibration |
+|---|---|---|---|---|
+| **baseline** (coût moyen, champion) | **1.1544** | −0.000 | −0.02 | 0.976 |
+| gamma_glm (α = 0.1, choisi par validation croisée 5 plis) | 1.1554 | −0.001 | 0.02 | 0.971 |
+| gamma_gbm | 1.1702 | −0.014 | 0.02 | 0.949 |
 
-Écart train/test du champion : Gini 0.43 → 0.34 (léger sur-apprentissage
-maîtrisé par early stopping ; amélioration possible par recherche
-d'hyperparamètres en validation croisée). Le GLM ne présente aucun écart.
+**Interprétation** : avec ces variables, le coût d'un sinistre n'est pas
+prédictible (D² en validation croisée : 0,4 % ± 0,5 %). Le profil de
+l'assuré explique *si* un sinistre survient, pas *combien* il coûte (qui
+dépend des circonstances : matériel vs corporel). C'est un résultat connu sur
+freMTPL2. La sélection automatique retient donc le coût moyen, ce qui est la
+décision statistiquement correcte : un modèle plus complexe n'ajouterait
+que du bruit. La différenciation tarifaire provient de la fréquence.
+
+### Prime pure vs sinistralité réelle du test
+
+| Indicateur | Valeur |
+|---|---|
+| Gini de la prime pure | **0.335** |
+| Calibration hors sinistres graves | **0.968** |
+| Calibration totale | 1.160 |
+| S/P attendu / réalisé | 0.680 / 0.586 |
+
+L'écart de calibration totale vient uniquement des sinistres graves : les
+4 plus gros sinistres (4,07 M€, 1,40 M€, 1,30 M€, 0,77 M€) sont tous dans
+l'entraînement. L'excédent pèse 28,4 % du coût en entraînement contre 14,2 %
+en test. Hors excédent, le modèle est calibré à 3 % près. La surcharge est
+donc prudente sur ce test ; c'est le rôle d'une surcharge de sinistres graves,
+estimée sur peu d'événements extrêmes (amélioration possible : théorie des
+valeurs extrêmes, loi de Pareto généralisée sur l'excédent).
+
+### Exemples de tarifs (hypothèses : frais 25 %, bénéfice 5 %, sécurité 3 %)
+
+| Profil | λ / an | P(sinistre 1 an) | Prime pure | Prime commerciale | Marge |
+|---|---|---|---|---|---|
+| Jeune conducteur urbain, malus | 0.255 | 22.5 % | 600 € | 883 € | 283 € |
+| Conducteur expérimenté rural, bonus max | 0.051 | 5.0 % | 121 € | 177 € | 57 € |
+| Conducteur senior, ville moyenne | 0.058 | 5.6 % | 135 € | 199 € | 64 € |
+
+Le rapport `pricing_report.json` détaille aussi primes, sinistres attendus,
+sinistres réels, marges et S/P par classe de risque, par zone et par tranche
+de bonus-malus.
 
 ## Utilisation
 
@@ -81,41 +122,55 @@ cd ml-service
 .\.venv\Scripts\Activate.ps1
 python -m pip install -r requirements-dev.txt
 
-python -m actuarial.train_frequency            # entraînement complet (~30 s)
-python -m actuarial.train_frequency --sample 100000
-python -m pytest tests/actuarial               # 28 tests, données synthétiques
+python -m actuarial.train                  # pipeline complet (~1 min)
+python -m actuarial.train --sample 100000  # exécution rapide
+python -m pytest tests/actuarial           # 60 tests, données synthétiques
+```
+
+```python
+from actuarial.pricing import PricingAssumptions, load_pricing_engine
+
+engine = load_pricing_engine()                       # hypothèses enregistrées
+engine = load_pricing_engine(assumptions=PricingAssumptions(expense_ratio=0.20))
+quotes = engine.quote(profiles_dataframe)            # une ligne par profil
 ```
 
 ## Artefacts (`artifacts/actuarial/`)
 
 | Fichier | Contenu |
 |---|---|
-| `frequency_model.joblib` | Pipeline champion (prétraitement + modèle) |
-| `frequency_model.card.json` | Fiche modèle : version, empreinte des données, métriques, environnement |
-| `frequency_report.json` | Comparaison des candidats, courbes de Lorenz, table de calibration (prêts pour le dashboard Angular) |
+| `frequency_model.joblib` / `.card.json` | Champion fréquence + fiche modèle |
+| `severity_model.joblib` / `.card.json` | Champion sévérité + fiche (seuil d'écrêtement) |
+| `pricing_config.json` | Versions des modèles, écrêtement, hypothèses commerciales |
+| `frequency_report.json`, `severity_report.json` | Comparaison des candidats, courbes de Lorenz, calibration par décile |
+| `pricing_report.json` | Qualité de la prime pure, diagnostic sinistres graves, marges par segment, exemples |
 
-Le chargement (`registry.load_model`) refuse un modèle entraîné avec une
-autre version de scikit-learn, pour éviter des prédictions silencieusement fausses.
+Chaque fiche modèle contient la version, l'empreinte des données
+d'entraînement, les métriques et l'environnement. Le chargement refuse un
+modèle entraîné avec une autre version de scikit-learn.
 
 ## Architecture du code
 
 ```
 actuarial/
-├── config.py           seuils, chemins, graine
-├── schema.py           contrat des colonnes (partagé avec l'API et Spring)
-├── data.py             chargement, nettoyage, validation, découpage
-├── preprocessing.py    encodage GLM (binning, one-hot, log) / arbres (ordinal)
-├── metrics.py          déviance, D², Lorenz/Gini, calibration
-├── frequency.py        candidats, benchmark, champion, P(sinistre)
-├── registry.py         persistance versionnée + fiche modèle
-└── train_frequency.py  CLI d'entraînement
-tests/actuarial/        tests sur portefeuille synthétique au processus connu
+├── config.py         seuils, chemins, graine, hypothèses commerciales
+├── schema.py         contrat des colonnes (partagé avec l'API et Spring)
+├── data.py           chargement, nettoyage, sinistres indemnisés, écrêtement, découpage
+├── preprocessing.py  encodage GLM (binning, one-hot, log) / arbres (ordinal)
+├── metrics.py        déviance Tweedie, D², Lorenz/Gini, calibration
+├── modeling.py       banc d'essai générique : tâche, candidats, champion
+├── frequency.py      candidats Poisson, P(sinistre)
+├── severity.py       candidats Gamma
+├── pricing.py        prime pure/commerciale, marge, rechargement du moteur
+├── registry.py       persistance versionnée + fiche modèle
+└── train.py          pipeline d'entraînement de bout en bout
+tests/actuarial/      60 tests sur portefeuille synthétique au processus connu
 ```
 
 ## Feuille de route
 
 1. ~~Données + modèle de fréquence~~
-2. Modèle de sévérité (freMTPL2sev), prime pure/commerciale, marge de prime
+2. ~~Modèle de sévérité, prime pure/commerciale, marge de prime~~
 3. Explicabilité SHAP (§3.6)
 4. API FastAPI + endpoints Spring Boot
 5. Écrans Angular

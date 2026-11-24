@@ -8,9 +8,12 @@ from __future__ import annotations
 
 # Identifiers, targets and weights
 POLICY_ID = "IDpol"
-CLAIM_COUNT = "ClaimNb"
-EXPOSURE = "Exposure"
+CLAIM_COUNT = "ClaimNb"  # number of paid claims (claims with a recorded amount)
+EXPOSURE = "Exposure"  # years of coverage
 FREQUENCY = "Frequency"  # ClaimNb / Exposure: annualised claim frequency
+CLAIM_AMOUNT = "ClaimAmount"  # total incurred amount of the policy (uncapped)
+CAPPED_AMOUNT = "ClaimAmountCapped"  # total amount after large-claim capping
+SEVERITY = "Severity"  # CAPPED_AMOUNT / ClaimNb: average capped cost per claim
 
 # Rating factors (features)
 AREA = "Area"  # A (rural) .. F (urban centre)
@@ -41,3 +44,4 @@ FEATURES: tuple[str, ...] = NUMERIC_FEATURES + CATEGORICAL_FEATURES
 REQUIRED_POLICY_COLUMNS: frozenset[str] = frozenset(
     {POLICY_ID, CLAIM_COUNT, EXPOSURE, *FEATURES}
 )
+REQUIRED_CLAIM_COLUMNS: frozenset[str] = frozenset({POLICY_ID, CLAIM_AMOUNT})

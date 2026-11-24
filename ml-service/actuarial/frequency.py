@@ -3,7 +3,7 @@
 Statistical framing
 -------------------
 For a policy i observed during an exposure e_i (in years), the number of
-claims N_i is modelled as
+paid claims N_i is modelled as
 
     N_i ~ Poisson(lambda(x_i) * e_i)
 
@@ -29,11 +29,6 @@ poisson_gbm  Gradient boosted trees with a Poisson loss: captures
 
 from __future__ import annotations
 
-import logging
-import time
-from collections.abc import Callable
-from dataclasses import dataclass, field
-
 import numpy as np
 import pandas as pd
 from sklearn.dummy import DummyRegressor
@@ -43,46 +38,23 @@ from sklearn.pipeline import Pipeline
 
 from actuarial import config
 from actuarial import schema as s
-from actuarial.data import PortfolioSplit
-from actuarial.metrics import FrequencyMetrics, evaluate_frequency
+from actuarial.metrics import POISSON
+from actuarial.modeling import Candidate, Task, predict
 from actuarial.preprocessing import (
     build_glm_preprocessor,
     build_tree_preprocessor,
     tree_categorical_mask,
 )
 
-logger = logging.getLogger(__name__)
+FREQUENCY_TASK = Task(
+    name="frequency",
+    target=s.FREQUENCY,
+    weight=s.EXPOSURE,
+    deviance_power=POISSON,
+)
 
 
-@dataclass(frozen=True)
-class Candidate:
-    name: str
-    algorithm: str
-    description: str
-    build: Callable[[], Pipeline]
-
-
-@dataclass
-class CandidateResult:
-    candidate: Candidate
-    model: Pipeline
-    train_metrics: FrequencyMetrics
-    test_metrics: FrequencyMetrics
-    fit_seconds: float
-    test_predictions: np.ndarray = field(repr=False)
-
-    def summary(self) -> dict[str, object]:
-        return {
-            "name": self.candidate.name,
-            "algorithm": self.candidate.algorithm,
-            "description": self.candidate.description,
-            "fit_seconds": round(self.fit_seconds, 2),
-            "train": self.train_metrics.to_dict(),
-            "test": self.test_metrics.to_dict(),
-        }
-
-
-def build_candidates(random_state: int = config.RANDOM_STATE) -> tuple[Candidate, ...]:
+def build_frequency_candidates(random_state: int = config.RANDOM_STATE) -> tuple[Candidate, ...]:
     return (
         Candidate(
             name="baseline",
@@ -138,18 +110,9 @@ def build_candidates(random_state: int = config.RANDOM_STATE) -> tuple[Candidate
     )
 
 
-def fit_frequency_model(model: Pipeline, policies: pd.DataFrame) -> Pipeline:
-    model.fit(
-        policies[list(s.FEATURES)],
-        policies[s.FREQUENCY],
-        model__sample_weight=policies[s.EXPOSURE],
-    )
-    return model
-
-
 def predict_frequency(model: Pipeline, profiles: pd.DataFrame) -> np.ndarray:
-    """Expected number of claims per policy-year for each risk profile."""
-    return np.asarray(model.predict(profiles[list(s.FEATURES)]), dtype=float)
+    """Expected number of paid claims per policy-year for each risk profile."""
+    return predict(model, profiles)
 
 
 def claim_probability(frequency: np.ndarray | float, years: np.ndarray | float = 1.0) -> np.ndarray:
@@ -159,50 +122,3 @@ def claim_probability(frequency: np.ndarray | float, years: np.ndarray | float =
     if np.any(frequency < 0) or np.any(years < 0):
         raise ValueError("Frequency and duration must be non-negative.")
     return -np.expm1(-frequency * years)
-
-
-def benchmark_candidates(
-    split: PortfolioSplit,
-    candidates: tuple[Candidate, ...] | None = None,
-) -> list[CandidateResult]:
-    """Fit every candidate on the train set and score it on the held-out test set."""
-    results: list[CandidateResult] = []
-    for candidate in candidates or build_candidates():
-        logger.info("Fitting %s", candidate.name)
-        started = time.perf_counter()
-        model = fit_frequency_model(candidate.build(), split.train)
-        elapsed = time.perf_counter() - started
-
-        train_pred = predict_frequency(model, split.train)
-        test_pred = predict_frequency(model, split.test)
-        result = CandidateResult(
-            candidate=candidate,
-            model=model,
-            train_metrics=evaluate_frequency(
-                split.train[s.FREQUENCY], train_pred, split.train[s.EXPOSURE]
-            ),
-            test_metrics=evaluate_frequency(
-                split.test[s.FREQUENCY], test_pred, split.test[s.EXPOSURE]
-            ),
-            fit_seconds=elapsed,
-            test_predictions=test_pred,
-        )
-        logger.info(
-            "%-12s test deviance=%.5f  D2=%.4f  Gini=%.4f  calibration=%.4f  (%.1fs)",
-            candidate.name,
-            result.test_metrics.mean_poisson_deviance,
-            result.test_metrics.d2_explained,
-            result.test_metrics.gini,
-            result.test_metrics.calibration_ratio,
-            elapsed,
-        )
-        results.append(result)
-    return results
-
-
-def select_champion(results: list[CandidateResult]) -> CandidateResult:
-    """The champion minimises the out-of-sample Poisson deviance (the
-    quantity the models are trained to minimise)."""
-    if not results:
-        raise ValueError("No candidate to select from.")
-    return min(results, key=lambda r: r.test_metrics.mean_poisson_deviance)

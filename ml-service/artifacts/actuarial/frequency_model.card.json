@@ -1,8 +1,8 @@
 {
   "name": "frequency_model",
-  "task": "claim_frequency",
+  "task": "frequency",
   "algorithm": "HistGradientBoostingRegressor (loss=poisson)",
-  "target": "Frequency = ClaimNb / Exposure (sinistres par an)",
+  "target": "Frequency",
   "weight": "Exposure",
   "features": [
     "VehPower",
@@ -15,101 +15,103 @@
     "VehGas",
     "Region"
   ],
-  "data_source": "freMTPL2freq (OpenML 41214)",
-  "data_fingerprint": "588f3d6751158d3e",
+  "data_source": "freMTPL2freq (OpenML 41214) + freMTPL2sev (OpenML 41215), sinistres indemnisés",
+  "data_fingerprint": "b448e279c7a45a70",
   "train_summary": {
-    "policies": 508509,
-    "exposure_years": 268796.66,
-    "claims": 27037,
-    "claim_frequency": 0.100585,
-    "share_with_claim": 0.050235
+    "rows": 508509,
+    "total_weight": 268942.56
   },
   "test_summary": {
-    "policies": 169504,
-    "exposure_years": 89563.45,
-    "claims": 9019,
-    "claim_frequency": 0.1007,
-    "share_with_claim": 0.050235
+    "rows": 169504,
+    "total_weight": 89417.54
   },
   "metrics": {
-    "mean_poisson_deviance": 0.5704,
-    "d2_explained": 0.086664,
-    "gini": 0.340048,
-    "observed_claims": 9019.0,
-    "predicted_claims": 9005.462798,
-    "calibration_ratio": 0.998499
+    "deviance_power": 1.0,
+    "mean_deviance": 0.451187,
+    "d2_explained": 0.060777,
+    "gini": 0.319726,
+    "observed_total": 6625.0,
+    "predicted_total": 6574.617935,
+    "calibration_ratio": 0.992395
   },
   "candidates": [
     {
       "name": "baseline",
       "algorithm": "DummyRegressor(mean)",
       "description": "Fréquence moyenne unique du portefeuille (référence minimale).",
-      "fit_seconds": 2.54,
+      "fit_seconds": 2.66,
       "train": {
-        "mean_poisson_deviance": 0.625,
+        "deviance_power": 1.0,
+        "mean_deviance": 0.477272,
         "d2_explained": 0.0,
-        "gini": 0.002929,
-        "observed_claims": 27037.0,
-        "predicted_claims": 27037.0,
+        "gini": 0.003063,
+        "observed_total": 19780.0,
+        "predicted_total": 19780.0,
         "calibration_ratio": 1.0
       },
       "test": {
-        "mean_poisson_deviance": 0.624524,
-        "d2_explained": -0.0,
-        "gini": -0.002284,
-        "observed_claims": 9019.0,
-        "predicted_claims": 9008.768924,
-        "calibration_ratio": 0.998866
+        "deviance_power": 1.0,
+        "mean_deviance": 0.480387,
+        "d2_explained": -8e-06,
+        "gini": -0.003053,
+        "observed_total": 6625.0,
+        "predicted_total": 6576.418861,
+        "calibration_ratio": 0.992667
       }
     },
     {
       "name": "poisson_glm",
       "algorithm": "PoissonRegressor (GLM, lien log)",
       "description": "GLM de Poisson : modèle de référence du marché, entièrement interprétable.",
-      "fit_seconds": 3.6,
+      "fit_seconds": 3.87,
       "train": {
-        "mean_poisson_deviance": 0.592535,
-        "d2_explained": 0.051944,
-        "gini": 0.286591,
-        "observed_claims": 27037.0,
-        "predicted_claims": 27052.659867,
-        "calibration_ratio": 1.000579
+        "deviance_power": 1.0,
+        "mean_deviance": 0.45566,
+        "d2_explained": 0.045281,
+        "gini": 0.288482,
+        "observed_total": 19780.0,
+        "predicted_total": 19783.744614,
+        "calibration_ratio": 1.000189
       },
       "test": {
-        "mean_poisson_deviance": 0.592687,
-        "d2_explained": 0.050977,
-        "gini": 0.282679,
-        "observed_claims": 9019.0,
-        "predicted_claims": 9036.437267,
-        "calibration_ratio": 1.001933
+        "deviance_power": 1.0,
+        "mean_deviance": 0.460052,
+        "d2_explained": 0.042323,
+        "gini": 0.277742,
+        "observed_total": 6625.0,
+        "predicted_total": 6571.610258,
+        "calibration_ratio": 0.991941
       }
     },
     {
       "name": "poisson_gbm",
       "algorithm": "HistGradientBoostingRegressor (loss=poisson)",
       "description": "Gradient boosting à perte de Poisson : capte non-linéarités et interactions.",
-      "fit_seconds": 6.52,
+      "fit_seconds": 4.14,
       "train": {
-        "mean_poisson_deviance": 0.549653,
-        "d2_explained": 0.120555,
-        "gini": 0.433047,
-        "observed_claims": 27037.0,
-        "predicted_claims": 26954.951341,
-        "calibration_ratio": 0.996965
+        "deviance_power": 1.0,
+        "mean_deviance": 0.433977,
+        "d2_explained": 0.090713,
+        "gini": 0.397173,
+        "observed_total": 19780.0,
+        "predicted_total": 19773.194332,
+        "calibration_ratio": 0.999656
       },
       "test": {
-        "mean_poisson_deviance": 0.5704,
-        "d2_explained": 0.086664,
-        "gini": 0.340048,
-        "observed_claims": 9019.0,
-        "predicted_claims": 9005.462798,
-        "calibration_ratio": 0.998499
+        "deviance_power": 1.0,
+        "mean_deviance": 0.451187,
+        "d2_explained": 0.060777,
+        "gini": 0.319726,
+        "observed_total": 6625.0,
+        "predicted_total": 6574.617935,
+        "calibration_ratio": 0.992395
       }
     }
   ],
+  "parameters": {},
   "random_state": 42,
-  "version": "20261124160504",
-  "created_at": "2026-11-24T16:05:04+00:00",
+  "version": "20261124161609",
+  "created_at": "2026-11-24T16:16:09+00:00",
   "environment": {
     "python": "3.12.7",
     "scikit_learn": "1.5.2"

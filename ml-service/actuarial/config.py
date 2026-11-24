@@ -43,3 +43,23 @@ EXPOSURE_CAP = 1.0
 VEHICLE_AGE_CAP = 20
 DRIVER_AGE_CAP = 90
 BONUS_MALUS_CAP = 150
+
+# --------------------------------------------------------------------------
+# Large claims (écrêtement des sinistres graves).
+# Claim amounts are extremely heavy-tailed: median 1 172 EUR, maximum
+# 4.07 MEUR, and the top 1 % of claims carry ~31 % of the total cost. A few
+# bodily-injury claims would otherwise drive the severity model. Standard
+# practice: cap every claim at a high quantile, model the capped severity per
+# risk profile, and spread the capped-off excess over the whole portfolio as a
+# proportional large-claim loading (surcharge sinistres graves).
+# --------------------------------------------------------------------------
+LARGE_CLAIM_QUANTILE = 0.995
+
+# --------------------------------------------------------------------------
+# Commercial premium assumptions (hypothèses de tarification).
+# Defaults are typical orders of magnitude for French motor insurance and are
+# meant to be overridden by the platform administrator.
+# --------------------------------------------------------------------------
+EXPENSE_RATIO = 0.25  # management + acquisition costs, share of the commercial premium
+PROFIT_RATIO = 0.05  # target profit, share of the commercial premium
+SAFETY_LOADING = 0.03  # prudence margin on the pure premium (model uncertainty)

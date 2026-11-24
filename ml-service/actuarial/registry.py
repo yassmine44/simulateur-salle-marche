@@ -39,6 +39,7 @@ class ModelCard:
     test_summary: dict[str, Any]
     metrics: dict[str, Any]
     candidates: list[dict[str, Any]]
+    parameters: dict[str, Any] = field(default_factory=dict)
     random_state: int = config.RANDOM_STATE
     version: str = field(
         default_factory=lambda: datetime.now(timezone.utc).strftime("%Y%m%d%H%M%S")
@@ -80,7 +81,7 @@ def load_model(name: str, directory: Path = config.ARTIFACTS_DIR) -> tuple[Any, 
     if not model_path.exists() or not card_path.exists():
         raise FileNotFoundError(
             f"Model '{name}' not found in {directory}. Train it first "
-            f"(python -m actuarial.train_frequency)."
+            f"(python -m actuarial.train)."
         )
     card = json.loads(card_path.read_text(encoding="utf-8"))
     if card.get("environment", {}).get("scikit_learn") != sklearn.__version__:
