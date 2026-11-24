@@ -55,6 +55,7 @@ from sklearn.pipeline import Pipeline
 
 from actuarial import config
 from actuarial import schema as s
+from actuarial.data import clip_rating_factors
 from actuarial.pricing import PricingEngine, load_pricing_engine
 
 PredictFn = Callable[[pd.DataFrame], np.ndarray]
@@ -226,6 +227,7 @@ class PremiumExplainer:
         return float(np.exp(log_base) * (1 + self.engine.large_claim_loading))
 
     def explain(self, profiles: pd.DataFrame) -> list[PremiumExplanation]:
+        profiles = clip_rating_factors(profiles)
         frequency_phi = self.frequency.shapley_values(profiles)
         severity_phi = self.severity.shapley_values(profiles)
         pure_premiums = self.engine.quote(profiles)["pure_premium"].to_numpy()

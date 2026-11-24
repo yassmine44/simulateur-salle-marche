@@ -180,6 +180,78 @@ de 200 contrats (définition « interventionnelle », celle de `shap`).
 du conducteur expérimenté rural : bonus-malus ×2,76, âge ×1,52, densité ×1,31,
 région ×1,20, marque ×0,75.
 
+## Intégration (API)
+
+```
+Angular ──HTTPS, session + CSRF──► Spring Boot /api/actuarial/*  ──HTTP interne──► ml-service /api/actuarial/*
+                                   authentification, validation,                     modèles, tarification,
+                                   traçabilité (table actuarial_quotes)              explications XAI
+```
+
+### Spring Boot — API publique (utilisateur authentifié)
+
+| Méthode | Route | Rôle |
+|---|---|---|
+| GET | `/api/actuarial/metadata` | Définition du formulaire : libellés, bornes, valeurs acceptées |
+| GET | `/api/actuarial/status` | Versions des modèles, hypothèses en vigueur |
+| POST | `/api/actuarial/quotes` | Devis expliqué ; tracé au nom de l'utilisateur |
+| GET | `/api/actuarial/quotes/me?limit=20` | Historique des devis de l'utilisateur (max 100) |
+| POST | `/api/actuarial/comparisons` | Pourquoi A paie plus que B |
+| GET | `/api/actuarial/reports/{frequency\|severity\|pricing\|explainability}` | Rapports d'évaluation |
+| GET | `/api/actuarial/model-cards` | Fiches des modèles |
+
+Exemple de requête :
+
+```json
+POST /api/actuarial/quotes
+{
+  "profile": {"driverAge": 20, "bonusMalus": 100, "vehicleAge": 2, "vehiclePower": 7,
+              "density": 5000, "area": "E", "vehicleBrand": "B12",
+              "vehicleGas": "Regular", "region": "R11"},
+  "years": 1,
+  "assumptions": {"expenseRatio": 0.25, "profitRatio": 0.05, "safetyLoading": 0.03},
+  "explain": true,
+  "top": 3
+}
+```
+
+Réponse (extrait) : `purePremium` 600,23 · `commercialPremium` 883,19 ·
+`premiumMargin` 282,96 · `claimProbability` 0,225 · `explanation.contributions` :
+bonus-malus ×2,18 (hausse), âge ×1,81 (hausse), marque ×0,76 (baisse).
+
+**Erreurs** (format `ProblemDetail`) : 400 champ invalide (message en
+français par champ), 401 non authentifié, 404 rapport inconnu, 503 moteur
+injoignable ou modèles non entraînés (avec la consigne), 502 réponse
+inattendue du moteur.
+
+**Traçabilité (§4)** : chaque devis est enregistré avec l'utilisateur, la
+date, le profil, les résultats, les hypothèses et les versions des modèles.
+Les modèles étant versionnés et déterministes, tout devis est reproductible.
+
+**Configuration** (`application.properties`) :
+`app.actuarial.ml-service.base-url` (variable `ACTUARIAL_ML_URL`, défaut
+`http://localhost:5000`), délais de connexion 2 s et de réponse 10 s.
+
+### ml-service — API interne
+
+Mêmes cas d'usage sous `/api/actuarial/` (`status`, `metadata`, `quote`,
+`compare`, `reports/{name}`, `model-cards`). Contrat JSON en camelCase,
+indépendant des noms de colonnes d'entraînement. Validation stricte : une
+catégorie jamais vue à l'entraînement est refusée (422) au lieu d'être
+tarifée avec un effet par défaut ; les valeurs au-delà des plafonds
+d'entraînement sont plafonnées comme à l'entraînement (pas d'écart
+entraînement/production). Modèles chargés une fois, de façon thread-safe.
+Latence mesurée d'un devis expliqué : ~0,8 s.
+
+### Tests de l'intégration
+
+* Python : 27 tests d'API (`tests/actuarial/test_api.py`) — cas nominaux,
+  9 cas de validation, plafonnement, 503 sans modèles, rechargement.
+* Java : 24 tests — client HTTP avec `MockRestServiceServer` (traduction de
+  chaque erreur, champs transmis), service (traçabilité, historique borné),
+  contrôleur (authentification sur chaque route), validation des DTO. Le
+  JSON de test du client est la réponse réelle du ml-service.
+
 ## Utilisation
 
 ```powershell
@@ -189,7 +261,7 @@ python -m pip install -r requirements-dev.txt
 
 python -m actuarial.train                  # pipeline complet (~1 min)
 python -m actuarial.train --sample 100000  # exécution rapide
-python -m pytest tests/actuarial           # 73 tests, données synthétiques
+python -m pytest tests/actuarial           # 100 tests, données synthétiques
 ```
 
 ```python
@@ -236,8 +308,9 @@ actuarial/
 ├── pricing.py        prime pure/commerciale, marge, rechargement du moteur
 ├── explainability.py valeurs de Shapley exactes, explications locales/globales
 ├── registry.py       persistance versionnée + fiche modèle
-└── train.py          pipeline d'entraînement de bout en bout
-tests/actuarial/      73 tests sur portefeuille synthétique au processus connu
+├── train.py          pipeline d'entraînement de bout en bout
+└── api.py            API FastAPI (contrat camelCase, validation, chargement thread-safe)
+tests/actuarial/      100 tests sur portefeuille synthétique au processus connu
 ```
 
 ## Feuille de route
@@ -245,7 +318,7 @@ tests/actuarial/      73 tests sur portefeuille synthétique au processus connu
 1. ~~Données + modèle de fréquence~~
 2. ~~Modèle de sévérité, prime pure/commerciale, marge de prime~~
 3. ~~Explicabilité SHAP (§3.6)~~
-4. API FastAPI + endpoints Spring Boot
+4. ~~API FastAPI + endpoints Spring Boot~~
 5. Écrans Angular
 6. Provisionnement Chain-Ladder
 7. Administration et intégration (stress test, formation)

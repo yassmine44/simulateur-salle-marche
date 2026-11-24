@@ -110,12 +110,24 @@ def prepare_policies(raw: pd.DataFrame) -> pd.DataFrame:
 
     df[s.CLAIM_COUNT] = df[s.CLAIM_COUNT].clip(upper=config.CLAIM_COUNT_CAP)
     df[s.EXPOSURE] = df[s.EXPOSURE].clip(upper=config.EXPOSURE_CAP)
-    df[s.VEHICLE_AGE] = df[s.VEHICLE_AGE].clip(upper=config.VEHICLE_AGE_CAP)
-    df[s.DRIVER_AGE] = df[s.DRIVER_AGE].clip(upper=config.DRIVER_AGE_CAP)
-    df[s.BONUS_MALUS] = df[s.BONUS_MALUS].clip(upper=config.BONUS_MALUS_CAP)
+    df = clip_rating_factors(df)
 
     df[s.FREQUENCY] = df[s.CLAIM_COUNT] / df[s.EXPOSURE]
     return df.reset_index(drop=True)
+
+
+def clip_rating_factors(profiles: pd.DataFrame) -> pd.DataFrame:
+    """Apply the training caps to rating factors.
+
+    Called both at training time and before every prediction, so that a
+    profile served by the API is transformed exactly like the data the models
+    learned from (no training/serving skew). Returns a copy.
+    """
+    df = profiles.copy()
+    df[s.VEHICLE_AGE] = df[s.VEHICLE_AGE].clip(upper=config.VEHICLE_AGE_CAP)
+    df[s.DRIVER_AGE] = df[s.DRIVER_AGE].clip(upper=config.DRIVER_AGE_CAP)
+    df[s.BONUS_MALUS] = df[s.BONUS_MALUS].clip(upper=config.BONUS_MALUS_CAP)
+    return df
 
 
 def prepare_claims(raw: pd.DataFrame) -> pd.DataFrame:

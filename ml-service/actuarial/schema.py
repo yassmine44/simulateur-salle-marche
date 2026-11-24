@@ -53,6 +53,27 @@ FEATURE_LABELS: dict[str, str] = {
     REGION: "Région",
 }
 
+# Values accepted at inference time. Categories are those seen in training
+# (an unseen category would silently fall back to a default effect). Numeric
+# ranges are wider than the training caps: values above a cap are clipped
+# exactly as during training (see data.clip_rating_factors).
+CATEGORY_DOMAINS: dict[str, tuple[str, ...]] = {
+    AREA: ("A", "B", "C", "D", "E", "F"),
+    VEHICLE_BRAND: ("B1", "B2", "B3", "B4", "B5", "B6", "B10", "B11", "B12", "B13", "B14"),
+    VEHICLE_GAS: ("Diesel", "Regular"),
+    REGION: (
+        "R11", "R21", "R22", "R23", "R24", "R25", "R26", "R31", "R41", "R42", "R43",
+        "R52", "R53", "R54", "R72", "R73", "R74", "R82", "R83", "R91", "R93", "R94",
+    ),
+}
+NUMERIC_DOMAINS: dict[str, tuple[int, int]] = {
+    VEHICLE_POWER: (4, 15),
+    VEHICLE_AGE: (0, 100),
+    DRIVER_AGE: (18, 100),
+    BONUS_MALUS: (50, 230),
+    DENSITY: (1, 30_000),
+}
+
 REQUIRED_POLICY_COLUMNS: frozenset[str] = frozenset(
     {POLICY_ID, CLAIM_COUNT, EXPOSURE, *FEATURES}
 )

@@ -33,6 +33,7 @@ from features import (
     latest_feature_row,
 )
 from train import train as run_training
+from actuarial.api import router as actuarial_router
 
 ROOT = Path(__file__).resolve().parent
 MODEL_PATH = ROOT / "artifacts" / "random_forest_sp500.joblib"
@@ -46,6 +47,9 @@ app = FastAPI(
     ),
     version="1.0.0",
 )
+
+# Module d'Actuariat (cahier des charges §3.7): /api/actuarial/*
+app.include_router(actuarial_router)
 
 _model: RandomForestClassifier | None = None
 

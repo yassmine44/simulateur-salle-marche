@@ -30,6 +30,7 @@ from sklearn.pipeline import Pipeline
 
 from actuarial import config
 from actuarial import schema as s
+from actuarial.data import clip_rating_factors
 from actuarial.frequency import claim_probability, predict_frequency
 from actuarial.registry import load_model
 from actuarial.severity import predict_severity
@@ -70,6 +71,7 @@ class PricingEngine:
 
     def quote(self, profiles: pd.DataFrame, years: float | np.ndarray = 1.0) -> pd.DataFrame:
         """Annual tariff of each risk profile, and its claim probability over `years`."""
+        profiles = clip_rating_factors(profiles)
         frequency = predict_frequency(self.frequency_model, profiles)
         severity = predict_severity(self.severity_model, profiles)
         pure = frequency * severity * (1 + self.large_claim_loading)
