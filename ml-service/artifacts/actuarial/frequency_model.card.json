@@ -1,0 +1,117 @@
+{
+  "name": "frequency_model",
+  "task": "claim_frequency",
+  "algorithm": "HistGradientBoostingRegressor (loss=poisson)",
+  "target": "Frequency = ClaimNb / Exposure (sinistres par an)",
+  "weight": "Exposure",
+  "features": [
+    "VehPower",
+    "VehAge",
+    "DrivAge",
+    "BonusMalus",
+    "Density",
+    "Area",
+    "VehBrand",
+    "VehGas",
+    "Region"
+  ],
+  "data_source": "freMTPL2freq (OpenML 41214)",
+  "data_fingerprint": "588f3d6751158d3e",
+  "train_summary": {
+    "policies": 508509,
+    "exposure_years": 268796.66,
+    "claims": 27037,
+    "claim_frequency": 0.100585,
+    "share_with_claim": 0.050235
+  },
+  "test_summary": {
+    "policies": 169504,
+    "exposure_years": 89563.45,
+    "claims": 9019,
+    "claim_frequency": 0.1007,
+    "share_with_claim": 0.050235
+  },
+  "metrics": {
+    "mean_poisson_deviance": 0.5704,
+    "d2_explained": 0.086664,
+    "gini": 0.340048,
+    "observed_claims": 9019.0,
+    "predicted_claims": 9005.462798,
+    "calibration_ratio": 0.998499
+  },
+  "candidates": [
+    {
+      "name": "baseline",
+      "algorithm": "DummyRegressor(mean)",
+      "description": "Fréquence moyenne unique du portefeuille (référence minimale).",
+      "fit_seconds": 2.54,
+      "train": {
+        "mean_poisson_deviance": 0.625,
+        "d2_explained": 0.0,
+        "gini": 0.002929,
+        "observed_claims": 27037.0,
+        "predicted_claims": 27037.0,
+        "calibration_ratio": 1.0
+      },
+      "test": {
+        "mean_poisson_deviance": 0.624524,
+        "d2_explained": -0.0,
+        "gini": -0.002284,
+        "observed_claims": 9019.0,
+        "predicted_claims": 9008.768924,
+        "calibration_ratio": 0.998866
+      }
+    },
+    {
+      "name": "poisson_glm",
+      "algorithm": "PoissonRegressor (GLM, lien log)",
+      "description": "GLM de Poisson : modèle de référence du marché, entièrement interprétable.",
+      "fit_seconds": 3.6,
+      "train": {
+        "mean_poisson_deviance": 0.592535,
+        "d2_explained": 0.051944,
+        "gini": 0.286591,
+        "observed_claims": 27037.0,
+        "predicted_claims": 27052.659867,
+        "calibration_ratio": 1.000579
+      },
+      "test": {
+        "mean_poisson_deviance": 0.592687,
+        "d2_explained": 0.050977,
+        "gini": 0.282679,
+        "observed_claims": 9019.0,
+        "predicted_claims": 9036.437267,
+        "calibration_ratio": 1.001933
+      }
+    },
+    {
+      "name": "poisson_gbm",
+      "algorithm": "HistGradientBoostingRegressor (loss=poisson)",
+      "description": "Gradient boosting à perte de Poisson : capte non-linéarités et interactions.",
+      "fit_seconds": 6.52,
+      "train": {
+        "mean_poisson_deviance": 0.549653,
+        "d2_explained": 0.120555,
+        "gini": 0.433047,
+        "observed_claims": 27037.0,
+        "predicted_claims": 26954.951341,
+        "calibration_ratio": 0.996965
+      },
+      "test": {
+        "mean_poisson_deviance": 0.5704,
+        "d2_explained": 0.086664,
+        "gini": 0.340048,
+        "observed_claims": 9019.0,
+        "predicted_claims": 9005.462798,
+        "calibration_ratio": 0.998499
+      }
+    }
+  ],
+  "random_state": 42,
+  "version": "20261124160504",
+  "created_at": "2026-11-24T16:05:04+00:00",
+  "environment": {
+    "python": "3.12.7",
+    "scikit_learn": "1.5.2"
+  }
+}
