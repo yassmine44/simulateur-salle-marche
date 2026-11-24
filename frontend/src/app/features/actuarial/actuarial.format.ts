@@ -27,6 +27,18 @@ export function formatCompactEuros(value: number): string {
   return COMPACT_EUROS.format(value);
 }
 
+const COMPACT_USD = new Intl.NumberFormat('fr-FR', {
+  style: 'currency',
+  currency: 'USD',
+  notation: 'compact',
+  maximumFractionDigits: 1
+});
+
+/** Montant en dollars, notation compacte (ex. « 17 Md $US »). */
+export function formatCompactUsd(value: number): string {
+  return COMPACT_USD.format(value);
+}
+
 export function formatPercent(ratio: number, digits = 1): string {
   return new Intl.NumberFormat('fr-FR', {
     style: 'percent',

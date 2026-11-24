@@ -11,6 +11,7 @@ import org.springframework.test.web.client.MockRestServiceServer;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.server.ResponseStatusException;
 
+import tn.esprit.simulateurbackend.dto.actuarial.ChainLadderRequest;
 import tn.esprit.simulateurbackend.dto.actuarial.PricingAssumptionsDto;
 import tn.esprit.simulateurbackend.dto.actuarial.QuoteRequest;
 import tn.esprit.simulateurbackend.dto.actuarial.QuoteResponse;
@@ -133,6 +134,43 @@ class ActuarialPricingClientTest {
 
         assertEquals("poisson_gbm", client.report("pricing").path("champion").asString());
         server.verify();
+    }
+
+    @Test
+    void shouldPostTriangleWithNullFutureCells() {
+        server.expect(requestTo(ROOT + "/reserving/chain-ladder"))
+                .andExpect(method(HttpMethod.POST))
+                .andExpect(content().string(containsString("[[100.0,150.0,160.0],[110.0,170.0,null],[120.0]]")))
+                .andExpect(content().string(not(containsString("origins"))))
+                .andRespond(withSuccess("{\"total\": {\"reserve\": 123.4}}", MediaType.APPLICATION_JSON));
+
+        var request = new ChainLadderRequest(
+                null,
+                java.util.Arrays.asList(
+                        java.util.List.of(100.0, 150.0, 160.0),
+                        java.util.Arrays.asList(110.0, 170.0, null),
+                        java.util.List.of(120.0)
+                ),
+                0.95
+        );
+
+        assertEquals(123.4, client.chainLadder(request).path("total").path("reserve").asDouble());
+        server.verify();
+    }
+
+    @Test
+    void shouldExplainARejectedTriangle() {
+        server.expect(requestTo(ROOT + "/reserving/chain-ladder"))
+                .andRespond(withStatus(HttpStatus.UNPROCESSABLE_CONTENT)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .body("{\"detail\": \"Ligne 2 : les valeurs après la diagonale doivent être vides.\"}"));
+
+        var request = new ChainLadderRequest(null, java.util.List.of(), null);
+        ResponseStatusException error =
+                assertThrows(ResponseStatusException.class, () -> client.chainLadder(request));
+
+        assertEquals(HttpStatus.BAD_REQUEST, error.getStatusCode());
+        assertTrue(error.getReason().contains("après la diagonale"));
     }
 
     @Test

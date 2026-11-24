@@ -112,4 +112,21 @@ class ActuarialServiceTest {
         service.report(" Pricing ");
         verify(client).report("pricing");
     }
+
+    @Test
+    void shouldServeTheReservingReport() {
+        service.report("reserving");
+        verify(client).report("reserving");
+    }
+
+    @Test
+    void shouldDelegateChainLadderWithoutTracingAQuote() {
+        var request = new tn.esprit.simulateurbackend.dto.actuarial.ChainLadderRequest(
+                null, List.of(List.of(1.0, 2.0, 3.0), List.of(1.0, 2.0), List.of(1.0)), null
+        );
+        service.chainLadder(request);
+
+        verify(client).chainLadder(request);
+        verifyNoInteractions(repository);
+    }
 }

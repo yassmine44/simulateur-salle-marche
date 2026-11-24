@@ -184,3 +184,71 @@ def test_main_application_exposes_the_actuarial_routes() -> None:
 
     paths = {route.path for route in app.routes}
     assert {"/api/actuarial/quote", "/api/actuarial/compare", "/api/actuarial/metadata"} <= paths
+
+
+# --- reserving (Chain-Ladder on a user triangle) ----------------------------------
+def _taylor_ashe_cumulative() -> list[list[float]]:
+    from itertools import accumulate
+
+    from tests.actuarial.test_reserving import TAYLOR_ASHE
+
+    return [list(accumulate(row)) for row in TAYLOR_ASHE]
+
+
+def test_chain_ladder_on_a_user_triangle(client: TestClient) -> None:
+    response = client.post(
+        "/api/actuarial/reserving/chain-ladder",
+        json={"triangle": _taylor_ashe_cumulative(), "origins": list(range(1988, 1998))},
+    )
+    assert response.status_code == 200
+    body = response.json()
+    assert round(body["total"]["reserve"]) == 18_680_856
+    assert round(body["total"]["mack_se"]) == 2_447_095
+    assert body["origins"][0]["origin"] == 1988
+
+
+def test_chain_ladder_accepts_rows_padded_with_nulls(client: TestClient) -> None:
+    rows = _taylor_ashe_cumulative()
+    padded = [row + [None] * (10 - len(row)) for row in rows]
+    short = client.post("/api/actuarial/reserving/chain-ladder", json={"triangle": rows}).json()
+    full = client.post("/api/actuarial/reserving/chain-ladder", json={"triangle": padded}).json()
+    assert short["total"] == full["total"]
+
+
+def test_chain_ladder_confidence_level_widens_the_interval(client: TestClient) -> None:
+    rows = _taylor_ashe_cumulative()
+    narrow = client.post("/api/actuarial/reserving/chain-ladder", json={"triangle": rows, "confidenceLevel": 0.8}).json()
+    wide = client.post("/api/actuarial/reserving/chain-ladder", json={"triangle": rows, "confidenceLevel": 0.99}).json()
+    assert wide["total"]["ci_low"] < narrow["total"]["ci_low"]
+    assert wide["total"]["ci_high"] > narrow["total"]["ci_high"]
+
+
+@pytest.mark.parametrize(
+    ("payload", "message"),
+    [
+        ({"triangle": [[1.0, 2.0], [1.0]]}, None),  # fewer than 3 rows
+        ({"triangle": [[1, 2, 3], [1, 2, 3], [1]]}, "après la diagonale"),
+        ({"triangle": [[1, 2, 3, 4], [1, 2], [1]]}, "Ligne 1"),
+        ({"triangle": [[1, 2, 3], [0, 2], [1]]}, "strictement positifs"),
+        ({"triangle": [[1, 2, 3], [1, 2], [1]], "origins": [2001, 2002]}, "origins"),
+        ({"triangle": [[1, 2, 3], [1, 2], [1]], "confidenceLevel": 1.0}, None),
+    ],
+)
+def test_invalid_triangles_are_rejected_with_a_reason(client: TestClient, payload, message) -> None:
+    response = client.post("/api/actuarial/reserving/chain-ladder", json=payload)
+    assert response.status_code == 422
+    if message:
+        assert message in str(response.json()["detail"])
+
+
+def test_chain_ladder_works_without_trained_models(tmp_path) -> None:
+    response = _client(tmp_path).post(
+        "/api/actuarial/reserving/chain-ladder", json={"triangle": _taylor_ashe_cumulative()}
+    )
+    assert response.status_code == 200
+
+
+def test_missing_reserving_report_returns_503(client: TestClient) -> None:
+    response = client.get("/api/actuarial/reports/reserving")
+    assert response.status_code == 503
+    assert "actuarial.reserving_report" in response.json()["detail"]

@@ -9,7 +9,7 @@ marge de prime, provisionnement).
 | Estimer les primes selon l'assuré et le risque | `pricing.PricingEngine` (prime pure et commerciale) | ✅ |
 | Prédire la marge de prime (primes − sinistres attendus) | `pricing.portfolio_margin`, `premium_margin` par contrat | ✅ |
 | Probabilité de survenance d'un sinistre | `frequency.claim_probability` | ✅ |
-| Montant des indemnisations / provisionnement | `severity` (coût par sinistre) · Chain-Ladder | ✅ / étape 6 |
+| Montant des indemnisations / provisionnement | `severity` (coût par sinistre) · `reserving` (Chain-Ladder + Mack, backtest réel) | ✅ |
 | §3.6 Explainable AI : contributions, sens, explications locales/globales | `explainability` (valeurs de Shapley exactes) | ✅ |
 
 ## Approche : fréquence × sévérité
@@ -180,6 +180,67 @@ de 200 contrats (définition « interventionnelle », celle de `shap`).
 du conducteur expérimenté rural : bonus-malus ×2,76, âge ×1,52, densité ×1,31,
 région ×1,20, marque ×0,75.
 
+## Provisionnement des sinistres (Chain-Ladder et Mack)
+
+Exigence §3.7 : « estimer le montant des indemnisations […] simuler l'argent
+qui devra être remboursé aux assurés ». Un sinistre est payé sur plusieurs
+années ; la **provision** est ce qui reste à payer sur les sinistres déjà
+survenus.
+
+### Méthode (`reserving.py`)
+
+* **Chain-Ladder** : facteurs de développement pondérés par les volumes
+  `fₖ = Σ C[i,k+1] / Σ C[i,k]`, projection du triangle jusqu'à l'ultime.
+* **Mack (1993)** : erreur standard de chaque provision et du total
+  (erreur de processus + erreur d'estimation des fₖ, covariance entre
+  années), dernier σ² extrapolé par la règle de Mack. Intervalles par une loi
+  log-normale ajustée (provisions positives et asymétriques).
+* **Validation** : sur le triangle de Taylor & Ashe (1983), référence de
+  l'article de Mack et du package R `ChainLadder`, l'implémentation retrouve
+  exactement les valeurs publiées : provision **18 680 856**, erreur standard
+  **2 447 095**, ultimes et erreurs par année.
+
+### Données réelles et backtest (`schedule_p.py`, `reserving_report.py`)
+
+**CAS Loss Reserve Database** (Schedule P, responsabilité civile automobile,
+146 groupes d'assureurs américains, survenance 1988-1997, 10 ans de
+développement). On se place au 31/12/1997 (triangle supérieur seul connu),
+puis on compare la provision estimée à ce qui a **réellement été payé**
+ensuite. Portefeuilles : marché (87 assureurs aux données propres) et les
+5 plus grands assureurs.
+
+| Portefeuille | Provision estimée (k$) | Erreur std. | Réellement payé | Écart | Dans l'IC 95 % |
+|---|---|---|---|---|---|
+| Marché (87 assureurs) | 16 996 854 | 4,1 % | 15 495 987 | +9,7 % | non |
+| State Farm | 12 586 821 | 4,4 % | 11 561 327 | +8,9 % | oui |
+| USAA | 1 964 890 | 7,6 % | 1 745 835 | +12,5 % | oui |
+| FL Farm Bureau | 296 281 | 4,4 % | 294 557 | +0,6 % | oui |
+| New Jersey Manufacturers | 494 113 | 5,9 % | 481 049 | +2,7 % | oui |
+| NC Farm Bureau | 178 201 | 4,6 % | 135 891 | +31,1 % | non |
+
+**Lecture critique** : les ordres de grandeur sont bons, mais Chain-Ladder
+**surestime les 6 portefeuilles** (les paiements se sont accélérés après
+1997, contre l'hypothèse de facteurs stables) et les intervalles à 95 % ne
+contiennent la réalité que pour **80 %** des 54 années testées. C'est la
+conclusion de la monographie CAS de Meyers (2015, *Stochastic Loss Reserving
+Using Bayesian MCMC Models*) sur ces mêmes données : le modèle de Mack
+sous-estime l'incertitude réelle. Pistes : modèles bayésiens à tendance
+calendaire, bootstrap ODP.
+
+### Simulation sur un triangle utilisateur
+
+`POST /api/actuarial/reserving/chain-ladder` (ml-service et Spring) calcule
+provisions, erreurs de Mack et intervalles (niveau au choix) pour un
+triangle cumulé fourni ; validation précise (forme, diagonale, montants
+strictement positifs, 3 à 30 années). Dans l'interface, onglet
+**Provisionnement → Mon triangle** : copier-coller depuis un tableur
+(tabulation, point-virgule ou espace ; virgule décimale ; colonne d'années
+reconnue).
+
+```powershell
+python -m actuarial.reserving_report   # télécharge Schedule P (1 Mo) et génère le rapport
+```
+
 ## Intégration (API)
 
 ```
@@ -251,6 +312,7 @@ Route `/app/actuarial`, lien « Actuariat » dans le menu, chargée à la demand
 |---|---|
 | **Tarification** | Formulaire de profil (profils types, bornes issues de `/metadata`), hypothèses commerciales et horizon, prime commerciale, prime pure, marge, probabilité de sinistre, explication facteur par facteur avec phrase de lecture, historique des devis |
 | **Comparaison** | Deux profils côte à côte ; décomposition du ratio des primes A/B |
+| **Provisionnement** | Portefeuilles réels (provision, erreur de Mack, intervalle, backtest, triangle complété) ou triangle collé par l'utilisateur |
 | **Portefeuille et modèles** | Gini, calibration, S/P attendu/réalisé, surcharge sinistres graves ; comparaison des modèles ; courbe de Lorenz ; calibration par décile ; importance des variables ; effet d'une variable ; marges par segment |
 
 Graphiques en SVG/CSS, sans dépendance : barres divergentes de relativités
@@ -271,11 +333,11 @@ les tests et les styles.
 
 * Python : 27 tests d'API (`tests/actuarial/test_api.py`) — cas nominaux,
   9 cas de validation, plafonnement, 503 sans modèles, rechargement.
-* Angular : 36 tests (`ng test --include='src/app/features/actuarial/**/*.spec.ts'`) —
+* Angular : 56 tests (`ng test --include='src/app/features/actuarial/**/*.spec.ts'`) —
   échelles des graphiques, formats, service HTTP et cache, formulaire,
   composants graphiques, page de tarification (soumission par le vrai bouton,
   conversion des hypothèses, erreurs).
-* Java : 24 tests — client HTTP avec `MockRestServiceServer` (traduction de
+* Java : 29 tests — client HTTP avec `MockRestServiceServer` (traduction de
   chaque erreur, champs transmis), service (traçabilité, historique borné),
   contrôleur (authentification sur chaque route), validation des DTO. Le
   JSON de test du client est la réponse réelle du ml-service.
@@ -289,7 +351,7 @@ python -m pip install -r requirements-dev.txt
 
 python -m actuarial.train                  # pipeline complet (~1 min)
 python -m actuarial.train --sample 100000  # exécution rapide
-python -m pytest tests/actuarial           # 102 tests, données synthétiques
+python -m pytest tests/actuarial           # 129 tests, données synthétiques
 ```
 
 ```python
@@ -335,10 +397,13 @@ actuarial/
 ├── severity.py       candidats Gamma
 ├── pricing.py        prime pure/commerciale, marge, rechargement du moteur
 ├── explainability.py valeurs de Shapley exactes, explications locales/globales
+├── reserving.py      triangle, Chain-Ladder, erreurs de Mack, intervalles
+├── schedule_p.py     données CAS Schedule P, portefeuilles, triangle connu / réalisé
+├── reserving_report.py rapport de provisionnement et backtest
 ├── registry.py       persistance versionnée + fiche modèle
 ├── train.py          pipeline d'entraînement de bout en bout
 └── api.py            API FastAPI (contrat camelCase, validation, chargement thread-safe)
-tests/actuarial/      102 tests sur portefeuille synthétique au processus connu
+tests/actuarial/      129 tests (données synthétiques, triangle de référence)
 ```
 
 ## Feuille de route
@@ -348,5 +413,5 @@ tests/actuarial/      102 tests sur portefeuille synthétique au processus connu
 3. ~~Explicabilité SHAP (§3.6)~~
 4. ~~API FastAPI + endpoints Spring Boot~~
 5. ~~Écrans Angular~~
-6. Provisionnement Chain-Ladder
+6. ~~Provisionnement Chain-Ladder~~
 7. Administration et intégration (stress test, formation)

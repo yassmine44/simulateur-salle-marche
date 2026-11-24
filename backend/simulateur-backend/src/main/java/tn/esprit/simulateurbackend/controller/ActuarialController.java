@@ -19,6 +19,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import tools.jackson.databind.JsonNode;
 
+import tn.esprit.simulateurbackend.dto.actuarial.ChainLadderRequest;
 import tn.esprit.simulateurbackend.dto.actuarial.ComparisonRequest;
 import tn.esprit.simulateurbackend.dto.actuarial.ComparisonResponse;
 import tn.esprit.simulateurbackend.dto.actuarial.QuoteHistoryItem;
@@ -83,7 +84,17 @@ public class ActuarialController {
         return ResponseEntity.ok(actuarialService.compare(request));
     }
 
-    /** Rapports d'évaluation : frequency, severity, pricing, explainability. */
+    /** Provisionnement Chain-Ladder (avec erreurs de Mack) d'un triangle fourni. */
+    @PostMapping("/reserving/chain-ladder")
+    public ResponseEntity<JsonNode> chainLadder(
+            Authentication authentication,
+            @Valid @RequestBody ChainLadderRequest request
+    ) {
+        requireUser(authentication);
+        return ResponseEntity.ok(actuarialService.chainLadder(request));
+    }
+
+    /** Rapports d'évaluation : frequency, severity, pricing, explainability, reserving. */
     @GetMapping("/reports/{name}")
     public ResponseEntity<JsonNode> report(Authentication authentication, @PathVariable String name) {
         requireUser(authentication);

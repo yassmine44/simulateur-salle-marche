@@ -74,6 +74,17 @@ class ActuarialDtoValidationTest {
     }
 
     @Test
+    void shouldValidateChainLadderRequests() {
+        var rows = java.util.List.of(
+                java.util.List.of(1.0, 2.0, 3.0), java.util.List.of(1.0, 2.0), java.util.List.of(1.0)
+        );
+        assertTrue(invalidFields(new ChainLadderRequest(null, rows, 0.95)).isEmpty());
+        assertEquals(Set.of("triangle"), invalidFields(new ChainLadderRequest(null, rows.subList(0, 2), null)));
+        assertEquals(Set.of("triangle"), invalidFields(new ChainLadderRequest(null, null, null)));
+        assertEquals(Set.of("confidenceLevel"), invalidFields(new ChainLadderRequest(null, rows, 1.0)));
+    }
+
+    @Test
     void shouldRejectOutOfRangeHorizonAndTop() {
         QuoteRequest request = new QuoteRequest(profile("E", "B12", 20), 0.0, null, true, 12);
         assertEquals(Set.of("years", "top"), invalidFields(request));

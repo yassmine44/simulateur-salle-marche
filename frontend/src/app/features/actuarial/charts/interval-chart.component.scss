@@ -1,0 +1,143 @@
+@use 'viz-common';
+
+.plot-wrap {
+  position: relative;
+}
+
+.plot {
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: visible;
+  outline: none;
+
+  &:focus-visible {
+    border-radius: var(--radius-sm);
+    box-shadow: 0 0 0 2px var(--primary);
+  }
+}
+
+.grid {
+  stroke: var(--viz-grid);
+}
+
+.axis {
+  stroke: var(--border-strong);
+}
+
+.tick {
+  fill: var(--text-muted);
+  font-size: 10.5px;
+  font-variant-numeric: tabular-nums;
+
+  &.y {
+    dominant-baseline: middle;
+    text-anchor: end;
+  }
+
+  &.x {
+    text-anchor: middle;
+  }
+}
+
+.hit {
+  fill: transparent;
+
+  &.active {
+    fill: var(--bg-hover);
+  }
+}
+
+.range {
+  fill: var(--viz-series-1);
+  opacity: 0.28;
+  pointer-events: none;
+}
+
+.estimate {
+  fill: var(--viz-series-1);
+  stroke: var(--bg-card);
+  stroke-width: 2;
+  pointer-events: none;
+}
+
+.actual {
+  fill: var(--viz-series-2);
+  stroke: var(--bg-card);
+  stroke-width: 2;
+  pointer-events: none;
+}
+
+.swatch {
+  &.dot {
+    border-radius: 50%;
+  }
+
+  &.diamond {
+    border-radius: 1px;
+    transform: rotate(45deg) scale(0.85);
+  }
+
+  &.range {
+    width: 6px;
+    height: 12px;
+    background: var(--viz-series-1);
+    opacity: 0.35;
+  }
+}
+
+.tooltip {
+  position: absolute;
+  z-index: 2;
+  top: 8px;
+  min-width: 220px;
+  margin-left: 14px;
+  padding: 8px 10px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  background: var(--bg-card);
+  box-shadow: var(--shadow-md);
+  font-size: 11.5px;
+  pointer-events: none;
+
+  &.right {
+    margin-left: 0;
+    transform: translateX(calc(-100% - 14px));
+  }
+}
+
+.tooltip-title {
+  margin-bottom: 4px;
+  color: var(--text-secondary);
+  font-weight: 650;
+}
+
+.tooltip-row {
+  display: grid;
+  grid-template-columns: 10px 1fr auto;
+  align-items: center;
+  gap: 6px;
+  color: var(--text-primary);
+
+  strong {
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+.tooltip-note {
+  margin-top: 4px;
+  color: var(--text-secondary);
+}
+
+.scale-note {
+  padding: 1px 6px;
+  border: 1px solid var(--border-color);
+  border-radius: 999px;
+  color: var(--text-muted);
+  font-size: 10.5px;
+}
+
+.zero {
+  stroke: var(--viz-reference);
+  stroke-width: 1.5;
+}

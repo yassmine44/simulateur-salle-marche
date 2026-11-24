@@ -1,0 +1,79 @@
+@use '../actuarial-ui';
+
+:host {
+  display: block;
+}
+
+.tile-value.small {
+  font-size: 17px;
+}
+
+.block {
+  margin-top: 22px;
+
+  h3 {
+    margin: 0 0 6px;
+    font-size: 14.5px;
+  }
+}
+
+.hint {
+  margin: 0 0 10px;
+  color: var(--text-secondary);
+  font-size: 12px;
+  line-height: 1.55;
+}
+
+.projected-sample {
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+.triangle {
+  th[scope='row'] {
+    color: var(--text-primary);
+    font-weight: 650;
+  }
+
+  td.known {
+    color: var(--text-primary);
+  }
+
+  td.diagonal {
+    color: var(--text-primary);
+    font-weight: 750;
+  }
+
+  td.projected {
+    color: var(--text-muted);
+    font-style: italic;
+    background: var(--bg-muted);
+  }
+
+  td.reserve {
+    color: var(--text-primary);
+    font-weight: 700;
+    border-left: 1px solid var(--border-strong);
+  }
+
+  tfoot td,
+  tfoot th {
+    color: var(--text-secondary);
+    font-size: 11.5px;
+    border-bottom: 0;
+  }
+}
+
+.status {
+  display: inline-block;
+  margin-left: 4px;
+  font-weight: 700;
+
+  &.ok {
+    color: var(--success);
+  }
+
+  &.ko {
+    color: var(--danger);
+  }
+}

@@ -19,6 +19,11 @@ export const ACTUARIAL_ROUTES: Routes = [
         loadComponent: () => import('./pages/compare-page.component').then(m => m.ComparePageComponent)
       },
       {
+        path: 'provisionnement',
+        title: 'Provisionnement — Actuariat',
+        loadComponent: () => import('./pages/reserving-page.component').then(m => m.ReservingPageComponent)
+      },
+      {
         path: 'portefeuille',
         title: 'Portefeuille et modèles — Actuariat',
         loadComponent: () => import('./pages/insights-page.component').then(m => m.InsightsPageComponent)

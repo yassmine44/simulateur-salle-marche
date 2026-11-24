@@ -1,0 +1,120 @@
+<section class="panel intro">
+  <div class="panel-heading">
+    <div>
+      <span class="eyebrow">Provisionnement des sinistres</span>
+      <h2>Combien l'assureur doit-il encore payer ?</h2>
+      <p>
+        Un sinistre survenu cette année est souvent payé sur plusieurs années (expertises, soins, procès).
+        La <strong>provision</strong> est l'argent à mettre de côté pour ces paiements futurs. La méthode
+        <strong>Chain-Ladder</strong> l'estime à partir du rythme de paiement observé par le passé, et le
+        <strong>modèle de Mack</strong> mesure l'incertitude de cette estimation.
+      </p>
+    </div>
+    <div class="mode-switch" role="tablist" aria-label="Source du triangle">
+      <button type="button" role="tab" [attr.aria-selected]="mode() === 'portfolios'"
+              [class.active]="mode() === 'portfolios'" (click)="mode.set('portfolios')">Portefeuilles réels</button>
+      <button type="button" role="tab" [attr.aria-selected]="mode() === 'simulation'"
+              [class.active]="mode() === 'simulation'" (click)="mode.set('simulation')">Mon triangle</button>
+    </div>
+  </div>
+</section>
+
+@if (mode() === 'portfolios') {
+  @if (reportError(); as message) {
+    <div class="alert" role="alert"><strong>Rapport indisponible.</strong> {{ message }}</div>
+  } @else if (!report()) {
+    <div class="alert info"><span class="spinner"></span> Chargement du rapport de provisionnement…</div>
+  } @else {
+    @let rep = report()!;
+    <section class="panel">
+      <div class="panel-heading">
+        <div>
+          <span class="eyebrow">Données réelles · évaluation au 31/12/{{ rep.valuation_year }}</span>
+          <h2>{{ selected()?.name }}</h2>
+          <p>
+            {{ rep.source }}. Montants en {{ rep.unit }} ; la base contient aussi les paiements des années
+            suivantes, ce qui permet de vérifier l'estimation.
+          </p>
+        </div>
+        <label class="field inline">
+          <span>Portefeuille</span>
+          <select [value]="selectedCode()" (change)="onPortfolio($event)">
+            @for (p of rep.portfolios; track p.code) {
+              <option [value]="p.code">{{ p.name }}</option>
+            }
+          </select>
+        </label>
+      </div>
+
+      @if (selected(); as portfolio) {
+        <app-reserving-result
+          [result]="portfolio.chain_ladder"
+          [backtest]="portfolio.backtest"
+          [amount]="thousandsUsd"
+          [cell]="plain" />
+      }
+    </section>
+
+    <section class="panel lesson">
+      <h3>Ce que montre le backtest</h3>
+      <p>
+        Sur les {{ rep.summary.origins_backtested }} années vérifiées des {{ rep.summary.portfolios }} portefeuilles,
+        les paiements réels tombent dans l'intervalle à {{ percent(rep.confidence_level, 0) }} dans
+        <strong>{{ percent(rep.summary.interval_coverage, 0) }}</strong> des cas, et la provision totale est dans son
+        intervalle pour {{ rep.summary.totals_within_interval }} portefeuilles sur {{ rep.summary.portfolios }}.
+        Chain-Ladder a surestimé la provision de {{ overestimated() }} portefeuilles sur {{ rep.summary.portfolios }} :
+        sur cette période, les paiements se sont accélérés, ce qui contredit son hypothèse d'un rythme de
+        développement stable. C'est la conclusion de la monographie de la CAS (Meyers, 2015) sur ces mêmes
+        données : le modèle de Mack sous-estime l'incertitude réelle.
+      </p>
+    </section>
+  }
+} @else {
+  <section class="panel">
+    <div class="panel-heading">
+      <div>
+        <span class="eyebrow">Simulation</span>
+        <h2>Provisionner mon propre triangle</h2>
+        <p>
+          Collez un triangle de montants <strong>cumulés</strong> depuis un tableur : une ligne par année de survenance,
+          une colonne par année de développement. Une première colonne d'années (ex. 2015) est reconnue.
+        </p>
+      </div>
+    </div>
+
+    <label class="field">
+      <span>Triangle cumulé</span>
+      <textarea [formControl]="triangleText" rows="10" spellcheck="false"
+                aria-describedby="triangle-help"></textarea>
+      <small id="triangle-help" class="field-hint">
+        Séparateurs acceptés : tabulation (copier-coller Excel), point-virgule ou espace. Exemple chargé :
+        triangle de Taylor & Ashe (1983), référence de l'article de Mack.
+      </small>
+    </label>
+
+    <div class="simulation-actions">
+      <label class="field inline">
+        <span>Niveau de confiance</span>
+        <select [formControl]="confidence">
+          @for (level of confidenceLevels; track level) {
+            <option [ngValue]="level">{{ percent(level, 0) }}</option>
+          }
+        </select>
+      </label>
+      <button type="button" class="button secondary" (click)="loadExample()">Recharger l'exemple</button>
+      <button type="button" class="button primary" (click)="simulate()" [disabled]="computing()">
+        @if (computing()) { <span class="spinner"></span> Calcul… } @else { Calculer la provision }
+      </button>
+    </div>
+
+    @if (simulationError(); as message) {
+      <div class="alert" role="alert">{{ message }}</div>
+    }
+
+    @if (simulation(); as result) {
+      <div class="simulation-result" aria-live="polite">
+        <app-reserving-result [result]="result" [amount]="plain" [cell]="plain" />
+      </div>
+    }
+  </section>
+}

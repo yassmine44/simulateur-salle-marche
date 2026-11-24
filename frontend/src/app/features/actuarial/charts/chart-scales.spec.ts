@@ -1,5 +1,8 @@
 import {
   divergingBar,
+  logDomain,
+  logScale,
+  logTicks,
   extent,
   linearScale,
   linePath,
@@ -67,5 +70,24 @@ describe('chart-scales', () => {
     it('never zooms in below ×1.25, so small effects stay small', () => {
       expect(relativityHalfRange([1.05])).toBeCloseTo(Math.log(1.25), 10);
     });
+  });
+});
+
+describe('logarithmic scale', () => {
+  it('spaces each power of ten equally', () => {
+    const y = logScale([1e3, 1e6], [300, 0]);
+    expect(y(1e3)).toBeCloseTo(300, 10);
+    expect(y(1e4)).toBeCloseTo(200, 10);
+    expect(y(1e6)).toBeCloseTo(0, 10);
+  });
+
+  it('rounds the domain to the enclosing powers of ten', () => {
+    expect(logDomain(9696, 8_878_850)).toEqual([1e3, 1e7]);
+  });
+
+  it('keeps the number of ticks readable as the range grows', () => {
+    expect(logTicks(1e3, 1e4)).toEqual([1000, 2000, 5000, 10000]);
+    expect(logTicks(1e3, 1e7)).toEqual([1e3, 3e3, 1e4, 3e4, 1e5, 3e5, 1e6, 3e6, 1e7]);
+    expect(logTicks(1, 1e8).length).toBe(9);
   });
 });

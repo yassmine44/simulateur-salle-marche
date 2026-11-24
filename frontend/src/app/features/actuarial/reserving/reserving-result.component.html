@@ -1,0 +1,129 @@
+@let r = result();
+@let total = r.total;
+@let test = backtest();
+
+<div class="tile-grid">
+  <div class="tile">
+    <div class="tile-label">Provision estimée (Chain-Ladder)</div>
+    <div class="tile-value">{{ amount()(total.reserve) }}</div>
+    <div class="tile-hint">Reste à payer sur des sinistres déjà survenus</div>
+  </div>
+  <div class="tile">
+    <div class="tile-label">Erreur standard de Mack</div>
+    <div class="tile-value">{{ amount()(total.mack_se) }}</div>
+    <div class="tile-hint">Soit {{ total.cv !== null ? percent(total.cv) : '—' }} de la provision</div>
+  </div>
+  <div class="tile">
+    <div class="tile-label">Intervalle à {{ level() }}</div>
+    <div class="tile-value small">{{ amount()(total.ci_low) }} – {{ amount()(total.ci_high) }}</div>
+    <div class="tile-hint">Loi log-normale ajustée à la provision et à son erreur</div>
+  </div>
+  @if (test) {
+    <div class="tile">
+      <div class="tile-label">Réellement payé ensuite</div>
+      <div class="tile-value">{{ amount()(test.total.actual_reserve) }}</div>
+      <div class="tile-hint">
+        Écart de l'estimation : {{ test.total.relative_error > 0 ? '+' : '' }}{{ percent(test.total.relative_error) }}
+        <span class="status" [class.ok]="test.total.within_interval" [class.ko]="!test.total.within_interval">
+          {{ test.total.within_interval ? '✓ dans l\'intervalle' : '✗ hors de l\'intervalle' }}
+        </span>
+      </div>
+    </div>
+  }
+</div>
+
+<section class="block">
+  <h3>Incertitude de la provision par année de survenance{{ test ? ' et écart au réalisé' : '' }}</h3>
+  <app-interval-chart
+    [rows]="intervalRows()"
+    [yFormat]="amount()"
+    [relative]="true"
+    estimateLabel="Provision estimée (0 %)"
+    [intervalLabel]="'Intervalle à ' + level()"
+    actualLabel="Réellement payé"
+    ariaLabel="Intervalle de confiance de la provision et écart du réalisé, en % de la provision estimée, par année de survenance"
+    [caption]="test
+      ? 'Chaque année est rapportée à sa propre provision estimée (0 %). Un losange hors de sa barre signale une année où la réalité est sortie de l\'intervalle annoncé. Survolez une année pour voir les montants.'
+      : 'Chaque année est rapportée à sa propre provision estimée (0 %) : la barre montre l\'incertitude relative. Survolez une année pour voir les montants.'" />
+</section>
+
+<section class="block">
+  <h3>Triangle de développement complété</h3>
+  <p class="hint">
+    Montants cumulés payés par année de survenance (lignes) et année de développement (colonnes).
+    Les valeurs <strong>en gras</strong> sont les derniers montants connus ; les valeurs
+    <span class="projected-sample">en italique</span> sont projetées par Chain-Ladder.
+  </p>
+  <div class="table-scroll">
+    <table class="data-table triangle">
+      <thead>
+        <tr>
+          <th>Survenance</th>
+          @for (lag of lags(); track lag) { <th class="num">{{ lag }}</th> }
+          <th class="num">Provision</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (row of rows(); track row.origin.origin) {
+          <tr>
+            <th scope="row">{{ row.origin.origin }}</th>
+            @for (c of row.cells; track $index) {
+              <td class="num" [class]="'num ' + c.kind">{{ cell()(c.value) }}</td>
+            }
+            <td class="num reserve">{{ cell()(row.origin.reserve) }}</td>
+          </tr>
+        }
+      </tbody>
+      <tfoot>
+        <tr>
+          <th scope="row" title="Facteur de passage de la colonne précédente à celle-ci">Facteur fₖ</th>
+          <td></td>
+          @for (f of r.development_factors; track $index) { <td class="num">{{ factor(f) }}</td> }
+          <td></td>
+        </tr>
+      </tfoot>
+    </table>
+  </div>
+</section>
+
+@if (test) {
+  <section class="block">
+    <h3>Backtest : estimation de fin {{ r.origins[r.origins.length - 1].origin }} face à la réalité</h3>
+    <p class="hint">
+      {{ percent(test.interval_coverage, 0) }} des années ont vu leurs paiements réels tomber dans
+      l'intervalle à {{ level() }} (idéal : {{ level() }}).
+    </p>
+    <div class="table-scroll">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Survenance</th>
+            <th class="num">Provision estimée</th>
+            <th class="num">Réellement payé</th>
+            <th class="num">Écart</th>
+            <th>Intervalle</th>
+            <th class="num">S/P estimé</th>
+            <th class="num">S/P réel</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (o of backtestRows(); track o.origin) {
+            <tr>
+              <td>{{ o.origin }}</td>
+              <td class="num">{{ cell()(o.estimated_reserve) }}</td>
+              <td class="num">{{ cell()(o.actual_reserve) }}</td>
+              <td class="num">{{ o.relative_error !== null ? (o.relative_error > 0 ? '+' : '') + percent(o.relative_error) : '—' }}</td>
+              <td>
+                <span class="status" [class.ok]="o.within_interval" [class.ko]="!o.within_interval">
+                  {{ o.within_interval ? '✓ dedans' : '✗ dehors' }}
+                </span>
+              </td>
+              <td class="num">{{ percent(o.estimated_loss_ratio, 0) }}</td>
+              <td class="num">{{ percent(o.actual_loss_ratio, 0) }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </section>
+}

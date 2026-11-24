@@ -4,6 +4,7 @@ import { Observable, shareReplay } from 'rxjs';
 
 import {
   ActuarialMetadata,
+  ChainLadderResult,
   ComparisonResponse,
   PolicyProfile,
   QuoteHistoryItem,
@@ -43,6 +44,19 @@ export class ActuarialService {
     return this.http.post<ComparisonResponse>(
       `${this.baseUrl}/comparisons`,
       { profileA, profileB },
+      this.options
+    );
+  }
+
+  /** Provisions Chain-Ladder et erreurs de Mack d'un triangle saisi par l'utilisateur. */
+  chainLadder(
+    triangle: Array<Array<number | null>>,
+    confidenceLevel = 0.95,
+    origins?: number[]
+  ): Observable<ChainLadderResult> {
+    return this.http.post<ChainLadderResult>(
+      `${this.baseUrl}/reserving/chain-ladder`,
+      { triangle, confidenceLevel, ...(origins ? { origins } : {}) },
       this.options
     );
   }

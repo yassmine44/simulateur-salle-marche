@@ -14,6 +14,34 @@ export function linearScale(domain: [number, number], range: [number, number]): 
   return value => r0 + ((value - d0) / span) * (r1 - r0);
 }
 
+/** Échelle logarithmique (domaine strictement positif). */
+export function logScale(domain: [number, number], range: [number, number]): Scale {
+  const [d0, d1] = domain.map(Math.log10) as [number, number];
+  const inner = linearScale([d0, d1], range);
+  return value => inner(Math.log10(value));
+}
+
+/** Domaine logarithmique arrondi aux puissances de 10 qui encadrent [min, max]. */
+export function logDomain(min: number, max: number): [number, number] {
+  return [10 ** Math.floor(Math.log10(min)), 10 ** Math.ceil(Math.log10(max))];
+}
+
+/** Graduations 1, 2, 5 × 10^n comprises dans [min, max] (au plus ~8 traits). */
+export function logTicks(min: number, max: number): number[] {
+  const decades = Math.ceil(Math.log10(max)) - Math.floor(Math.log10(min));
+  const multipliers = decades > 4 ? [1] : decades > 2 ? [1, 3] : [1, 2, 5];
+  const ticks: number[] = [];
+  for (let exponent = Math.floor(Math.log10(min)); exponent <= Math.ceil(Math.log10(max)); exponent++) {
+    for (const m of multipliers) {
+      const tick = m * 10 ** exponent;
+      if (tick >= min * (1 - 1e-9) && tick <= max * (1 + 1e-9)) {
+        ticks.push(tick);
+      }
+    }
+  }
+  return ticks;
+}
+
 export function extent(values: number[]): [number, number] {
   if (values.length === 0) {
     return [0, 1];

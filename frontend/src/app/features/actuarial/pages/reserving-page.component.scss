@@ -1,0 +1,94 @@
+@use '../actuarial-ui';
+
+:host {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 18px;
+}
+
+.intro .panel-heading {
+  margin-bottom: 0;
+
+  p {
+    max-width: 820px;
+  }
+}
+
+.mode-switch {
+  display: inline-flex;
+  padding: 3px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  background: var(--bg-muted);
+
+  button {
+    padding: 7px 12px;
+    border: 0;
+    border-radius: var(--radius-sm);
+    color: var(--text-secondary);
+    background: transparent;
+    cursor: pointer;
+    font: inherit;
+    font-size: 12.5px;
+    font-weight: 650;
+
+    &.active {
+      color: var(--primary);
+      background: var(--bg-card);
+      box-shadow: var(--shadow-sm);
+    }
+  }
+}
+
+.field.inline {
+  min-width: 240px;
+}
+
+textarea {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  background: var(--bg-card);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 12px;
+  line-height: 1.5;
+  resize: vertical;
+
+  &:focus {
+    border-color: var(--primary);
+    outline: none;
+    box-shadow: 0 0 0 3px var(--primary-soft);
+  }
+}
+
+.simulation-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 10px;
+  margin: 14px 0;
+
+  .field.inline {
+    min-width: 160px;
+  }
+}
+
+.simulation-result {
+  margin-top: 18px;
+}
+
+.lesson {
+  h3 {
+    margin: 0 0 6px;
+    font-size: 14.5px;
+  }
+
+  p {
+    margin: 0;
+    color: var(--text-secondary);
+    font-size: 13px;
+    line-height: 1.6;
+  }
+}

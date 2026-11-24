@@ -47,8 +47,11 @@ from actuarial.pricing import (
     load_pricing_engine,
 )
 from actuarial.registry import model_paths
+from actuarial.reserving import Triangle, TriangleError, chain_ladder
 
-ReportName = Literal["frequency", "severity", "pricing", "explainability"]
+ReportName = Literal["frequency", "severity", "pricing", "explainability", "reserving"]
+
+MAX_TRIANGLE_SIZE = 30
 
 _FIELD_TO_COLUMN = {
     "area": s.AREA,
@@ -196,6 +199,36 @@ class ComparisonResponse(BaseModel):
     contributions: list[ComparisonContribution]
 
 
+class ChainLadderRequest(BaseModel):
+    """Cumulative run-off triangle supplied by the user.
+
+    Row i holds the cumulative paid amounts of origin i; it may stop at the
+    diagonal (n - i values) or be padded with nulls up to n columns.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    origins: list[int] | None = Field(None, description="Années d'origine (défaut : 1..n)")
+    triangle: list[list[float | None]] = Field(min_length=3, max_length=MAX_TRIANGLE_SIZE)
+    confidenceLevel: float = Field(0.95, gt=0.5, lt=1)
+
+    @model_validator(mode="after")
+    def _consistent_origins(self) -> "ChainLadderRequest":
+        if self.origins is not None and len(self.origins) != len(self.triangle):
+            raise ValueError("origins doit contenir une année par ligne du triangle")
+        return self
+
+    def to_triangle(self) -> Triangle:
+        n = len(self.triangle)
+        values = []
+        for i, row in enumerate(self.triangle):
+            if len(row) > n:
+                raise TriangleError(f"Ligne {i + 1} : {len(row)} valeurs pour un triangle de taille {n}.")
+            values.append([float("nan") if v is None else float(v) for v in row] + [float("nan")] * (n - len(row)))
+        origins = tuple(self.origins) if self.origins else tuple(range(1, n + 1))
+        return Triangle(origins, values)
+
+
 # ----------------------------------------------------------------------------
 # Service
 # ----------------------------------------------------------------------------
@@ -331,7 +364,8 @@ class ActuarialService:
     def report(self, name: ReportName) -> dict[str, Any]:
         path = self.directory / f"{name}_report.json"
         if not path.exists():
-            raise ModelsNotAvailable(f"Rapport '{name}' introuvable. Lancez python -m actuarial.train.")
+            command = "actuarial.reserving_report" if name == "reserving" else "actuarial.train"
+            raise ModelsNotAvailable(f"Rapport '{name}' introuvable. Lancez python -m {command}.")
         return json.loads(path.read_text(encoding="utf-8"))
 
     def model_cards(self) -> dict[str, Any]:
@@ -437,6 +471,18 @@ def report(name: ReportName, service: ActuarialService = Depends(get_service)) -
         return service.report(name)
     except ModelsNotAvailable as error:
         raise _unavailable(error) from error
+
+
+@router.post("/reserving/chain-ladder")
+def reserving_chain_ladder(request: ChainLadderRequest) -> dict[str, Any]:
+    """Chain-Ladder reserves and Mack standard errors of a user triangle.
+
+    Pure computation: no model to load, available even before training.
+    """
+    try:
+        return chain_ladder(request.to_triangle()).to_dict(request.confidenceLevel)
+    except TriangleError as error:
+        raise HTTPException(status_code=422, detail=str(error)) from error
 
 
 @router.get("/model-cards")

@@ -1,0 +1,93 @@
+<figure class="viz">
+  <div class="viz-toolbar">
+    <div class="legend" aria-hidden="true">
+      <span class="legend-item"><span class="swatch series-1 dot"></span>{{ estimateLabel() }}</span>
+      <span class="legend-item"><span class="swatch range"></span>{{ intervalLabel() }}</span>
+      @if (hasActual()) {
+        <span class="legend-item"><span class="swatch series-2 diamond"></span>{{ actualLabel() }}</span>
+      }
+      @if (logarithmic()) {
+        <span class="legend-item scale-note">Échelle logarithmique</span>
+      }
+    </div>
+    <button type="button" class="table-toggle" (click)="showTable.set(!showTable())"
+            [attr.aria-pressed]="showTable()">
+      {{ showTable() ? 'Voir le graphique' : 'Voir le tableau' }}
+    </button>
+  </div>
+
+  @if (!showTable()) {
+    <div class="plot-wrap">
+      <svg class="plot" [attr.width]="width()" [attr.height]="height" [attr.viewBox]="'0 0 ' + width() + ' ' + height"
+           role="img" [attr.aria-label]="ariaLabel()" tabindex="0"
+           (keydown)="onKeydown($event)" (blur)="hoverIndex.set(null)" (pointerleave)="hoverIndex.set(null)">
+        @for (tick of yTicks(); track tick) {
+          <line class="grid" [attr.x1]="margin.left" [attr.x2]="width() - margin.right"
+                [attr.y1]="yScale()(tick)" [attr.y2]="yScale()(tick)" />
+          <text class="tick y" [attr.x]="margin.left - 8" [attr.y]="yScale()(tick)">{{ axisFormat()(tick) }}</text>
+        }
+        <line class="axis" [attr.x1]="margin.left" [attr.x2]="width() - margin.right"
+              [attr.y1]="height - margin.bottom" [attr.y2]="height - margin.bottom" />
+        @if (zeroLine() !== null) {
+          <line class="zero" [attr.x1]="margin.left" [attr.x2]="width() - margin.right"
+                [attr.y1]="zeroLine()" [attr.y2]="zeroLine()" />
+        }
+
+        @for (m of marks(); track m.key; let i = $index) {
+          <rect class="hit" [class.active]="hoverIndex() === i" [attr.x]="m.bandX" [attr.y]="margin.top"
+                [attr.width]="band()" [attr.height]="height - margin.top - margin.bottom"
+                (pointerenter)="hoverIndex.set(i)" />
+          <rect class="range" [attr.x]="m.cx - 5" [attr.y]="m.yHigh" width="10"
+                [attr.height]="m.yLow - m.yHigh" rx="4" />
+          <circle class="estimate" [attr.cx]="m.cx" [attr.cy]="m.yEstimate" r="5" />
+          @if (m.yActual !== null) {
+            <path class="actual" [attr.d]="diamond(m.cx, m.yActual)" />
+          }
+          <text class="tick x" [attr.x]="m.cx" [attr.y]="height - margin.bottom + 16">{{ m.label }}</text>
+        }
+      </svg>
+
+      @if (hovered(); as h) {
+        <div class="tooltip" [class.right]="h.cx > width() * 0.6" [style.left.px]="h.cx">
+          <div class="tooltip-title">{{ h.label }}</div>
+          <div class="tooltip-row"><span class="swatch series-1 dot"></span><span>{{ estimateLabel() }}</span><strong>{{ yFormat()(h.estimate) }}</strong></div>
+          <div class="tooltip-row"><span class="swatch range"></span><span>{{ intervalLabel() }}</span><strong>{{ yFormat()(h.low) }} – {{ yFormat()(h.high) }}</strong></div>
+          @if (h.actual != null) {
+            <div class="tooltip-row"><span class="swatch series-2 diamond"></span><span>{{ actualLabel() }}</span><strong>{{ yFormat()(h.actual) }}</strong></div>
+            <div class="tooltip-note">
+              Écart à l'estimation : {{ axisFormatSigned(h.deviation!) }} ·
+              {{ h.inside ? '✓ dans l\'intervalle' : '✗ hors de l\'intervalle' }}
+            </div>
+          }
+        </div>
+      }
+    </div>
+  } @else {
+    <div class="table-scroll">
+      <table class="viz-table">
+        <thead>
+          <tr>
+            <th></th><th class="num">{{ estimateLabel() }}</th><th class="num">{{ intervalLabel() }}</th>
+            @if (hasActual()) { <th class="num">{{ actualLabel() }}</th> }
+          </tr>
+        </thead>
+        <tbody>
+          @for (m of marks(); track m.key) {
+            <tr>
+              <td>{{ m.label }}</td>
+              <td class="num">{{ yFormat()(m.estimate) }}</td>
+              <td class="num">{{ yFormat()(m.low) }} – {{ yFormat()(m.high) }}</td>
+              @if (hasActual()) {
+                <td class="num">{{ m.actual != null ? yFormat()(m.actual) : '—' }} {{ m.inside === false ? '✗' : '' }}</td>
+              }
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+
+  @if (caption()) {
+    <figcaption>{{ caption() }}</figcaption>
+  }
+</figure>

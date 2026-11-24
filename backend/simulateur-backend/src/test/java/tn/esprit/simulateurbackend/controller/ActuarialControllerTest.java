@@ -67,6 +67,8 @@ class ActuarialControllerTest {
                 () -> controller.myQuotes(null, 20),
                 () -> controller.compare(null, comparison),
                 () -> controller.report(null, "pricing"),
+                () -> controller.chainLadder(null, new tn.esprit.simulateurbackend.dto.actuarial.ChainLadderRequest(
+                        null, List.of(List.of(1.0, 2.0, 3.0), List.of(1.0, 2.0), List.of(1.0)), null)),
                 () -> controller.modelCards(null)
         );
 

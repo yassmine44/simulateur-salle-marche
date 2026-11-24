@@ -22,6 +22,7 @@ import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.json.JsonMapper;
 
 import tn.esprit.simulateurbackend.config.ActuarialServiceProperties;
+import tn.esprit.simulateurbackend.dto.actuarial.ChainLadderRequest;
 import tn.esprit.simulateurbackend.dto.actuarial.ComparisonRequest;
 import tn.esprit.simulateurbackend.dto.actuarial.ComparisonResponse;
 import tn.esprit.simulateurbackend.dto.actuarial.PricingAssumptionsDto;
@@ -86,6 +87,16 @@ public class ActuarialPricingClient {
                 .body(request)
                 .retrieve()
                 .body(ComparisonResponse.class));
+    }
+
+    /** Provisions Chain-Ladder et erreurs standard de Mack d'un triangle utilisateur. */
+    public JsonNode chainLadder(ChainLadderRequest request) {
+        return call(() -> restClient.post()
+                .uri("/reserving/chain-ladder")
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(request)
+                .retrieve()
+                .body(JsonNode.class));
     }
 
     public JsonNode status() {

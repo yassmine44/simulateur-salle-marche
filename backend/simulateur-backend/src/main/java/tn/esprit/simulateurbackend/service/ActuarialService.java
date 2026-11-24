@@ -15,6 +15,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import tools.jackson.databind.JsonNode;
 
+import tn.esprit.simulateurbackend.dto.actuarial.ChainLadderRequest;
 import tn.esprit.simulateurbackend.dto.actuarial.ComparisonRequest;
 import tn.esprit.simulateurbackend.dto.actuarial.ComparisonResponse;
 import tn.esprit.simulateurbackend.dto.actuarial.QuoteHistoryItem;
@@ -30,7 +31,8 @@ import tn.esprit.simulateurbackend.repository.ActuarialQuoteRepository;
 @Service
 public class ActuarialService {
 
-    public static final Set<String> REPORTS = Set.of("frequency", "severity", "pricing", "explainability");
+    public static final Set<String> REPORTS =
+            Set.of("frequency", "severity", "pricing", "explainability", "reserving");
     public static final int MAX_HISTORY = 100;
 
     private final ActuarialPricingClient client;
@@ -72,6 +74,11 @@ public class ActuarialService {
         return client.compare(request);
     }
 
+    /** Simulation de provisionnement sur un triangle fourni par l'utilisateur. */
+    public JsonNode chainLadder(ChainLadderRequest request) {
+        return client.chainLadder(request);
+    }
+
     public JsonNode metadata() {
         return client.metadata();
     }
@@ -85,7 +92,7 @@ public class ActuarialService {
         if (!REPORTS.contains(normalized)) {
             throw new ResponseStatusException(
                     HttpStatus.NOT_FOUND,
-                    "Rapport inconnu. Rapports disponibles : frequency, severity, pricing, explainability."
+                    "Rapport inconnu. Rapports disponibles : frequency, severity, pricing, explainability, reserving."
             );
         }
         return client.report(normalized);

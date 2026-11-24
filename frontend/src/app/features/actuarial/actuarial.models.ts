@@ -222,7 +222,7 @@ export interface ExplainabilityReport {
   dependence: Record<string, DependencePoint[]>;
 }
 
-export type ReportName = 'frequency' | 'severity' | 'pricing' | 'explainability';
+export type ReportName = 'frequency' | 'severity' | 'pricing' | 'explainability' | 'reserving';
 
 // ---------------------------------------------------------------------------
 // Profils types (mêmes profils que le rapport d'entraînement)
@@ -259,3 +259,88 @@ export const PROFILE_PRESETS: readonly ProfilePreset[] = [
     }
   }
 ];
+
+// ---------------------------------------------------------------------------
+// Provisionnement (Chain-Ladder et Mack)
+// ---------------------------------------------------------------------------
+export interface ReserveOrigin {
+  origin: number;
+  latest: number;
+  development_to_date: number;
+  ultimate: number;
+  reserve: number;
+  mack_se: number;
+  cv: number | null;
+  ci_low: number;
+  ci_high: number;
+}
+
+export interface ChainLadderResult {
+  confidence_level: number;
+  development_factors: number[];
+  cumulative_factors: number[];
+  sigma2: number[];
+  /** Triangle connu (null = cellule future). */
+  triangle: Array<Array<number | null>>;
+  /** Triangle complété par la projection Chain-Ladder. */
+  projected: number[][];
+  origins: ReserveOrigin[];
+  total: {
+    latest: number;
+    ultimate: number;
+    reserve: number;
+    mack_se: number;
+    cv: number | null;
+    ci_low: number;
+    ci_high: number;
+  };
+  size: number;
+}
+
+export interface BacktestOrigin {
+  origin: number;
+  estimated_reserve: number;
+  actual_reserve: number;
+  error: number;
+  relative_error: number | null;
+  within_interval: boolean | null;
+  premium: number;
+  estimated_loss_ratio: number;
+  actual_loss_ratio: number;
+}
+
+export interface Backtest {
+  origins: BacktestOrigin[];
+  total: {
+    estimated_reserve: number;
+    actual_reserve: number;
+    error: number;
+    relative_error: number;
+    within_interval: boolean;
+  };
+  interval_coverage: number;
+}
+
+export interface ReservingPortfolio {
+  code: string;
+  name: string;
+  companies: number;
+  chain_ladder: ChainLadderResult;
+  actual_triangle: number[][];
+  backtest: Backtest;
+}
+
+export interface ReservingReport {
+  source: string;
+  unit: string;
+  valuation_year: number;
+  confidence_level: number;
+  method: string;
+  portfolios: ReservingPortfolio[];
+  summary: {
+    portfolios: number;
+    origins_backtested: number;
+    interval_coverage: number;
+    totals_within_interval: number;
+  };
+}
