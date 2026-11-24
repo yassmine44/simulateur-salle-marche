@@ -87,7 +87,7 @@
       "name": "gamma_gbm",
       "algorithm": "HistGradientBoostingRegressor (loss=gamma)",
       "description": "Gradient boosting à perte Gamma : capte non-linéarités et interactions.",
-      "fit_seconds": 0.12,
+      "fit_seconds": 0.15,
       "train": {
         "deviance_power": 2.0,
         "mean_deviance": 1.062896,
@@ -117,8 +117,8 @@
     }
   },
   "random_state": 42,
-  "version": "20261124161609",
-  "created_at": "2026-11-24T16:16:09+00:00",
+  "version": "20261124162402",
+  "created_at": "2026-11-24T16:24:02+00:00",
   "environment": {
     "python": "3.12.7",
     "scikit_learn": "1.5.2"

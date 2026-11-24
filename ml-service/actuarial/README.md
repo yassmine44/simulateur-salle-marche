@@ -10,6 +10,7 @@ marge de prime, provisionnement).
 | Prédire la marge de prime (primes − sinistres attendus) | `pricing.portfolio_margin`, `premium_margin` par contrat | ✅ |
 | Probabilité de survenance d'un sinistre | `frequency.claim_probability` | ✅ |
 | Montant des indemnisations / provisionnement | `severity` (coût par sinistre) · Chain-Ladder | ✅ / étape 6 |
+| §3.6 Explainable AI : contributions, sens, explications locales/globales | `explainability` (valeurs de Shapley exactes) | ✅ |
 
 ## Approche : fréquence × sévérité
 
@@ -115,6 +116,70 @@ Le rapport `pricing_report.json` détaille aussi primes, sinistres attendus,
 sinistres réels, marges et S/P par classe de risque, par zone et par tranche
 de bonus-malus.
 
+## Explicabilité (XAI, §3.6)
+
+### Méthode : valeurs de Shapley exactes, échelle logarithmique
+
+La contribution φⱼ d'une variable à la prime d'un assuré est sa **valeur de
+Shapley** : son apport marginal moyen sur toutes les coalitions des autres
+variables, les variables absentes étant tirées d'un échantillon de référence
+de 200 contrats (définition « interventionnelle », celle de `shap`).
+
+* **Exacte, pas approximée** : avec 9 variables métier, les 2⁹ = 512
+  coalitions sont énumérées. Fonctionne pour tout modèle (GLM, gradient
+  boosting à splits catégoriels natifs — non pris en charge par
+  `shap.TreeExplainer` —, modèle constant) et directement au niveau des
+  variables métier, pas des colonnes encodées.
+* **Échelle logarithmique** (lien des modèles) : les contributions sont
+  additives en log et donc **multiplicatives sur la prime** :
+  `prime = prime de base × Πⱼ exp(φⱼ)`. `exp(φⱼ)` est une **relativité
+  tarifaire** (« le bonus-malus multiplie la prime par 2,18 »), le langage des
+  actuaires et du régulateur. La prime pure étant λ·μ·(1+L), ses contributions
+  sont la somme de celles des modèles de fréquence et de sévérité.
+* **Propriétés vérifiées par les tests** : égalité avec la solution
+  analytique d'un modèle log-additif (à 1e-10), efficience
+  (`base + Σφ = log f(x)` exactement), variable inutilisée ⇒ φ = 0,
+  interaction partagée entre les deux variables (symétrie).
+* **Performance** : ~0,35 s par explication (une prédiction groupée de
+  102 400 lignes) ; contributions nulles sans calcul pour un modèle constant
+  (axiome « dummy »).
+
+### Ce que le système permet de répondre (exigences §3.6.1)
+
+| Question | Fonction |
+|---|---|
+| Quelles variables ont le plus contribué à la prime de cet assuré, et dans quel sens ? | `PremiumExplainer.explain` → relativité + `hausse` / `baisse` / `neutre` |
+| Pourquoi l'assuré A paie-t-il plus que B ? | `PremiumExplainer.compare` (les écarts se multiplient exactement en ratio de primes) |
+| Quelles variables pèsent le plus sur le portefeuille ? | `global_importance` (moyenne des \|φ\|) |
+| Comment une variable fait-elle varier la prime ? | `dependence` (relativité moyenne par valeur) |
+
+### Résultats (200 contrats du test)
+
+| Rang | Variable | Part de l'importance |
+|---|---|---|
+| 1 | Coefficient bonus-malus | 39,3 % |
+| 2 | Âge du conducteur | 13,4 % |
+| 3 | Densité de population | 10,7 % |
+| 4 | Âge du véhicule | 9,6 % |
+| 5 | Carburant | 8,7 % |
+| 6 | Région | 8,4 % |
+| 7 | Marque du véhicule | 6,1 % |
+| 8 | Puissance du véhicule | 3,1 % |
+| 9 | Zone géographique | 0,7 % |
+
+* La **zone** pèse peu car elle mesure presque la même chose que la densité,
+  déjà utilisée par le modèle : le crédit va à la variable que le modèle exploite.
+* L'**âge du conducteur** a un effet en U avec une bosse vers 50 ans
+  (×1,45 à 20 ans, ×0,71 à 30 ans, ×1,20 à 50 ans), phénomène connu sur
+  freMTPL2 (interprétation courante : conduite occasionnelle du véhicule
+  parental par les enfants).
+* Toute l'explication vient de la fréquence : la sévérité retenue est
+  constante (voir plus haut), ses contributions sont nulles.
+
+**Comparaison** — le jeune conducteur urbain en malus paie **4,98×** la prime
+du conducteur expérimenté rural : bonus-malus ×2,76, âge ×1,52, densité ×1,31,
+région ×1,20, marque ×0,75.
+
 ## Utilisation
 
 ```powershell
@@ -124,15 +189,20 @@ python -m pip install -r requirements-dev.txt
 
 python -m actuarial.train                  # pipeline complet (~1 min)
 python -m actuarial.train --sample 100000  # exécution rapide
-python -m pytest tests/actuarial           # 60 tests, données synthétiques
+python -m pytest tests/actuarial           # 73 tests, données synthétiques
 ```
 
 ```python
 from actuarial.pricing import PricingAssumptions, load_pricing_engine
+from actuarial.explainability import load_premium_explainer
 
 engine = load_pricing_engine()                       # hypothèses enregistrées
 engine = load_pricing_engine(assumptions=PricingAssumptions(expense_ratio=0.20))
 quotes = engine.quote(profiles_dataframe)            # une ligne par profil
+
+explainer = load_premium_explainer()
+explainer.explain(profiles_dataframe)[0].to_dict(top=5)
+explainer.compare(profile_a, profile_b)
 ```
 
 ## Artefacts (`artifacts/actuarial/`)
@@ -144,6 +214,8 @@ quotes = engine.quote(profiles_dataframe)            # une ligne par profil
 | `pricing_config.json` | Versions des modèles, écrêtement, hypothèses commerciales |
 | `frequency_report.json`, `severity_report.json` | Comparaison des candidats, courbes de Lorenz, calibration par décile |
 | `pricing_report.json` | Qualité de la prime pure, diagnostic sinistres graves, marges par segment, exemples |
+| `explainer_background.csv` | Échantillon de référence des explications (200 contrats) |
+| `explainability_report.json` | Importance globale, dépendances, explications des profils types, comparaison |
 
 Chaque fiche modèle contient la version, l'empreinte des données
 d'entraînement, les métriques et l'environnement. Le chargement refuse un
@@ -162,16 +234,17 @@ actuarial/
 ├── frequency.py      candidats Poisson, P(sinistre)
 ├── severity.py       candidats Gamma
 ├── pricing.py        prime pure/commerciale, marge, rechargement du moteur
+├── explainability.py valeurs de Shapley exactes, explications locales/globales
 ├── registry.py       persistance versionnée + fiche modèle
 └── train.py          pipeline d'entraînement de bout en bout
-tests/actuarial/      60 tests sur portefeuille synthétique au processus connu
+tests/actuarial/      73 tests sur portefeuille synthétique au processus connu
 ```
 
 ## Feuille de route
 
 1. ~~Données + modèle de fréquence~~
 2. ~~Modèle de sévérité, prime pure/commerciale, marge de prime~~
-3. Explicabilité SHAP (§3.6)
+3. ~~Explicabilité SHAP (§3.6)~~
 4. API FastAPI + endpoints Spring Boot
 5. Écrans Angular
 6. Provisionnement Chain-Ladder

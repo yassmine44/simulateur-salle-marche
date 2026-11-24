@@ -1,0 +1,2388 @@
+{
+  "method": "Valeurs de Shapley exactes (interventionnelles), échelle logarithmique",
+  "background_size": 200,
+  "global_sample_size": 200,
+  "base_premium": 135.0837,
+  "global_importance": {
+    "premium": [
+      {
+        "feature": "BonusMalus",
+        "label": "Coefficient bonus-malus",
+        "mean_abs_phi": 0.364195,
+        "share": 0.392681
+      },
+      {
+        "feature": "DrivAge",
+        "label": "Âge du conducteur",
+        "mean_abs_phi": 0.123927,
+        "share": 0.13362
+      },
+      {
+        "feature": "Density",
+        "label": "Densité de population",
+        "mean_abs_phi": 0.099383,
+        "share": 0.107156
+      },
+      {
+        "feature": "VehAge",
+        "label": "Âge du véhicule",
+        "mean_abs_phi": 0.089368,
+        "share": 0.096358
+      },
+      {
+        "feature": "VehGas",
+        "label": "Carburant",
+        "mean_abs_phi": 0.080982,
+        "share": 0.087316
+      },
+      {
+        "feature": "Region",
+        "label": "Région",
+        "mean_abs_phi": 0.07808,
+        "share": 0.084187
+      },
+      {
+        "feature": "VehBrand",
+        "label": "Marque du véhicule",
+        "mean_abs_phi": 0.056689,
+        "share": 0.061123
+      },
+      {
+        "feature": "VehPower",
+        "label": "Puissance du véhicule",
+        "mean_abs_phi": 0.028686,
+        "share": 0.03093
+      },
+      {
+        "feature": "Area",
+        "label": "Zone géographique",
+        "mean_abs_phi": 0.006149,
+        "share": 0.00663
+      }
+    ],
+    "frequency": [
+      {
+        "feature": "BonusMalus",
+        "label": "Coefficient bonus-malus",
+        "mean_abs_phi": 0.364195,
+        "share": 0.392681
+      },
+      {
+        "feature": "DrivAge",
+        "label": "Âge du conducteur",
+        "mean_abs_phi": 0.123927,
+        "share": 0.13362
+      },
+      {
+        "feature": "Density",
+        "label": "Densité de population",
+        "mean_abs_phi": 0.099383,
+        "share": 0.107156
+      },
+      {
+        "feature": "VehAge",
+        "label": "Âge du véhicule",
+        "mean_abs_phi": 0.089368,
+        "share": 0.096358
+      },
+      {
+        "feature": "VehGas",
+        "label": "Carburant",
+        "mean_abs_phi": 0.080982,
+        "share": 0.087316
+      },
+      {
+        "feature": "Region",
+        "label": "Région",
+        "mean_abs_phi": 0.07808,
+        "share": 0.084187
+      },
+      {
+        "feature": "VehBrand",
+        "label": "Marque du véhicule",
+        "mean_abs_phi": 0.056689,
+        "share": 0.061123
+      },
+      {
+        "feature": "VehPower",
+        "label": "Puissance du véhicule",
+        "mean_abs_phi": 0.028686,
+        "share": 0.03093
+      },
+      {
+        "feature": "Area",
+        "label": "Zone géographique",
+        "mean_abs_phi": 0.006149,
+        "share": 0.00663
+      }
+    ],
+    "severity": [
+      {
+        "feature": "VehPower",
+        "label": "Puissance du véhicule",
+        "mean_abs_phi": 0.0,
+        "share": 0.0
+      },
+      {
+        "feature": "VehAge",
+        "label": "Âge du véhicule",
+        "mean_abs_phi": 0.0,
+        "share": 0.0
+      },
+      {
+        "feature": "DrivAge",
+        "label": "Âge du conducteur",
+        "mean_abs_phi": 0.0,
+        "share": 0.0
+      },
+      {
+        "feature": "BonusMalus",
+        "label": "Coefficient bonus-malus",
+        "mean_abs_phi": 0.0,
+        "share": 0.0
+      },
+      {
+        "feature": "Density",
+        "label": "Densité de population",
+        "mean_abs_phi": 0.0,
+        "share": 0.0
+      },
+      {
+        "feature": "Area",
+        "label": "Zone géographique",
+        "mean_abs_phi": 0.0,
+        "share": 0.0
+      },
+      {
+        "feature": "VehBrand",
+        "label": "Marque du véhicule",
+        "mean_abs_phi": 0.0,
+        "share": 0.0
+      },
+      {
+        "feature": "VehGas",
+        "label": "Carburant",
+        "mean_abs_phi": 0.0,
+        "share": 0.0
+      },
+      {
+        "feature": "Region",
+        "label": "Région",
+        "mean_abs_phi": 0.0,
+        "share": 0.0
+      }
+    ]
+  },
+  "dependence": {
+    "VehPower": [
+      {
+        "value": 4.0,
+        "mean_phi": -0.034191,
+        "relativity": 0.966387,
+        "count": 29
+      },
+      {
+        "value": 5.0,
+        "mean_phi": -0.021595,
+        "relativity": 0.978636,
+        "count": 34
+      },
+      {
+        "value": 6.0,
+        "mean_phi": -0.006023,
+        "relativity": 0.993995,
+        "count": 56
+      },
+      {
+        "value": 7.0,
+        "mean_phi": 0.009584,
+        "relativity": 1.00963,
+        "count": 43
+      },
+      {
+        "value": 8.0,
+        "mean_phi": 0.023923,
+        "relativity": 1.024212,
+        "count": 10
+      },
+      {
+        "value": 9.0,
+        "mean_phi": 0.063324,
+        "relativity": 1.065371,
+        "count": 11
+      },
+      {
+        "value": 10.0,
+        "mean_phi": 0.07604,
+        "relativity": 1.079006,
+        "count": 7
+      },
+      {
+        "value": 11.0,
+        "mean_phi": 0.128557,
+        "relativity": 1.137186,
+        "count": 4
+      },
+      {
+        "value": 12.0,
+        "mean_phi": 0.141952,
+        "relativity": 1.152521,
+        "count": 3
+      },
+      {
+        "value": 13.0,
+        "mean_phi": 0.052266,
+        "relativity": 1.053656,
+        "count": 2
+      },
+      {
+        "value": 15.0,
+        "mean_phi": 0.117625,
+        "relativity": 1.124822,
+        "count": 1
+      }
+    ],
+    "VehAge": [
+      {
+        "value": 0.0,
+        "mean_phi": 0.107272,
+        "relativity": 1.113237,
+        "count": 6
+      },
+      {
+        "value": 1.0,
+        "mean_phi": 0.064855,
+        "relativity": 1.067005,
+        "count": 20
+      },
+      {
+        "value": 2.0,
+        "mean_phi": 0.070273,
+        "relativity": 1.072802,
+        "count": 17
+      },
+      {
+        "value": 3.0,
+        "mean_phi": 0.060167,
+        "relativity": 1.062014,
+        "count": 14
+      },
+      {
+        "value": 4.0,
+        "mean_phi": 0.063511,
+        "relativity": 1.065571,
+        "count": 11
+      },
+      {
+        "value": 5.0,
+        "mean_phi": 0.059417,
+        "relativity": 1.061218,
+        "count": 12
+      },
+      {
+        "value": 6.0,
+        "mean_phi": 0.073442,
+        "relativity": 1.076206,
+        "count": 11
+      },
+      {
+        "value": 7.0,
+        "mean_phi": 0.081452,
+        "relativity": 1.084861,
+        "count": 15
+      },
+      {
+        "value": 8.0,
+        "mean_phi": 0.025754,
+        "relativity": 1.026088,
+        "count": 10
+      },
+      {
+        "value": 9.0,
+        "mean_phi": 0.035285,
+        "relativity": 1.035915,
+        "count": 15
+      },
+      {
+        "value": 10.0,
+        "mean_phi": 0.02495,
+        "relativity": 1.025264,
+        "count": 18
+      },
+      {
+        "value": 11.0,
+        "mean_phi": 0.014741,
+        "relativity": 1.01485,
+        "count": 12
+      },
+      {
+        "value": 12.0,
+        "mean_phi": -0.0522,
+        "relativity": 0.949139,
+        "count": 8
+      },
+      {
+        "value": 13.0,
+        "mean_phi": -0.138748,
+        "relativity": 0.870447,
+        "count": 4
+      },
+      {
+        "value": 14.0,
+        "mean_phi": -0.163295,
+        "relativity": 0.849341,
+        "count": 7
+      },
+      {
+        "value": 15.0,
+        "mean_phi": -0.191561,
+        "relativity": 0.825669,
+        "count": 7
+      },
+      {
+        "value": 16.0,
+        "mean_phi": -0.320807,
+        "relativity": 0.725564,
+        "count": 1
+      },
+      {
+        "value": 17.0,
+        "mean_phi": -0.234655,
+        "relativity": 0.790844,
+        "count": 4
+      },
+      {
+        "value": 18.0,
+        "mean_phi": -0.451256,
+        "relativity": 0.636828,
+        "count": 5
+      },
+      {
+        "value": 19.0,
+        "mean_phi": -0.597206,
+        "relativity": 0.550347,
+        "count": 1
+      },
+      {
+        "value": 20.0,
+        "mean_phi": -0.492396,
+        "relativity": 0.61116,
+        "count": 2
+      }
+    ],
+    "DrivAge": [
+      {
+        "value": 19.0,
+        "mean_phi": 0.368923,
+        "relativity": 1.446176,
+        "count": 1
+      },
+      {
+        "value": 20.0,
+        "mean_phi": 0.371396,
+        "relativity": 1.449756,
+        "count": 3
+      },
+      {
+        "value": 22.0,
+        "mean_phi": -0.00572,
+        "relativity": 0.994296,
+        "count": 3
+      },
+      {
+        "value": 23.0,
+        "mean_phi": -0.002011,
+        "relativity": 0.997991,
+        "count": 1
+      },
+      {
+        "value": 25.0,
+        "mean_phi": -0.265626,
+        "relativity": 0.766726,
+        "count": 1
+      },
+      {
+        "value": 27.0,
+        "mean_phi": -0.250624,
+        "relativity": 0.778315,
+        "count": 3
+      },
+      {
+        "value": 28.0,
+        "mean_phi": -0.300294,
+        "relativity": 0.7406,
+        "count": 5
+      },
+      {
+        "value": 29.0,
+        "mean_phi": -0.278277,
+        "relativity": 0.757087,
+        "count": 2
+      },
+      {
+        "value": 30.0,
+        "mean_phi": -0.33984,
+        "relativity": 0.711884,
+        "count": 4
+      },
+      {
+        "value": 31.0,
+        "mean_phi": -0.265672,
+        "relativity": 0.76669,
+        "count": 3
+      },
+      {
+        "value": 32.0,
+        "mean_phi": -0.219122,
+        "relativity": 0.803224,
+        "count": 3
+      },
+      {
+        "value": 33.0,
+        "mean_phi": -0.265954,
+        "relativity": 0.766474,
+        "count": 5
+      },
+      {
+        "value": 34.0,
+        "mean_phi": -0.177959,
+        "relativity": 0.836977,
+        "count": 5
+      },
+      {
+        "value": 36.0,
+        "mean_phi": -0.121215,
+        "relativity": 0.885843,
+        "count": 3
+      },
+      {
+        "value": 37.0,
+        "mean_phi": -0.087806,
+        "relativity": 0.915938,
+        "count": 2
+      },
+      {
+        "value": 38.0,
+        "mean_phi": -0.092624,
+        "relativity": 0.911536,
+        "count": 4
+      },
+      {
+        "value": 39.0,
+        "mean_phi": -0.06848,
+        "relativity": 0.933812,
+        "count": 12
+      },
+      {
+        "value": 40.0,
+        "mean_phi": -0.059254,
+        "relativity": 0.942467,
+        "count": 3
+      },
+      {
+        "value": 41.0,
+        "mean_phi": 0.008269,
+        "relativity": 1.008304,
+        "count": 7
+      },
+      {
+        "value": 42.0,
+        "mean_phi": 0.108532,
+        "relativity": 1.114641,
+        "count": 4
+      },
+      {
+        "value": 43.0,
+        "mean_phi": 0.126138,
+        "relativity": 1.134439,
+        "count": 5
+      },
+      {
+        "value": 44.0,
+        "mean_phi": 0.142753,
+        "relativity": 1.153445,
+        "count": 4
+      },
+      {
+        "value": 45.0,
+        "mean_phi": 0.180202,
+        "relativity": 1.197459,
+        "count": 8
+      },
+      {
+        "value": 46.0,
+        "mean_phi": 0.176465,
+        "relativity": 1.192993,
+        "count": 8
+      },
+      {
+        "value": 47.0,
+        "mean_phi": 0.169714,
+        "relativity": 1.184965,
+        "count": 10
+      },
+      {
+        "value": 48.0,
+        "mean_phi": 0.178971,
+        "relativity": 1.195987,
+        "count": 4
+      },
+      {
+        "value": 49.0,
+        "mean_phi": 0.139943,
+        "relativity": 1.150208,
+        "count": 3
+      },
+      {
+        "value": 50.0,
+        "mean_phi": 0.180319,
+        "relativity": 1.197599,
+        "count": 1
+      },
+      {
+        "value": 51.0,
+        "mean_phi": 0.147867,
+        "relativity": 1.159359,
+        "count": 3
+      },
+      {
+        "value": 52.0,
+        "mean_phi": 0.157666,
+        "relativity": 1.170775,
+        "count": 6
+      },
+      {
+        "value": 53.0,
+        "mean_phi": 0.150957,
+        "relativity": 1.162947,
+        "count": 5
+      },
+      {
+        "value": 54.0,
+        "mean_phi": 0.09412,
+        "relativity": 1.098692,
+        "count": 8
+      },
+      {
+        "value": 55.0,
+        "mean_phi": 0.060438,
+        "relativity": 1.062302,
+        "count": 5
+      },
+      {
+        "value": 56.0,
+        "mean_phi": 0.075782,
+        "relativity": 1.078727,
+        "count": 3
+      },
+      {
+        "value": 57.0,
+        "mean_phi": -0.004599,
+        "relativity": 0.995411,
+        "count": 6
+      },
+      {
+        "value": 58.0,
+        "mean_phi": -0.006198,
+        "relativity": 0.993821,
+        "count": 4
+      },
+      {
+        "value": 59.0,
+        "mean_phi": -0.003413,
+        "relativity": 0.996593,
+        "count": 3
+      },
+      {
+        "value": 60.0,
+        "mean_phi": -0.013133,
+        "relativity": 0.986953,
+        "count": 5
+      },
+      {
+        "value": 61.0,
+        "mean_phi": 0.005937,
+        "relativity": 1.005955,
+        "count": 5
+      },
+      {
+        "value": 62.0,
+        "mean_phi": -0.030279,
+        "relativity": 0.970175,
+        "count": 3
+      },
+      {
+        "value": 64.0,
+        "mean_phi": -0.05286,
+        "relativity": 0.948513,
+        "count": 2
+      },
+      {
+        "value": 65.0,
+        "mean_phi": -0.021866,
+        "relativity": 0.978372,
+        "count": 3
+      },
+      {
+        "value": 67.0,
+        "mean_phi": 0.005473,
+        "relativity": 1.005488,
+        "count": 1
+      },
+      {
+        "value": 68.0,
+        "mean_phi": 0.106736,
+        "relativity": 1.112641,
+        "count": 1
+      },
+      {
+        "value": 70.0,
+        "mean_phi": -0.039267,
+        "relativity": 0.961494,
+        "count": 2
+      },
+      {
+        "value": 71.0,
+        "mean_phi": -0.004934,
+        "relativity": 0.995078,
+        "count": 3
+      },
+      {
+        "value": 72.0,
+        "mean_phi": -0.048404,
+        "relativity": 0.952749,
+        "count": 2
+      },
+      {
+        "value": 73.0,
+        "mean_phi": -0.033879,
+        "relativity": 0.966689,
+        "count": 4
+      },
+      {
+        "value": 74.0,
+        "mean_phi": -0.021284,
+        "relativity": 0.978941,
+        "count": 2
+      },
+      {
+        "value": 75.0,
+        "mean_phi": -0.042566,
+        "relativity": 0.958327,
+        "count": 1
+      },
+      {
+        "value": 76.0,
+        "mean_phi": 0.036577,
+        "relativity": 1.037254,
+        "count": 2
+      },
+      {
+        "value": 78.0,
+        "mean_phi": 0.012147,
+        "relativity": 1.012221,
+        "count": 1
+      },
+      {
+        "value": 79.0,
+        "mean_phi": 0.039363,
+        "relativity": 1.040148,
+        "count": 1
+      },
+      {
+        "value": 81.0,
+        "mean_phi": -0.006513,
+        "relativity": 0.993508,
+        "count": 1
+      },
+      {
+        "value": 85.0,
+        "mean_phi": 0.062317,
+        "relativity": 1.0643,
+        "count": 1
+      }
+    ],
+    "BonusMalus": [
+      {
+        "value": 50.0,
+        "mean_phi": -0.210828,
+        "relativity": 0.809913,
+        "count": 115
+      },
+      {
+        "value": 51.0,
+        "mean_phi": -0.178982,
+        "relativity": 0.836121,
+        "count": 8
+      },
+      {
+        "value": 52.0,
+        "mean_phi": 0.258831,
+        "relativity": 1.295415,
+        "count": 3
+      },
+      {
+        "value": 54.0,
+        "mean_phi": 0.01453,
+        "relativity": 1.014636,
+        "count": 4
+      },
+      {
+        "value": 56.0,
+        "mean_phi": 0.528587,
+        "relativity": 1.696533,
+        "count": 4
+      },
+      {
+        "value": 57.0,
+        "mean_phi": 0.171245,
+        "relativity": 1.186782,
+        "count": 2
+      },
+      {
+        "value": 58.0,
+        "mean_phi": 0.755231,
+        "relativity": 2.128102,
+        "count": 2
+      },
+      {
+        "value": 59.0,
+        "mean_phi": 0.372317,
+        "relativity": 1.451094,
+        "count": 1
+      },
+      {
+        "value": 60.0,
+        "mean_phi": 0.361051,
+        "relativity": 1.434837,
+        "count": 5
+      },
+      {
+        "value": 62.0,
+        "mean_phi": 1.006367,
+        "relativity": 2.735643,
+        "count": 3
+      },
+      {
+        "value": 64.0,
+        "mean_phi": 0.305217,
+        "relativity": 1.356919,
+        "count": 3
+      },
+      {
+        "value": 67.0,
+        "mean_phi": 1.110071,
+        "relativity": 3.034574,
+        "count": 1
+      },
+      {
+        "value": 68.0,
+        "mean_phi": 0.46973,
+        "relativity": 1.599562,
+        "count": 6
+      },
+      {
+        "value": 71.0,
+        "mean_phi": 0.902015,
+        "relativity": 2.464565,
+        "count": 1
+      },
+      {
+        "value": 72.0,
+        "mean_phi": 0.498187,
+        "relativity": 1.645734,
+        "count": 6
+      },
+      {
+        "value": 73.0,
+        "mean_phi": 0.814637,
+        "relativity": 2.258356,
+        "count": 1
+      },
+      {
+        "value": 74.0,
+        "mean_phi": 0.640447,
+        "relativity": 1.897328,
+        "count": 1
+      },
+      {
+        "value": 75.0,
+        "mean_phi": 1.116674,
+        "relativity": 3.054677,
+        "count": 1
+      },
+      {
+        "value": 76.0,
+        "mean_phi": 0.571487,
+        "relativity": 1.770898,
+        "count": 5
+      },
+      {
+        "value": 80.0,
+        "mean_phi": 0.617474,
+        "relativity": 1.854238,
+        "count": 3
+      },
+      {
+        "value": 81.0,
+        "mean_phi": 0.69673,
+        "relativity": 2.007179,
+        "count": 1
+      },
+      {
+        "value": 85.0,
+        "mean_phi": 0.727208,
+        "relativity": 2.069295,
+        "count": 9
+      },
+      {
+        "value": 86.0,
+        "mean_phi": 0.732957,
+        "relativity": 2.081226,
+        "count": 1
+      },
+      {
+        "value": 90.0,
+        "mean_phi": 0.736906,
+        "relativity": 2.089461,
+        "count": 2
+      },
+      {
+        "value": 95.0,
+        "mean_phi": 0.876508,
+        "relativity": 2.402496,
+        "count": 9
+      },
+      {
+        "value": 100.0,
+        "mean_phi": 0.980241,
+        "relativity": 2.665098,
+        "count": 1
+      },
+      {
+        "value": 102.0,
+        "mean_phi": 1.092324,
+        "relativity": 2.981193,
+        "count": 1
+      },
+      {
+        "value": 133.0,
+        "mean_phi": 1.667306,
+        "relativity": 5.297878,
+        "count": 1
+      }
+    ],
+    "Density": [
+      {
+        "value": 10.0,
+        "mean_phi": -0.216986,
+        "relativity": 0.804941,
+        "count": 4
+      },
+      {
+        "value": 12.0,
+        "mean_phi": -0.097752,
+        "relativity": 0.906874,
+        "count": 1
+      },
+      {
+        "value": 15.0,
+        "mean_phi": -0.262659,
+        "relativity": 0.769004,
+        "count": 1
+      },
+      {
+        "value": 16.0,
+        "mean_phi": -0.252271,
+        "relativity": 0.777034,
+        "count": 2
+      },
+      {
+        "value": 17.0,
+        "mean_phi": -0.372903,
+        "relativity": 0.688732,
+        "count": 2
+      },
+      {
+        "value": 19.0,
+        "mean_phi": -0.011105,
+        "relativity": 0.988957,
+        "count": 1
+      },
+      {
+        "value": 20.0,
+        "mean_phi": -0.225383,
+        "relativity": 0.798211,
+        "count": 2
+      },
+      {
+        "value": 22.0,
+        "mean_phi": 0.009905,
+        "relativity": 1.009955,
+        "count": 1
+      },
+      {
+        "value": 25.0,
+        "mean_phi": -0.049696,
+        "relativity": 0.951518,
+        "count": 2
+      },
+      {
+        "value": 26.0,
+        "mean_phi": -0.222976,
+        "relativity": 0.800134,
+        "count": 1
+      },
+      {
+        "value": 27.0,
+        "mean_phi": -0.153982,
+        "relativity": 0.857288,
+        "count": 1
+      },
+      {
+        "value": 29.0,
+        "mean_phi": -0.132356,
+        "relativity": 0.876029,
+        "count": 1
+      },
+      {
+        "value": 35.0,
+        "mean_phi": -0.261032,
+        "relativity": 0.770256,
+        "count": 1
+      },
+      {
+        "value": 39.0,
+        "mean_phi": -0.137843,
+        "relativity": 0.871235,
+        "count": 1
+      },
+      {
+        "value": 41.0,
+        "mean_phi": -0.078942,
+        "relativity": 0.924094,
+        "count": 1
+      },
+      {
+        "value": 42.0,
+        "mean_phi": -0.085343,
+        "relativity": 0.918197,
+        "count": 1
+      },
+      {
+        "value": 47.0,
+        "mean_phi": -0.051828,
+        "relativity": 0.949492,
+        "count": 1
+      },
+      {
+        "value": 48.0,
+        "mean_phi": -0.088686,
+        "relativity": 0.915133,
+        "count": 4
+      },
+      {
+        "value": 49.0,
+        "mean_phi": -0.063549,
+        "relativity": 0.938428,
+        "count": 3
+      },
+      {
+        "value": 50.0,
+        "mean_phi": -0.05633,
+        "relativity": 0.945227,
+        "count": 1
+      },
+      {
+        "value": 51.0,
+        "mean_phi": -0.077154,
+        "relativity": 0.925748,
+        "count": 5
+      },
+      {
+        "value": 52.0,
+        "mean_phi": -0.09359,
+        "relativity": 0.910656,
+        "count": 1
+      },
+      {
+        "value": 54.0,
+        "mean_phi": -0.052483,
+        "relativity": 0.94887,
+        "count": 1
+      },
+      {
+        "value": 57.0,
+        "mean_phi": -0.063949,
+        "relativity": 0.938053,
+        "count": 2
+      },
+      {
+        "value": 59.0,
+        "mean_phi": -0.054659,
+        "relativity": 0.946808,
+        "count": 1
+      },
+      {
+        "value": 61.0,
+        "mean_phi": -0.121161,
+        "relativity": 0.885891,
+        "count": 1
+      },
+      {
+        "value": 65.0,
+        "mean_phi": -0.057137,
+        "relativity": 0.944464,
+        "count": 2
+      },
+      {
+        "value": 71.0,
+        "mean_phi": -0.088951,
+        "relativity": 0.914891,
+        "count": 2
+      },
+      {
+        "value": 72.0,
+        "mean_phi": -0.077327,
+        "relativity": 0.925587,
+        "count": 1
+      },
+      {
+        "value": 76.0,
+        "mean_phi": -0.056668,
+        "relativity": 0.944908,
+        "count": 3
+      },
+      {
+        "value": 84.0,
+        "mean_phi": -0.033061,
+        "relativity": 0.96748,
+        "count": 1
+      },
+      {
+        "value": 89.0,
+        "mean_phi": -0.064683,
+        "relativity": 0.937364,
+        "count": 1
+      },
+      {
+        "value": 91.0,
+        "mean_phi": -0.052362,
+        "relativity": 0.948985,
+        "count": 1
+      },
+      {
+        "value": 93.0,
+        "mean_phi": -0.054333,
+        "relativity": 0.947117,
+        "count": 1
+      },
+      {
+        "value": 94.0,
+        "mean_phi": -0.045375,
+        "relativity": 0.955639,
+        "count": 1
+      },
+      {
+        "value": 105.0,
+        "mean_phi": -0.056113,
+        "relativity": 0.945432,
+        "count": 1
+      },
+      {
+        "value": 106.0,
+        "mean_phi": -0.026482,
+        "relativity": 0.973866,
+        "count": 1
+      },
+      {
+        "value": 107.0,
+        "mean_phi": -0.098565,
+        "relativity": 0.906137,
+        "count": 1
+      },
+      {
+        "value": 112.0,
+        "mean_phi": -0.088113,
+        "relativity": 0.915657,
+        "count": 1
+      },
+      {
+        "value": 114.0,
+        "mean_phi": -0.018349,
+        "relativity": 0.981819,
+        "count": 1
+      },
+      {
+        "value": 116.0,
+        "mean_phi": -0.026756,
+        "relativity": 0.973599,
+        "count": 2
+      },
+      {
+        "value": 122.0,
+        "mean_phi": -0.022752,
+        "relativity": 0.977505,
+        "count": 1
+      },
+      {
+        "value": 125.0,
+        "mean_phi": -0.042174,
+        "relativity": 0.958703,
+        "count": 1
+      },
+      {
+        "value": 126.0,
+        "mean_phi": -0.028703,
+        "relativity": 0.971705,
+        "count": 1
+      },
+      {
+        "value": 127.0,
+        "mean_phi": -0.017619,
+        "relativity": 0.982535,
+        "count": 2
+      },
+      {
+        "value": 143.0,
+        "mean_phi": 0.010094,
+        "relativity": 1.010145,
+        "count": 1
+      },
+      {
+        "value": 144.0,
+        "mean_phi": -0.002762,
+        "relativity": 0.997242,
+        "count": 1
+      },
+      {
+        "value": 147.0,
+        "mean_phi": -0.002621,
+        "relativity": 0.997382,
+        "count": 1
+      },
+      {
+        "value": 152.0,
+        "mean_phi": -0.08191,
+        "relativity": 0.921355,
+        "count": 1
+      },
+      {
+        "value": 153.0,
+        "mean_phi": 0.009139,
+        "relativity": 1.009181,
+        "count": 1
+      },
+      {
+        "value": 163.0,
+        "mean_phi": -0.02725,
+        "relativity": 0.973118,
+        "count": 2
+      },
+      {
+        "value": 165.0,
+        "mean_phi": -0.011344,
+        "relativity": 0.98872,
+        "count": 1
+      },
+      {
+        "value": 172.0,
+        "mean_phi": -0.028491,
+        "relativity": 0.971911,
+        "count": 1
+      },
+      {
+        "value": 182.0,
+        "mean_phi": -0.00876,
+        "relativity": 0.991278,
+        "count": 2
+      },
+      {
+        "value": 186.0,
+        "mean_phi": -0.015156,
+        "relativity": 0.984958,
+        "count": 2
+      },
+      {
+        "value": 203.0,
+        "mean_phi": -0.012911,
+        "relativity": 0.987172,
+        "count": 2
+      },
+      {
+        "value": 212.0,
+        "mean_phi": -0.043051,
+        "relativity": 0.957862,
+        "count": 1
+      },
+      {
+        "value": 214.0,
+        "mean_phi": 0.008874,
+        "relativity": 1.008914,
+        "count": 2
+      },
+      {
+        "value": 222.0,
+        "mean_phi": -0.04607,
+        "relativity": 0.954975,
+        "count": 2
+      },
+      {
+        "value": 229.0,
+        "mean_phi": 0.004647,
+        "relativity": 1.004657,
+        "count": 2
+      },
+      {
+        "value": 230.0,
+        "mean_phi": -0.064255,
+        "relativity": 0.937766,
+        "count": 1
+      },
+      {
+        "value": 243.0,
+        "mean_phi": -0.046105,
+        "relativity": 0.954941,
+        "count": 1
+      },
+      {
+        "value": 253.0,
+        "mean_phi": -0.020734,
+        "relativity": 0.979479,
+        "count": 1
+      },
+      {
+        "value": 268.0,
+        "mean_phi": 0.001496,
+        "relativity": 1.001497,
+        "count": 1
+      },
+      {
+        "value": 270.0,
+        "mean_phi": -0.006184,
+        "relativity": 0.993835,
+        "count": 2
+      },
+      {
+        "value": 283.0,
+        "mean_phi": -0.019988,
+        "relativity": 0.98021,
+        "count": 1
+      },
+      {
+        "value": 288.0,
+        "mean_phi": -0.008918,
+        "relativity": 0.991122,
+        "count": 1
+      },
+      {
+        "value": 289.0,
+        "mean_phi": -0.036425,
+        "relativity": 0.964231,
+        "count": 1
+      },
+      {
+        "value": 295.0,
+        "mean_phi": -0.019838,
+        "relativity": 0.980358,
+        "count": 1
+      },
+      {
+        "value": 298.0,
+        "mean_phi": -0.008651,
+        "relativity": 0.991386,
+        "count": 1
+      },
+      {
+        "value": 300.0,
+        "mean_phi": 0.003901,
+        "relativity": 1.003908,
+        "count": 1
+      },
+      {
+        "value": 312.0,
+        "mean_phi": -0.050142,
+        "relativity": 0.951095,
+        "count": 1
+      },
+      {
+        "value": 342.0,
+        "mean_phi": 0.021896,
+        "relativity": 1.022137,
+        "count": 1
+      },
+      {
+        "value": 346.0,
+        "mean_phi": -0.004644,
+        "relativity": 0.995367,
+        "count": 1
+      },
+      {
+        "value": 354.0,
+        "mean_phi": -0.058673,
+        "relativity": 0.943015,
+        "count": 1
+      },
+      {
+        "value": 377.0,
+        "mean_phi": -0.05086,
+        "relativity": 0.950411,
+        "count": 1
+      },
+      {
+        "value": 393.0,
+        "mean_phi": -0.041536,
+        "relativity": 0.959315,
+        "count": 1
+      },
+      {
+        "value": 395.0,
+        "mean_phi": -0.041682,
+        "relativity": 0.959174,
+        "count": 1
+      },
+      {
+        "value": 399.0,
+        "mean_phi": -0.054335,
+        "relativity": 0.947115,
+        "count": 1
+      },
+      {
+        "value": 401.0,
+        "mean_phi": -0.010712,
+        "relativity": 0.989345,
+        "count": 1
+      },
+      {
+        "value": 402.0,
+        "mean_phi": -0.012259,
+        "relativity": 0.987816,
+        "count": 1
+      },
+      {
+        "value": 405.0,
+        "mean_phi": 0.020465,
+        "relativity": 1.020676,
+        "count": 4
+      },
+      {
+        "value": 412.0,
+        "mean_phi": 0.043792,
+        "relativity": 1.044765,
+        "count": 1
+      },
+      {
+        "value": 433.0,
+        "mean_phi": 0.005902,
+        "relativity": 1.005919,
+        "count": 1
+      },
+      {
+        "value": 458.0,
+        "mean_phi": 0.012243,
+        "relativity": 1.012318,
+        "count": 2
+      },
+      {
+        "value": 473.0,
+        "mean_phi": 0.034753,
+        "relativity": 1.035364,
+        "count": 1
+      },
+      {
+        "value": 481.0,
+        "mean_phi": -0.013386,
+        "relativity": 0.986704,
+        "count": 1
+      },
+      {
+        "value": 501.0,
+        "mean_phi": 0.038483,
+        "relativity": 1.039233,
+        "count": 1
+      },
+      {
+        "value": 516.0,
+        "mean_phi": 0.005203,
+        "relativity": 1.005216,
+        "count": 1
+      },
+      {
+        "value": 522.0,
+        "mean_phi": 0.098282,
+        "relativity": 1.103274,
+        "count": 1
+      },
+      {
+        "value": 528.0,
+        "mean_phi": 0.029325,
+        "relativity": 1.029759,
+        "count": 1
+      },
+      {
+        "value": 533.0,
+        "mean_phi": 0.065419,
+        "relativity": 1.067606,
+        "count": 1
+      },
+      {
+        "value": 570.0,
+        "mean_phi": 0.120709,
+        "relativity": 1.128297,
+        "count": 1
+      },
+      {
+        "value": 598.0,
+        "mean_phi": 0.108862,
+        "relativity": 1.115009,
+        "count": 1
+      },
+      {
+        "value": 604.0,
+        "mean_phi": 0.094469,
+        "relativity": 1.099075,
+        "count": 1
+      },
+      {
+        "value": 644.0,
+        "mean_phi": 0.03166,
+        "relativity": 1.032166,
+        "count": 1
+      },
+      {
+        "value": 648.0,
+        "mean_phi": 0.030832,
+        "relativity": 1.031312,
+        "count": 1
+      },
+      {
+        "value": 713.0,
+        "mean_phi": 0.117978,
+        "relativity": 1.125219,
+        "count": 1
+      },
+      {
+        "value": 729.0,
+        "mean_phi": 0.090821,
+        "relativity": 1.095073,
+        "count": 1
+      },
+      {
+        "value": 745.0,
+        "mean_phi": 0.11395,
+        "relativity": 1.120696,
+        "count": 1
+      },
+      {
+        "value": 747.0,
+        "mean_phi": 0.120281,
+        "relativity": 1.127813,
+        "count": 1
+      },
+      {
+        "value": 798.0,
+        "mean_phi": 0.113777,
+        "relativity": 1.120503,
+        "count": 1
+      },
+      {
+        "value": 817.0,
+        "mean_phi": 0.137031,
+        "relativity": 1.146863,
+        "count": 1
+      },
+      {
+        "value": 820.0,
+        "mean_phi": 0.142412,
+        "relativity": 1.153051,
+        "count": 1
+      },
+      {
+        "value": 824.0,
+        "mean_phi": 0.227384,
+        "relativity": 1.255312,
+        "count": 2
+      },
+      {
+        "value": 856.0,
+        "mean_phi": 0.152482,
+        "relativity": 1.164721,
+        "count": 1
+      },
+      {
+        "value": 918.0,
+        "mean_phi": 0.123662,
+        "relativity": 1.131633,
+        "count": 1
+      },
+      {
+        "value": 930.0,
+        "mean_phi": 0.100062,
+        "relativity": 1.10524,
+        "count": 2
+      },
+      {
+        "value": 983.0,
+        "mean_phi": 0.193087,
+        "relativity": 1.212988,
+        "count": 2
+      },
+      {
+        "value": 1006.0,
+        "mean_phi": 0.170731,
+        "relativity": 1.186172,
+        "count": 1
+      },
+      {
+        "value": 1052.0,
+        "mean_phi": 0.143171,
+        "relativity": 1.153928,
+        "count": 1
+      },
+      {
+        "value": 1054.0,
+        "mean_phi": 0.151013,
+        "relativity": 1.163012,
+        "count": 3
+      },
+      {
+        "value": 1127.0,
+        "mean_phi": 0.029157,
+        "relativity": 1.029587,
+        "count": 1
+      },
+      {
+        "value": 1182.0,
+        "mean_phi": 0.0728,
+        "relativity": 1.075515,
+        "count": 2
+      },
+      {
+        "value": 1192.0,
+        "mean_phi": 0.089303,
+        "relativity": 1.093412,
+        "count": 1
+      },
+      {
+        "value": 1193.0,
+        "mean_phi": 0.107982,
+        "relativity": 1.114027,
+        "count": 1
+      },
+      {
+        "value": 1313.0,
+        "mean_phi": 0.142672,
+        "relativity": 1.153352,
+        "count": 1
+      },
+      {
+        "value": 1323.0,
+        "mean_phi": 0.157327,
+        "relativity": 1.170379,
+        "count": 1
+      },
+      {
+        "value": 1326.0,
+        "mean_phi": 0.11375,
+        "relativity": 1.120472,
+        "count": 1
+      },
+      {
+        "value": 1445.0,
+        "mean_phi": 0.105662,
+        "relativity": 1.111446,
+        "count": 1
+      },
+      {
+        "value": 1501.0,
+        "mean_phi": 0.130198,
+        "relativity": 1.139054,
+        "count": 1
+      },
+      {
+        "value": 2715.0,
+        "mean_phi": 0.191732,
+        "relativity": 1.211346,
+        "count": 1
+      },
+      {
+        "value": 2740.0,
+        "mean_phi": 0.109107,
+        "relativity": 1.115282,
+        "count": 1
+      },
+      {
+        "value": 2906.0,
+        "mean_phi": 0.097447,
+        "relativity": 1.102353,
+        "count": 1
+      },
+      {
+        "value": 3021.0,
+        "mean_phi": 0.141137,
+        "relativity": 1.151582,
+        "count": 2
+      },
+      {
+        "value": 3132.0,
+        "mean_phi": 0.109716,
+        "relativity": 1.115961,
+        "count": 1
+      },
+      {
+        "value": 3274.0,
+        "mean_phi": 0.170748,
+        "relativity": 1.186192,
+        "count": 1
+      },
+      {
+        "value": 3317.0,
+        "mean_phi": 0.162497,
+        "relativity": 1.176445,
+        "count": 3
+      },
+      {
+        "value": 3430.0,
+        "mean_phi": 0.216544,
+        "relativity": 1.241778,
+        "count": 1
+      },
+      {
+        "value": 3657.0,
+        "mean_phi": 0.30512,
+        "relativity": 1.356788,
+        "count": 1
+      },
+      {
+        "value": 3688.0,
+        "mean_phi": 0.301883,
+        "relativity": 1.352403,
+        "count": 1
+      },
+      {
+        "value": 3744.0,
+        "mean_phi": 0.168848,
+        "relativity": 1.18394,
+        "count": 1
+      },
+      {
+        "value": 3866.0,
+        "mean_phi": 0.163203,
+        "relativity": 1.177276,
+        "count": 1
+      },
+      {
+        "value": 4172.0,
+        "mean_phi": 0.236048,
+        "relativity": 1.266235,
+        "count": 1
+      },
+      {
+        "value": 4253.0,
+        "mean_phi": 0.17732,
+        "relativity": 1.194013,
+        "count": 1
+      },
+      {
+        "value": 4348.0,
+        "mean_phi": 0.210109,
+        "relativity": 1.233812,
+        "count": 1
+      },
+      {
+        "value": 4427.0,
+        "mean_phi": 0.196892,
+        "relativity": 1.217613,
+        "count": 1
+      },
+      {
+        "value": 4456.0,
+        "mean_phi": 0.206882,
+        "relativity": 1.229837,
+        "count": 1
+      },
+      {
+        "value": 4579.0,
+        "mean_phi": 0.271095,
+        "relativity": 1.3114,
+        "count": 1
+      },
+      {
+        "value": 4649.0,
+        "mean_phi": 0.330354,
+        "relativity": 1.391461,
+        "count": 1
+      },
+      {
+        "value": 4762.0,
+        "mean_phi": 0.227488,
+        "relativity": 1.255442,
+        "count": 4
+      },
+      {
+        "value": 4998.0,
+        "mean_phi": 0.203952,
+        "relativity": 1.226239,
+        "count": 1
+      },
+      {
+        "value": 5389.0,
+        "mean_phi": 0.126102,
+        "relativity": 1.134398,
+        "count": 1
+      },
+      {
+        "value": 5449.0,
+        "mean_phi": 0.211309,
+        "relativity": 1.235294,
+        "count": 1
+      },
+      {
+        "value": 8346.0,
+        "mean_phi": 0.174411,
+        "relativity": 1.190545,
+        "count": 1
+      },
+      {
+        "value": 8455.0,
+        "mean_phi": 0.211672,
+        "relativity": 1.235742,
+        "count": 2
+      },
+      {
+        "value": 8549.0,
+        "mean_phi": 0.13551,
+        "relativity": 1.145121,
+        "count": 1
+      },
+      {
+        "value": 9307.0,
+        "mean_phi": 0.122618,
+        "relativity": 1.130452,
+        "count": 1
+      },
+      {
+        "value": 12650.0,
+        "mean_phi": 0.200739,
+        "relativity": 1.222306,
+        "count": 1
+      },
+      {
+        "value": 27000.0,
+        "mean_phi": 0.136666,
+        "relativity": 1.146446,
+        "count": 3
+      }
+    ],
+    "Area": [
+      {
+        "value": "A",
+        "mean_phi": -0.004848,
+        "relativity": 0.995164,
+        "count": 32
+      },
+      {
+        "value": "B",
+        "mean_phi": -0.01091,
+        "relativity": 0.989149,
+        "count": 24
+      },
+      {
+        "value": "C",
+        "mean_phi": 0.000894,
+        "relativity": 1.000895,
+        "count": 66
+      },
+      {
+        "value": "D",
+        "mean_phi": -0.000814,
+        "relativity": 0.999187,
+        "count": 40
+      },
+      {
+        "value": "E",
+        "mean_phi": 0.007349,
+        "relativity": 1.007376,
+        "count": 34
+      },
+      {
+        "value": "F",
+        "mean_phi": 0.003152,
+        "relativity": 1.003157,
+        "count": 4
+      }
+    ],
+    "VehBrand": [
+      {
+        "value": "B1",
+        "mean_phi": 0.015194,
+        "relativity": 1.01531,
+        "count": 60
+      },
+      {
+        "value": "B10",
+        "mean_phi": 0.093361,
+        "relativity": 1.097858,
+        "count": 6
+      },
+      {
+        "value": "B11",
+        "mean_phi": 0.168634,
+        "relativity": 1.183686,
+        "count": 6
+      },
+      {
+        "value": "B12",
+        "mean_phi": -0.111439,
+        "relativity": 0.894546,
+        "count": 34
+      },
+      {
+        "value": "B13",
+        "mean_phi": 0.045828,
+        "relativity": 1.046895,
+        "count": 3
+      },
+      {
+        "value": "B14",
+        "mean_phi": -0.074838,
+        "relativity": 0.927894,
+        "count": 1
+      },
+      {
+        "value": "B2",
+        "mean_phi": 0.021514,
+        "relativity": 1.021748,
+        "count": 39
+      },
+      {
+        "value": "B3",
+        "mean_phi": 0.052229,
+        "relativity": 1.053617,
+        "count": 16
+      },
+      {
+        "value": "B4",
+        "mean_phi": 0.065644,
+        "relativity": 1.067847,
+        "count": 8
+      },
+      {
+        "value": "B5",
+        "mean_phi": 0.107133,
+        "relativity": 1.113082,
+        "count": 15
+      },
+      {
+        "value": "B6",
+        "mean_phi": 0.020893,
+        "relativity": 1.021113,
+        "count": 12
+      }
+    ],
+    "VehGas": [
+      {
+        "value": "Diesel",
+        "mean_phi": 0.098316,
+        "relativity": 1.103311,
+        "count": 106
+      },
+      {
+        "value": "Regular",
+        "mean_phi": -0.061436,
+        "relativity": 0.940413,
+        "count": 94
+      }
+    ],
+    "Region": [
+      {
+        "value": "R11",
+        "mean_phi": 0.042107,
+        "relativity": 1.043006,
+        "count": 15
+      },
+      {
+        "value": "R21",
+        "mean_phi": -0.140113,
+        "relativity": 0.86926,
+        "count": 2
+      },
+      {
+        "value": "R22",
+        "mean_phi": 0.09174,
+        "relativity": 1.09608,
+        "count": 5
+      },
+      {
+        "value": "R23",
+        "mean_phi": -0.05551,
+        "relativity": 0.946003,
+        "count": 2
+      },
+      {
+        "value": "R24",
+        "mean_phi": -0.068645,
+        "relativity": 0.933658,
+        "count": 56
+      },
+      {
+        "value": "R25",
+        "mean_phi": -0.050586,
+        "relativity": 0.950672,
+        "count": 3
+      },
+      {
+        "value": "R26",
+        "mean_phi": -0.042404,
+        "relativity": 0.958482,
+        "count": 3
+      },
+      {
+        "value": "R31",
+        "mean_phi": 0.079306,
+        "relativity": 1.082535,
+        "count": 4
+      },
+      {
+        "value": "R41",
+        "mean_phi": -0.183463,
+        "relativity": 0.832383,
+        "count": 2
+      },
+      {
+        "value": "R52",
+        "mean_phi": -0.020005,
+        "relativity": 0.980194,
+        "count": 16
+      },
+      {
+        "value": "R53",
+        "mean_phi": -0.064947,
+        "relativity": 0.937117,
+        "count": 17
+      },
+      {
+        "value": "R54",
+        "mean_phi": -0.022279,
+        "relativity": 0.977967,
+        "count": 5
+      },
+      {
+        "value": "R72",
+        "mean_phi": -0.001165,
+        "relativity": 0.998836,
+        "count": 13
+      },
+      {
+        "value": "R74",
+        "mean_phi": 0.271813,
+        "relativity": 1.312342,
+        "count": 2
+      },
+      {
+        "value": "R82",
+        "mean_phi": 0.147505,
+        "relativity": 1.158939,
+        "count": 20
+      },
+      {
+        "value": "R83",
+        "mean_phi": -0.055538,
+        "relativity": 0.945977,
+        "count": 2
+      },
+      {
+        "value": "R91",
+        "mean_phi": 0.093511,
+        "relativity": 1.098023,
+        "count": 8
+      },
+      {
+        "value": "R93",
+        "mean_phi": 0.079262,
+        "relativity": 1.082488,
+        "count": 24
+      },
+      {
+        "value": "R94",
+        "mean_phi": -0.080592,
+        "relativity": 0.92257,
+        "count": 1
+      }
+    ]
+  },
+  "examples": [
+    {
+      "profile_name": "Jeune conducteur urbain, malus",
+      "base_premium": 135.0837,
+      "pure_premium": 600.2259,
+      "contributions": [
+        {
+          "feature": "BonusMalus",
+          "label": "Coefficient bonus-malus",
+          "value": 100,
+          "phi": 0.778484,
+          "relativity": 2.178169,
+          "frequency_phi": 0.778484,
+          "severity_phi": 0.0,
+          "direction": "hausse"
+        },
+        {
+          "feature": "DrivAge",
+          "label": "Âge du conducteur",
+          "value": 20,
+          "phi": 0.5914,
+          "relativity": 1.806516,
+          "frequency_phi": 0.5914,
+          "severity_phi": 0.0,
+          "direction": "hausse"
+        },
+        {
+          "feature": "VehBrand",
+          "label": "Marque du véhicule",
+          "value": "B12",
+          "phi": -0.276941,
+          "relativity": 0.758099,
+          "frequency_phi": -0.276941,
+          "severity_phi": 0.0,
+          "direction": "baisse"
+        },
+        {
+          "feature": "Density",
+          "label": "Densité de population",
+          "value": 5000,
+          "phi": 0.207365,
+          "relativity": 1.230431,
+          "frequency_phi": 0.207365,
+          "severity_phi": 0.0,
+          "direction": "hausse"
+        },
+        {
+          "feature": "Region",
+          "label": "Région",
+          "value": "R11",
+          "phi": 0.101355,
+          "relativity": 1.10667,
+          "frequency_phi": 0.101355,
+          "severity_phi": 0.0,
+          "direction": "hausse"
+        },
+        {
+          "feature": "VehPower",
+          "label": "Puissance du véhicule",
+          "value": 7,
+          "phi": 0.070851,
+          "relativity": 1.073422,
+          "frequency_phi": 0.070851,
+          "severity_phi": 0.0,
+          "direction": "hausse"
+        },
+        {
+          "feature": "Area",
+          "label": "Zone géographique",
+          "value": "E",
+          "phi": 0.01376,
+          "relativity": 1.013855,
+          "frequency_phi": 0.01376,
+          "severity_phi": 0.0,
+          "direction": "hausse"
+        },
+        {
+          "feature": "VehGas",
+          "label": "Carburant",
+          "value": "Regular",
+          "phi": 0.013481,
+          "relativity": 1.013572,
+          "frequency_phi": 0.013481,
+          "severity_phi": 0.0,
+          "direction": "hausse"
+        },
+        {
+          "feature": "VehAge",
+          "label": "Âge du véhicule",
+          "value": 2,
+          "phi": -0.008344,
+          "relativity": 0.991691,
+          "frequency_phi": -0.008344,
+          "severity_phi": 0.0,
+          "direction": "neutre"
+        }
+      ]
+    },
+    {
+      "profile_name": "Conducteur expérimenté rural, bonus maximal",
+      "base_premium": 135.0837,
+      "pure_premium": 120.5339,
+      "contributions": [
+        {
+          "feature": "BonusMalus",
+          "label": "Coefficient bonus-malus",
+          "value": 50,
+          "phi": -0.236756,
+          "relativity": 0.789184,
+          "frequency_phi": -0.236756,
+          "severity_phi": 0.0,
+          "direction": "baisse"
+        },
+        {
+          "feature": "DrivAge",
+          "label": "Âge du conducteur",
+          "value": 50,
+          "phi": 0.175793,
+          "relativity": 1.192192,
+          "frequency_phi": 0.175793,
+          "severity_phi": 0.0,
+          "direction": "hausse"
+        },
+        {
+          "feature": "Region",
+          "label": "Région",
+          "value": "R24",
+          "phi": -0.082668,
+          "relativity": 0.920657,
+          "frequency_phi": -0.082668,
+          "severity_phi": 0.0,
+          "direction": "baisse"
+        },
+        {
+          "feature": "VehGas",
+          "label": "Carburant",
+          "value": "Diesel",
+          "phi": 0.072326,
+          "relativity": 1.075006,
+          "frequency_phi": 0.072326,
+          "severity_phi": 0.0,
+          "direction": "hausse"
+        },
+        {
+          "feature": "Density",
+          "label": "Densité de population",
+          "value": 50,
+          "phi": -0.063326,
+          "relativity": 0.938638,
+          "frequency_phi": -0.063326,
+          "severity_phi": 0.0,
+          "direction": "baisse"
+        },
+        {
+          "feature": "VehAge",
+          "label": "Âge du véhicule",
+          "value": 8,
+          "phi": 0.01929,
+          "relativity": 1.019477,
+          "frequency_phi": 0.01929,
+          "severity_phi": 0.0,
+          "direction": "hausse"
+        },
+        {
+          "feature": "VehBrand",
+          "label": "Marque du véhicule",
+          "value": "B1",
+          "phi": 0.007208,
+          "relativity": 1.007234,
+          "frequency_phi": 0.007208,
+          "severity_phi": 0.0,
+          "direction": "neutre"
+        },
+        {
+          "feature": "Area",
+          "label": "Zone géographique",
+          "value": "A",
+          "phi": -0.004682,
+          "relativity": 0.995329,
+          "frequency_phi": -0.004682,
+          "severity_phi": 0.0,
+          "direction": "neutre"
+        },
+        {
+          "feature": "VehPower",
+          "label": "Puissance du véhicule",
+          "value": 6,
+          "phi": -0.001149,
+          "relativity": 0.998851,
+          "frequency_phi": -0.001149,
+          "severity_phi": 0.0,
+          "direction": "neutre"
+        }
+      ]
+    },
+    {
+      "profile_name": "Conducteur senior, ville moyenne",
+      "base_premium": 135.0837,
+      "pure_premium": 135.0991,
+      "contributions": [
+        {
+          "feature": "BonusMalus",
+          "label": "Coefficient bonus-malus",
+          "value": 50,
+          "phi": -0.207702,
+          "relativity": 0.81245,
+          "frequency_phi": -0.207702,
+          "severity_phi": 0.0,
+          "direction": "baisse"
+        },
+        {
+          "feature": "Region",
+          "label": "Région",
+          "value": "R82",
+          "phi": 0.181841,
+          "relativity": 1.199424,
+          "frequency_phi": 0.181841,
+          "severity_phi": 0.0,
+          "direction": "hausse"
+        },
+        {
+          "feature": "Density",
+          "label": "Densité de population",
+          "value": 800,
+          "phi": 0.161289,
+          "relativity": 1.175024,
+          "frequency_phi": 0.161289,
+          "severity_phi": 0.0,
+          "direction": "hausse"
+        },
+        {
+          "feature": "VehGas",
+          "label": "Carburant",
+          "value": "Regular",
+          "phi": -0.086582,
+          "relativity": 0.917061,
+          "frequency_phi": -0.086582,
+          "severity_phi": 0.0,
+          "direction": "baisse"
+        },
+        {
+          "feature": "DrivAge",
+          "label": "Âge du conducteur",
+          "value": 72,
+          "phi": -0.064085,
+          "relativity": 0.937925,
+          "frequency_phi": -0.064085,
+          "severity_phi": 0.0,
+          "direction": "baisse"
+        },
+        {
+          "feature": "VehAge",
+          "label": "Âge du véhicule",
+          "value": 5,
+          "phi": 0.047236,
+          "relativity": 1.04837,
+          "frequency_phi": 0.047236,
+          "severity_phi": 0.0,
+          "direction": "hausse"
+        },
+        {
+          "feature": "VehPower",
+          "label": "Puissance du véhicule",
+          "value": 5,
+          "phi": -0.041061,
+          "relativity": 0.959771,
+          "frequency_phi": -0.041061,
+          "severity_phi": 0.0,
+          "direction": "baisse"
+        },
+        {
+          "feature": "VehBrand",
+          "label": "Marque du véhicule",
+          "value": "B2",
+          "phi": 0.012805,
+          "relativity": 1.012888,
+          "frequency_phi": 0.012805,
+          "severity_phi": 0.0,
+          "direction": "hausse"
+        },
+        {
+          "feature": "Area",
+          "label": "Zone géographique",
+          "value": "C",
+          "phi": -0.003628,
+          "relativity": 0.996378,
+          "frequency_phi": -0.003628,
+          "severity_phi": 0.0,
+          "direction": "neutre"
+        }
+      ]
+    }
+  ],
+  "comparison": {
+    "profile_a": "Jeune conducteur urbain, malus",
+    "profile_b": "Conducteur expérimenté rural, bonus maximal",
+    "premium_a": 600.2259,
+    "premium_b": 120.5339,
+    "premium_ratio": 4.979727,
+    "contributions": [
+      {
+        "feature": "BonusMalus",
+        "label": "Coefficient bonus-malus",
+        "value_a": 100,
+        "value_b": 50,
+        "phi_difference": 1.015241,
+        "relativity": 2.760027
+      },
+      {
+        "feature": "DrivAge",
+        "label": "Âge du conducteur",
+        "value_a": 20,
+        "value_b": 50,
+        "phi_difference": 0.415607,
+        "relativity": 1.51529
+      },
+      {
+        "feature": "VehBrand",
+        "label": "Marque du véhicule",
+        "value_a": "B12",
+        "value_b": "B1",
+        "phi_difference": -0.284149,
+        "relativity": 0.752654
+      },
+      {
+        "feature": "Density",
+        "label": "Densité de population",
+        "value_a": 5000,
+        "value_b": 50,
+        "phi_difference": 0.27069,
+        "relativity": 1.310869
+      },
+      {
+        "feature": "Region",
+        "label": "Région",
+        "value_a": "R11",
+        "value_b": "R24",
+        "phi_difference": 0.184023,
+        "relativity": 1.202044
+      },
+      {
+        "feature": "VehPower",
+        "label": "Puissance du véhicule",
+        "value_a": 7,
+        "value_b": 6,
+        "phi_difference": 0.072001,
+        "relativity": 1.074656
+      },
+      {
+        "feature": "VehGas",
+        "label": "Carburant",
+        "value_a": "Regular",
+        "value_b": "Diesel",
+        "phi_difference": -0.058845,
+        "relativity": 0.942853
+      },
+      {
+        "feature": "VehAge",
+        "label": "Âge du véhicule",
+        "value_a": 2,
+        "value_b": 8,
+        "phi_difference": -0.027634,
+        "relativity": 0.972744
+      },
+      {
+        "feature": "Area",
+        "label": "Zone géographique",
+        "value_a": "E",
+        "value_b": "A",
+        "phi_difference": 0.018442,
+        "relativity": 1.018613
+      }
+    ]
+  }
+}

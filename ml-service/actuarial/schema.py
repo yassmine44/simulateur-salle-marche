@@ -41,6 +41,18 @@ CATEGORICAL_FEATURES: tuple[str, ...] = (
 )
 FEATURES: tuple[str, ...] = NUMERIC_FEATURES + CATEGORICAL_FEATURES
 
+FEATURE_LABELS: dict[str, str] = {
+    AREA: "Zone géographique",
+    VEHICLE_POWER: "Puissance du véhicule",
+    VEHICLE_AGE: "Âge du véhicule",
+    DRIVER_AGE: "Âge du conducteur",
+    BONUS_MALUS: "Coefficient bonus-malus",
+    VEHICLE_BRAND: "Marque du véhicule",
+    VEHICLE_GAS: "Carburant",
+    DENSITY: "Densité de population",
+    REGION: "Région",
+}
+
 REQUIRED_POLICY_COLUMNS: frozenset[str] = frozenset(
     {POLICY_ID, CLAIM_COUNT, EXPOSURE, *FEATURES}
 )

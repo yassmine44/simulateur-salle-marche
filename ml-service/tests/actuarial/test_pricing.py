@@ -13,7 +13,7 @@ from actuarial.pricing import (
     load_pricing_engine,
     portfolio_margin,
 )
-from actuarial.train import ARCHETYPES, train_pipeline
+from actuarial.train import ARCHETYPES
 from tests.actuarial.conftest import SHARE_WITHOUT_AMOUNT, TAIL_FACTOR, TAIL_PROBABILITY
 
 
@@ -84,20 +84,14 @@ def test_portfolio_margin_totals(engine: PricingEngine, policies: pd.DataFrame) 
     assert by_area["policies"].sum() == len(policies)
 
 
-# --- end-to-end pipeline ----------------------------------------------------
-@pytest.fixture(scope="module")
-def trained(policies: pd.DataFrame, claims: pd.DataFrame, tmp_path_factory):
-    directory = tmp_path_factory.mktemp("artifacts")
-    summary = train_pipeline(policies, claims, directory)
-    return directory, summary
-
-
+# --- end-to-end pipeline (fixture `trained` in conftest) --------------------
 def test_pipeline_writes_every_artifact(trained) -> None:
     directory, _ = trained
     expected = {
         "frequency_model.joblib", "frequency_model.card.json", "frequency_report.json",
         "severity_model.joblib", "severity_model.card.json", "severity_report.json",
         "pricing_config.json", "pricing_report.json",
+        "explainer_background.csv", "explainability_report.json",
     }
     assert expected <= {path.name for path in directory.iterdir()}
 

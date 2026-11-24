@@ -1,5 +1,5 @@
 {
-  "model_version": "20261124161609",
+  "model_version": "20261124162402",
   "large_claim_cap": {
     "quantile": 0.995,
     "threshold": 34792.54,
@@ -61,7 +61,7 @@
       "name": "gamma_gbm",
       "algorithm": "HistGradientBoostingRegressor (loss=gamma)",
       "description": "Gradient boosting à perte Gamma : capte non-linéarités et interactions.",
-      "fit_seconds": 0.12,
+      "fit_seconds": 0.15,
       "train": {
         "deviance_power": 2.0,
         "mean_deviance": 1.062896,

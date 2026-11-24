@@ -13,6 +13,8 @@ Stages, all on the same policy-level train/test split:
 3. pricing    combine both champions into pure and commercial premiums,
               evaluate them against the actual claims of the test portfolio
               and compute premium margins by segment
+4. explain    exact Shapley values of the premium: global importance,
+              dependence, example explanations and a pairwise comparison
 
 Outputs in artifacts/actuarial/:
 
@@ -22,6 +24,8 @@ Outputs in artifacts/actuarial/:
     frequency_report.json                 candidates, Lorenz curves, calibration
     severity_report.json                  idem
     pricing_report.json                   premium accuracy, margins, example quotes
+    explainer_background.csv              reference sample of the Shapley explanations
+    explainability_report.json            global and local explanations (XAI)
 """
 
 from __future__ import annotations
@@ -45,6 +49,14 @@ from actuarial.data import (
     load_portfolio,
     portfolio_summary,
     split_policies,
+)
+from actuarial.explainability import (
+    BACKGROUND_SIZE,
+    GLOBAL_SAMPLE_SIZE,
+    PremiumExplainer,
+    build_explainability_report,
+    sample_background,
+    save_background,
 )
 from actuarial.frequency import FREQUENCY_TASK, build_frequency_candidates
 from actuarial.metrics import calibration_table, evaluate, sampled_lorenz
@@ -153,6 +165,8 @@ def train_pipeline(
     claims: pd.DataFrame,
     artifacts_dir: Path = config.ARTIFACTS_DIR,
     assumptions: PricingAssumptions = PricingAssumptions(),
+    background_size: int = BACKGROUND_SIZE,
+    explain_sample_size: int = GLOBAL_SAMPLE_SIZE,
 ) -> dict[str, Any]:
     artifacts_dir.mkdir(parents=True, exist_ok=True)
     data_fingerprint = fingerprint(policies, claims)
@@ -271,6 +285,21 @@ def train_pipeline(
         "example_quotes": _records(archetype_quotes.reset_index(drop=True)),
     }
     _write_json(artifacts_dir / "pricing_report.json", pricing_report)
+
+    # 4. Explainability ---------------------------------------------------------
+    background = sample_background(split.train, size=background_size)
+    save_background(background, artifacts_dir)
+    explainer = PremiumExplainer(engine, background)
+    global_sample = sample_background(
+        test, size=explain_sample_size, random_state=config.RANDOM_STATE + 1
+    )
+    explainability_report = build_explainability_report(explainer, global_sample, archetypes)
+    _write_json(artifacts_dir / "explainability_report.json", explainability_report)
+    top = explainability_report["global_importance"]["premium"][:3]
+    logger.info(
+        "[explainability] top premium drivers: %s",
+        ", ".join(f"{row['feature']} ({100 * row['share']:.0f}%)" for row in top),
+    )
 
     margin = pricing_report["margin"]["portfolio"][0]
     logger.info(

@@ -1,5 +1,5 @@
 {
-  "model_version": "20261124161609",
+  "model_version": "20261124162401",
   "task": "frequency",
   "champion": "poisson_gbm",
   "candidates": [
@@ -7,7 +7,7 @@
       "name": "baseline",
       "algorithm": "DummyRegressor(mean)",
       "description": "Fréquence moyenne unique du portefeuille (référence minimale).",
-      "fit_seconds": 2.66,
+      "fit_seconds": 2.53,
       "train": {
         "deviance_power": 1.0,
         "mean_deviance": 0.477272,
@@ -31,7 +31,7 @@
       "name": "poisson_glm",
       "algorithm": "PoissonRegressor (GLM, lien log)",
       "description": "GLM de Poisson : modèle de référence du marché, entièrement interprétable.",
-      "fit_seconds": 3.87,
+      "fit_seconds": 3.89,
       "train": {
         "deviance_power": 1.0,
         "mean_deviance": 0.45566,
@@ -55,7 +55,7 @@
       "name": "poisson_gbm",
       "algorithm": "HistGradientBoostingRegressor (loss=poisson)",
       "description": "Gradient boosting à perte de Poisson : capte non-linéarités et interactions.",
-      "fit_seconds": 4.14,
+      "fit_seconds": 4.77,
       "train": {
         "deviance_power": 1.0,
         "mean_deviance": 0.433977,

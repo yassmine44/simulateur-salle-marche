@@ -111,6 +111,18 @@ def policies(raw_portfolio: pd.DataFrame, claims: pd.DataFrame) -> pd.DataFrame:
 
 
 @pytest.fixture(scope="session")
+def trained(policies: pd.DataFrame, claims: pd.DataFrame, tmp_path_factory):
+    """Full training pipeline run once on the synthetic portfolio."""
+    from actuarial.train import train_pipeline
+
+    directory = tmp_path_factory.mktemp("artifacts")
+    # Small explanation samples keep the suite fast; the method is identical.
+    return directory, train_pipeline(
+        policies, claims, directory, background_size=50, explain_sample_size=40
+    )
+
+
+@pytest.fixture(scope="session")
 def truth(raw_portfolio: pd.DataFrame) -> pd.DataFrame:
     """True frequency and severity indexed by policy id."""
     return raw_portfolio.set_index(raw_portfolio[s.POLICY_ID].astype("int64"))[
